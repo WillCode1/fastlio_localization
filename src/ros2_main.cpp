@@ -184,15 +184,13 @@ int main(int argc, char **argv)
 {
     rclcpp::init(argc, argv);
     auto node = std::make_shared<rclcpp::Node>("SLAM");
-    bool pure_localization = false;
-    bool save_globalmap_en = false, path_en = true;
-    bool scan_pub_en = false, dense_pub_en = false;
+    bool path_en = true, scan_pub_en = false, dense_pub_en = false;
     string lidar_topic, imu_topic, config_file;
 
     ros::param::param("config_file", config_file, std::string(""));
 
     load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, map_frame, body_frame);
-    load_parameters(slam, string(ROOT_DIR) + config_file, pure_localization, save_globalmap_en, lidar_type);
+    load_parameters(slam, string(ROOT_DIR) + config_file, lidar_type);
 
     /*** ROS subscribe initialization ***/
     rclcpp::Subscription<livox_interfaces2::msg::CustomMsg>::SharedPtr sub_pcl1;
