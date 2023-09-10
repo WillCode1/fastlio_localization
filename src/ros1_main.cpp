@@ -16,6 +16,10 @@
 #include "utility/Parameters.h"
 #include "system/System.hpp"
 
+#define WORK
+#ifdef WORK
+#include "ant_robot_msgs/PoseDynamicData.h"
+#endif
 
 int lidar_type;
 System slam;
@@ -164,6 +168,76 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
     publish_tf(odomAftMapped.pose.pose, lidar_end_time);
 }
 
+#ifdef WORK
+void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, const double& lidar_end_time, bool vaild)
+{
+    ant_robot_msgs::PoseDynamicData odom;
+    odom.header.frame_id = map_frame;
+    odom.header.stamp = ros::Time().fromSec(lidar_end_time);
+    odom.is_valid = vaild;
+
+    // odom.latitude = 0;
+    // odom.longitude = 0;
+    // odom.altitude = 0;
+
+    Eigen::Matrix4d pose_mat = Eigen::Matrix4d::Identity();
+    pose_mat.topLeftCorner(3, 3) = state.rot.toRotationMatrix();
+    pose_mat.topRightCorner(3, 1) = state.pos;
+
+    Eigen::Matrix4d top2imu = Eigen::Matrix4d::Identity();
+    top2imu.topLeftCorner(3, 3) = state.offset_R_L_I.toRotationMatrix();
+    top2imu.topRightCorner(3, 1) = state.offset_T_L_I;
+
+    Eigen::Matrix4d top2baselink;
+    top2baselink << 0.999712, 0.0239977, 0.000999712, 1.12,
+        -0.0239977, 0.999712, -2.39977e-05, 0,
+        -0.001, 1.69407e-21, 1, 2.01,
+        0, 0, 0, 1;
+
+    auto baselink2imu = top2baselink * top2imu.inverse();
+#define TARNS_IMU
+#ifdef TARNS_IMU
+    Eigen::Matrix4d tran = Eigen::Matrix4d::Identity();
+    tran(1, 1) = -1;
+    tran(2, 2) = -1;
+    pose_mat = tran * pose_mat; // add tran
+#endif
+    pose_mat = pose_mat * baselink2imu.inverse();
+
+    odom.enu_pos[0] = pose_mat(0, 3);
+    odom.enu_pos[1] = pose_mat(1, 3);
+    odom.enu_pos[2] = pose_mat(2, 3);
+    auto res = EigenMath::RotationMatrix2RPY2(pose_mat.topLeftCorner(3, 3));
+    odom.roll = res(0);
+    odom.pitch = res(1);
+    odom.yaw = res(2);
+
+    odom.ahead_speed = std::hypot(state.vel(0), state.vel(1));
+    odom.enu_vel[0] = state.vel(0);
+    odom.enu_vel[1] = -state.vel(1);
+    odom.enu_vel[2] = -state.vel(2);
+    odom.angular_vel[0] = slam.angular_velocity(0);
+    odom.angular_vel[1] = -slam.angular_velocity(1);
+    odom.angular_vel[2] = -slam.angular_velocity(2);
+    odom.body_accel[0] = slam.linear_acceleration(0);
+    odom.body_accel[1] = -slam.linear_acceleration(1);
+    odom.body_accel[2] = -slam.linear_acceleration(2);
+
+    pubMsf.publish(odom);
+
+    auto quat = EigenMath::RotationMatrix2Quaternion(pose_mat.topLeftCorner(3, 3));
+    geometry_msgs::Pose pose;
+    pose.position.x = odom.enu_pos[0];
+    pose.position.y = odom.enu_pos[1];
+    pose.position.z = odom.enu_pos[2];
+    pose.orientation.w = quat.w();
+    pose.orientation.x = quat.x();
+    pose.orientation.y = quat.y();
+    pose.orientation.z = quat.z();
+    publish_tf(pose, lidar_end_time);
+}
+#endif
+
 void publish_imu_path(const ros::Publisher &pubPath, const state_ikfom &state, const double& lidar_end_time)
 {
     static geometry_msgs::PoseStamped msg_body_pose;
@@ -226,6 +300,8 @@ int main(int argc, char **argv)
 
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
     ros::Publisher pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
+
+    ros::Publisher pubMsf = nh.advertise<ant_robot_msgs::PoseDynamicData>("/ant_robot/pose_dynamic_data", 1);
     //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
     ros::Rate rate(5000);
@@ -243,8 +319,9 @@ int main(int argc, char **argv)
             const auto &state = slam.frontend->state;
 
             /******* Publish odometry *******/
-            publish_odometry(pubOdomAftMapped, state, slam.frontend->kf, slam.lidar_end_time);
-            
+            // publish_odometry(pubOdomAftMapped, state, slam.frontend->kf, slam.lidar_end_time);
+            publish_odometry2(pubMsf, state, slam.measures->lidar_beg_time, slam.system_state_vaild);
+
             /******* Publish points *******/
             if (path_en)
                 publish_imu_path(pubImuPath, state, slam.lidar_end_time);
@@ -264,6 +341,7 @@ int main(int argc, char **argv)
         }
         else
         {
+            publish_odometry2(pubMsf, slam.frontend->state, slam.measures->lidar_beg_time, slam.system_state_vaild);
 #ifdef DEDUB_MODE
             publish_cloud_world(pubrelocalizationDebug, slam.measures->lidar, slam.frontend->state, slam.lidar_end_time);
 #endif

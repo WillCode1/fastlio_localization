@@ -46,6 +46,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   livox_ros_driver
   eigen_conversions
+  ant_robot_msgs
 )
 
 find_package(Eigen3 REQUIRED)
@@ -56,7 +57,7 @@ include_directories(
 	${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
-  include)
+    include)
 
 catkin_package(
   CATKIN_DEPENDS geometry_msgs nav_msgs roscpp rospy std_msgs

@@ -174,6 +174,11 @@ public:
         while ((!imu->imu_buffer.empty()) && (imu_time <= lidar_end_time))
         {
             measures->imu.push_back(imu->imu_buffer.front());
+#define RECORD_IMU_STATE
+#ifdef RECORD_IMU_STATE
+            angular_velocity = imu->imu_buffer.front()->angular_velocity;
+            linear_acceleration = imu->imu_buffer.front()->linear_acceleration;
+#endif
             imu->imu_buffer.pop_front();
             imu_time = imu->imu_buffer.front()->timestamp;
         }
@@ -247,6 +252,11 @@ public:
     double timedelay_lidar2imu = 0.0;
     double lidar_end_time = 0;
     mutex mtx_buffer;
+
+#ifdef RECORD_IMU_STATE
+    V3D angular_velocity;
+    V3D linear_acceleration;
+#endif
 
     /*** module ***/
     shared_ptr<MeasureCollection> measures;
