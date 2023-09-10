@@ -20,27 +20,6 @@ mapping:
     cube_side_length: 1000
     runtime_log_enable: 0
 
-    keyframe_add_dist_threshold: 1
-    keyframe_add_angle_threshold: 0.2
-    pose_cov_threshold: 25      # for add GNSS factor
-    gnssValidInterval: 0.2
-    gpsCovThreshold: 2
-    useGpsElevation: false
-    recontruct_kdtree: true
-    ikdtree_reconstruct_keyframe_num: 10
-    ikdtree_reconstruct_downsamp_size: 0.1
-
-    loop_closure_enable_flag: true
-    manually_fine_tune_loop_closure: false
-    loop_keyframe_num_thld: 50
-    loop_closure_search_radius: 3
-    loop_closure_search_time_interval: 30
-    keyframe_search_num: 20
-    loop_closure_fitness_score_thld: 0.05
-    icp_downsamp_size: 0.1
-    odom_loop_vaild_period: []
-    scancontext_loop_vaild_period: []
-
     acc_cov: 0.1
     gyr_cov: 0.1
     b_acc_cov: 0.0001
