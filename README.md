@@ -1,7 +1,7 @@
 ## Related Works and Extended Application
 
-1. [ikd-Tree](https://github.com/hku-mars/ikd-Tree): A state-of-art dynamic KD-Tree for 3D kNN search.
-2. [FAST-LIO](https://github.com/hku-mars/FAST_LIO): FAST-LIO.
+1. [fast_lio_sam](https://github.com/WillCode1/fast_lio_sam): fastlio + gtsam + map update.
+2. [fastlio_localization](https://github.com/WillCode1/fastlio_localization): fastlio_localization + scancontext + bnb.
 
 ## Related papers
 
@@ -30,26 +30,10 @@ Follow [livox_ros_driver Installation](https://github.com/Livox-SDK/livox_ros_dr
 - Since the FAST-LIO must support Livox serials LiDAR firstly, so the **livox_ros_driver** must be installed and **sourced** before run any FAST-LIO luanch file.
 - How to source? The easiest way is add the line ``` source $Licox_ros_driver_dir$/devel/setup.bash ``` to the end of file ``` ~/.bashrc ```, where ``` $Licox_ros_driver_dir$ ``` is the directory of the livox ros driver workspace (should be the ``` ws_livox ``` directory if you completely followed the livox official document).
 
-### 2. Build
-Clone the repository and catkin_make:
-
-```
-    cd ~/$A_ROS_DIR$/src
-    git clone https://github.com/hku-mars/FAST_LIO.git
-    cd FAST_LIO
-    git submodule update --init
-    cd ../..
-    catkin_make
-    source devel/setup.bash
-```
-- Remember to source the livox_ros_driver before build (follow 1.3 **livox_ros_driver**)
-- If you want to use a custom build of PCL, add the following line to ~/.bashrc
-```export PCL_ROOT={CUSTOM_PCL_PATH}```
-
-### 3. Rosbag Example
+### 2. Rosbag Example
 
 Run:
 ```
-roslaunch fast_lio mapping.launch
+roslaunch fastlio_localization run.launch
 rosbag play YOUR_DOWNLOADED.bag
 ```
