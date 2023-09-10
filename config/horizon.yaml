@@ -1,0 +1,68 @@
+common:
+    lidar_topic:  "/livox/lidar"
+    imu_topic:  "/livox/imu"
+    map_frame:  "camera_init"
+    body_frame:  "body"
+    timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
+    
+preprocess:
+    lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
+    scan_line:  6
+    blind: 4
+    det_range: 260.0
+
+mapping:
+    point_skip_num: 4
+    surf_frame_ds_res: 0.5
+    max_iteration: 3
+    ikdtree_resolution: 0.5
+    lidar_model_search_range: 5
+    cube_side_length: 1000
+    runtime_log_enable: 0
+
+    keyframe_add_dist_threshold: 1
+    keyframe_add_angle_threshold: 0.2
+    pose_cov_threshold: 25      # for add GNSS factor
+    gnssValidInterval: 0.2
+    gpsCovThreshold: 2
+    useGpsElevation: false
+    recontruct_kdtree: true
+    ikdtree_reconstruct_keyframe_num: 10
+    ikdtree_reconstruct_downsamp_size: 0.1
+
+    loop_closure_enable_flag: true
+    manually_fine_tune_loop_closure: false
+    loop_keyframe_num_thld: 50
+    loop_closure_search_radius: 3
+    loop_closure_search_time_interval: 30
+    keyframe_search_num: 20
+    loop_closure_fitness_score_thld: 0.05
+    icp_downsamp_size: 0.1
+    odom_loop_vaild_period: []
+    scancontext_loop_vaild_period: []
+
+    acc_cov: 0.1
+    gyr_cov: 0.1
+    b_acc_cov: 0.0001
+    b_gyr_cov: 0.0001
+    extrinsic_est_en:  true      # true: enable the online estimation of IMU-LiDAR extrinsic
+    extrinsic_T: [ 0.05512, 0.02226, -0.0297 ]
+    extrinsic_R: [ 1, 0, 0,
+                   0, 1, 0,
+                   0, 0, 1]
+localization:
+    gravity: [ 0.0425684, 0.116608, -9.80821 ]
+
+scan_context:
+    lidar_height: 2
+    sc_dist_thres: 0.5
+
+publish:
+    path_en:  true
+    scan_publish_en:  true       # false: close all the point cloud output
+    dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+
+official:
+    save_globalmap_en: true
+    save_resolution: 0.1
+    save_keyframe_en: false

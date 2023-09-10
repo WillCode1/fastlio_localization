@@ -1,0 +1,25 @@
+pure_localization: false
+
+dataset_paths: [
+                "/home/will/data/testbag",
+                "/home/will/data/work_testbags",
+                "/home/will/Downloads/UrbanLoco/HK",
+                "/home/will/Downloads/UrbanLoco/CA",
+                "/home/will/Downloads/nclt", 
+                # "/home/will/Downloads/liosam", 
+                # "/home/will/Downloads/daniilidis/indoor_flying/"
+               ]
+read_topics: [
+              "/drivers/top_lidar_origin",
+              "/drivers/imu_data",
+              "/points_raw",
+              "/rslidar_points",
+              "/imu_raw",
+              "/velodyne_point_cloud",
+              "/davis/left/imu",
+              "/velodyne_points_0",
+              "/imu/data"
+             ]
+
+exec_evo: false
+update_baseline: false

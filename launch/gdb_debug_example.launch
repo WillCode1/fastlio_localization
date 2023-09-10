@@ -1,0 +1,17 @@
+<launch>
+
+  	<arg name="rviz" default="true" />
+
+	<param name="config_file" type="string" value="/config/localization_dev.yaml" />
+
+  	<node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" required="true" launch-prefix="gdb -ex run --args" />
+
+	<group if="$(arg rviz)">
+		<!-- glbal map-->
+		<arg name="map" default="$(find fastlio_localization)/PCD/globalmap.pcd" />
+    	<node pkg="pcl_ros" type="pcd_to_pointcloud" name="map_publisher" args="$(arg map) 2 _frame_id:=map cloud_pcd:=map" output="screen" />
+
+		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fastlio_localization)/rviz_cfg/localization.rviz" />
+	</group>
+
+</launch>
