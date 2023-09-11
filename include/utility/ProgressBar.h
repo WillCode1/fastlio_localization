@@ -27,6 +27,6 @@ inline void printProgressBar(float progress, float total) {
     float remaining_ratio = 1.0 - ratio;
     int estimated_remaining_time = static_cast<int>(elapsed_time / ratio * remaining_ratio);
 
-    std::cout << "Elapsed: " << elapsed_time << "s Remaining: " << estimated_remaining_time << "s\r";
+    std::cout << "Current msg duration: " << progress << "s Elapsed: " << elapsed_time << "s Remaining: " << estimated_remaining_time << "s\r";
     std::cout.flush();
 }

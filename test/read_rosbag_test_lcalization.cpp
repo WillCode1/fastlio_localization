@@ -16,6 +16,8 @@ using namespace std;
 const std::string root_path = std::string(ROOT_DIR);
 std::string config_filename;
 std::vector<std::string> topics;
+int max_test_localization_times = 10000;
+int test_localization_times = 0;
 
 std::set<std::string> test_bag_name;
 double bag_total_time = 0;
@@ -27,6 +29,17 @@ void SigHandle(int sig)
 {
     flg_exit = true;
     LOG_WARN("catch sig %d", sig);
+}
+
+void save_trajectory(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Quaterniond &quat, const double &time, int save_traj_fmt = 1)
+{
+    if (save_traj_fmt == 1)
+    {
+        fprintf(fp, "%0.4lf %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f\n", time,
+                pos.x(), pos.y(), pos.z(), quat.x(), quat.y(), quat.z(), quat.w());
+    }
+
+    fflush(fp);
 }
 
 void standard_pcl_cbk(System& slam, const sensor_msgs::PointCloud2::ConstPtr &msg)
@@ -96,8 +109,19 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
     slam.globalmap_path = bag_path + "/globalmap.pcd";
     slam.trajectory_path = bag_path + "/trajectory.pcd";
     slam.scd_path = bag_path + "/scancontext/";
+    FileOperation::createDirectoryOrRecreate(bag_path + "/localization_res/", false);
+    FILE *fp = fopen(std::string(bag_path + "/localization_res/localization_trajectory_" + std::to_string(test_localization_times) + ".txt").c_str(), "w");
 
     rosbag::Bag bag;
+
+    auto record_trajectory = [&](const double &time_stamp)
+    {
+        if (slam.system_state_vaild)
+        {
+            auto &imu_state = slam.frontend->state;
+            save_trajectory(fp, imu_state.pos, imu_state.rot, time_stamp);
+        }
+    };
 
     try
     {
@@ -132,7 +156,10 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
             sensor_msgs::PointCloud2::ConstPtr cloud = msg.instantiate<sensor_msgs::PointCloud2>();
             standard_pcl_cbk(slam, cloud);
             if (slam.sync_sensor_data())
+            {
                 slam.run();
+                record_trajectory(msg.getTime().toSec());
+            }
             printProgressBar(cost, bag_duration);
         }
         else if (msg.isType<livox_ros_driver::CustomMsg>())
@@ -140,7 +167,10 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
             livox_ros_driver::CustomMsg::ConstPtr cloud = msg.instantiate<livox_ros_driver::CustomMsg>();
             livox_pcl_cbk(slam, cloud);
             if (slam.sync_sensor_data())
+            {
                 slam.run();
+                record_trajectory(msg.getTime().toSec());
+            }
             printProgressBar(cost, bag_duration);
         }
         else if (msg.isType<sensor_msgs::Imu>())
@@ -148,11 +178,16 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
             sensor_msgs::Imu::ConstPtr imu = msg.instantiate<sensor_msgs::Imu>();
             imu_cbk(slam, imu);
             if (slam.sync_sensor_data())
+            {
                 slam.run();
+                record_trajectory(msg.getTime().toSec());
+            }
         }
     }
 
     bag.close();
+
+    fclose(fp);
 
     if (!flg_exit && !slam.lidar->lidar_buffer.empty())
     {
@@ -188,8 +223,8 @@ void traverse_for_testbag(const std::string& config_path, const std::string &dir
         {
             // std::cout << entry.path().filename() << std::endl;
             test_rosbag(entry.path(), config_path, topics, directoryPath);
-            execCommand("cp " + DEBUG_FILE_DIR("keyframe_pose.txt") + " " + directoryPath);
-            execCommand("cp " + DEBUG_FILE_DIR("keyframe_pose_optimized.txt") + " " + directoryPath);
+            // execCommand("cp " + DEBUG_FILE_DIR("keyframe_pose.txt") + " " + directoryPath);
+            // execCommand("cp " + DEBUG_FILE_DIR("keyframe_pose_optimized.txt") + " " + directoryPath);
             test_bag_name.insert(entry.path().filename());
         }
         else if (fs::is_directory(entry))
@@ -222,17 +257,24 @@ int main(int argc, char** argv)
 
     signal(SIGINT, SigHandle);
 
-    config_filename = "mapping_dev.yaml";
+    config_filename = "localization_dev.yaml";
 
     topics = test_config["read_topics"].IsDefined() ? test_config["read_topics"].as<vector<std::string>>() : vector<std::string>();
 
+    max_test_localization_times = 10000;
+
     Timer timer;
     auto dataset_paths = test_config["dataset_paths"].IsDefined() ? test_config["dataset_paths"].as<vector<std::string>>() : vector<std::string>();
-    for (const auto& path: dataset_paths)
+
+    for (test_localization_times = 0; test_localization_times < max_test_localization_times; ++test_localization_times)
     {
-        if (fs::exists(path) && fs::is_directory(path))
-            traverse_for_config(path);
+        for (const auto &path : dataset_paths)
+        {
+            if (fs::exists(path) && fs::is_directory(path))
+                traverse_for_config(path);
+        }
     }
+
     test_cost_total_time += timer.elapsedStart() / 1000;
 
     LOG_WARN("=================total test bag=================");
