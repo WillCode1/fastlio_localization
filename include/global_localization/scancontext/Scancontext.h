@@ -102,7 +102,7 @@ public:
 
     KeyMat polarcontext_invkeys_mat_;
     KeyMat polarcontext_invkeys_to_search_;
-    std::unique_ptr<InvKeyTree> polarcontext_tree_;
+    std::shared_ptr<InvKeyTree> polarcontext_tree_;
 
 }; // SCManager
 
