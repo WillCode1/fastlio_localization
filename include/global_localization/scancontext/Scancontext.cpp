@@ -347,7 +347,7 @@ namespace ScanContext
 
             // 重新构造kdtree
             polarcontext_tree_.reset();
-            polarcontext_tree_ = std::make_unique<InvKeyTree>(PC_NUM_RING /* dim */, polarcontext_invkeys_to_search_, 10 /* max leaf */);
+            polarcontext_tree_ = std::make_shared<InvKeyTree>(PC_NUM_RING /* dim */, polarcontext_invkeys_to_search_, 10 /* max leaf */);
             // tree_ptr_->index->buildIndex(); // inernally called in the constructor of InvKeyTree (for detail, refer the nanoflann and KDtreeVectorOfVectorsAdaptor)
             // t_tree_construction.toc("Tree construction");
         }
