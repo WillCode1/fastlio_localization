@@ -8,12 +8,15 @@ class FileOperation
 public:
     static bool createDirectoryOrRecreate(const std::string &directory_path, bool exist_remove = true)
     {
-        if (exist_remove && fs::exists(directory_path))
+        if (fs::exists(directory_path))
         {
-            fs::remove_all(directory_path);
+            if (exist_remove)
+                fs::remove_all(directory_path);
+            else
+                return true;
         }
 
-        return fs::create_directory(directory_path);
+        return fs::create_directories(directory_path);
     }
 
     static int getFilesNumByExtension(const std::string &directory_path, const std::string& extension)

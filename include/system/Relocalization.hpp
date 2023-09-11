@@ -27,7 +27,7 @@ public:
     void set_init_pose(const Pose &_manual_pose);
     void set_bnb3d_param(const BnbOptions &match_option, const Pose &lidar_pose);
     void set_ndt_param(const double &_step_size, const double &_resolution);
-    void set_gicp_param(bool _use_gicp, const double &gicp_ds, const double &search_radi, const double &tep, const double &fep, const double &fit_score);
+    void set_gicp_param(bool _use_gicp, const double &filter_range, const double &gicp_ds, const double &search_radi, const double &tep, const double &fep, const double &fit_score);
     void add_scancontext_descriptor(const PointCloudType::Ptr thiskeyframe, const std::string &path);
 
     std::string algorithm_type = "UNKNOW";
@@ -51,6 +51,7 @@ private:
 
     // gicp
     bool use_gicp = true;
+    double filter_range = 80;
     double gicp_downsample = 0.2;
     double search_radius = 0.2;
     double teps = 0.001;
@@ -242,8 +243,12 @@ bool Relocalization::fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &r
     result *= lidar_ext; // imu pose -> lidar pose
 
     PointCloudType::Ptr filter(new PointCloudType());
+    for (auto &point : scan->points)
+        if (pointDistanceSquare(point) < filter_range * filter_range)
+            filter->push_back(point);
+
     voxel_filter.setLeafSize(gicp_downsample, gicp_downsample, gicp_downsample);
-    voxel_filter.setInputCloud(scan);
+    voxel_filter.setInputCloud(filter);
     voxel_filter.filter(*filter);
 
     PointCloudType::Ptr aligned(new PointCloudType());
@@ -391,9 +396,10 @@ void Relocalization::set_ndt_param(const double &_step_size, const double &_reso
     resolution = _resolution;
 }
 
-void Relocalization::set_gicp_param(bool _use_gicp, const double &gicp_ds, const double &search_radi, const double &tep, const double &fep, const double &fit_score)
+void Relocalization::set_gicp_param(bool _use_gicp, const double &_filter_range, const double &gicp_ds, const double &search_radi, const double &tep, const double &fep, const double &fit_score)
 {
     use_gicp = _use_gicp;
+    filter_range = _filter_range;
     gicp_downsample = gicp_ds;
     search_radius = search_radi;
     teps = tep;

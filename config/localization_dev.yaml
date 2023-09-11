@@ -11,7 +11,7 @@ preprocess:
     scan_rate: 10                # only need to be set for velodyne, unit: Hz,
     timestamp_unit: 0            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
     blind: 1
-    det_range: 80.0
+    det_range: 200.0
 
 mapping:
     point_skip_num: 4
@@ -20,7 +20,7 @@ mapping:
     max_iteration: 3
     ikdtree_resolution: 0.5      # In unstructured scenarios, smaller is more likely to degenerate
     lidar_model_search_range: 5
-    cube_side_length: 200
+    cube_side_length: 10000
     runtime_log_enable: 0
 
     acc_cov: 0.1
@@ -81,6 +81,7 @@ ndt:
 
 gicp:
     use_gicp: false
+    filter_range: 80.0
     gicp_downsample: 0.1
     search_radius: 0.5
     teps: 1.0e-4
