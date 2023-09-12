@@ -39,9 +39,9 @@ public:
     std::shared_ptr<ScanContext::SCManager> sc_manager; // scan context
 
 private:
-    bool fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const Eigen::Matrix4d &lidar_ext);
-    bool run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext);
-    bool run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext);
+    bool fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const Eigen::Matrix4d &lidar_ext, const double &score);
+    bool run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
+    bool run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
 
     bool prior_pose_inited = false;
 
@@ -73,7 +73,7 @@ Relocalization::~Relocalization()
 {
 }
 
-bool Relocalization::run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext)
+bool Relocalization::run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score)
 {
     Timer timer;
     PointCloudType::Ptr scanDS(new PointCloudType());
@@ -110,7 +110,7 @@ bool Relocalization::run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d 
         bnb_opt_tmp.min_z_resolution = 0.1;
         bnb_opt_tmp.angular_search_window = DEG2RAD(6);
         bnb_opt_tmp.min_angular_resolution = DEG2RAD(1);
-        if (!bnb3d->MatchWithMatchOptions(rough_pose, rough_pose, scan, bnb_opt_tmp, lidar_ext))
+        if (!bnb3d->MatchWithMatchOptions(rough_pose, rough_pose, scan, bnb_opt_tmp, lidar_ext, score))
         {
             bnb_success = false;
             LOG_ERROR("bnb_failed, when bnb min_score = %.2f!", bnb_opt_tmp.min_score);
@@ -131,7 +131,7 @@ bool Relocalization::run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d 
     return true;
 }
 
-bool Relocalization::run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext)
+bool Relocalization::run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score)
 {
     if (!prior_pose_inited)
     {
@@ -141,12 +141,12 @@ bool Relocalization::run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d 
 
     Timer timer;
     bool bnb_success = true;
-    if (!bnb3d->MatchWithMatchOptions(manual_pose, rough_pose, scan, bnb_option, lidar_ext))
+    if (!bnb3d->MatchWithMatchOptions(manual_pose, rough_pose, scan, bnb_option, lidar_ext, score))
     {
         auto bnb_opt_tmp = bnb_option;
         bnb_opt_tmp.min_score = 0.1;
         LOG_ERROR("bnb_failed, when bnb min_score = %.2f! min_score set to %.2f and try again.", bnb_option.min_score, bnb_opt_tmp.min_score);
-        if (!bnb3d->MatchWithMatchOptions(manual_pose, rough_pose, scan, bnb_opt_tmp, lidar_ext))
+        if (!bnb3d->MatchWithMatchOptions(manual_pose, rough_pose, scan, bnb_opt_tmp, lidar_ext, score))
         {
             bnb_success = false;
             rough_pose = manual_pose;
@@ -167,9 +167,10 @@ bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d& resul
 {
     Eigen::Matrix4d lidar_ext = lidar_extrinsic.toMatrix4d();
     bool success_flag = true;
+    double score = 0;
     if (algorithm_type.compare("scan_context") == 0)
     {
-        if (!run_scan_context(scan, result, lidar_ext) || !fine_tune_pose(scan, result, lidar_ext))
+        if (!run_scan_context(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
         {
 #ifdef DEDUB_MODE
             result = EigenMath::CreateAffineMatrix(V3D(rough_pose.x, rough_pose.y, rough_pose.z), V3D(rough_pose.roll, rough_pose.pitch, rough_pose.yaw));
@@ -180,7 +181,7 @@ bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d& resul
     if (algorithm_type.compare("manually_set") == 0 || !success_flag)
     {
         success_flag = true;
-        if (!run_manually_set(scan, result, lidar_ext) || !fine_tune_pose(scan, result, lidar_ext))
+        if (!run_manually_set(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
         {
 #ifdef DEDUB_MODE
             result = EigenMath::CreateAffineMatrix(V3D(manual_pose.x, manual_pose.y, manual_pose.z), V3D(manual_pose.roll, manual_pose.pitch, manual_pose.yaw));
@@ -236,10 +237,16 @@ bool Relocalization::load_prior_map(const PointCloudType::Ptr& global_map)
     return true;
 }
 
-bool Relocalization::fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const Eigen::Matrix4d &lidar_ext)
+bool Relocalization::fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const Eigen::Matrix4d &lidar_ext, const double &score)
 {
     Timer timer;
     result = EigenMath::CreateAffineMatrix(V3D(rough_pose.x, rough_pose.y, rough_pose.z), V3D(rough_pose.roll, rough_pose.pitch, rough_pose.yaw));
+    if (score >= bnb_option.enough_score)
+    {
+        LOG_WARN("bnb score enough!");
+        return true;
+    }
+
     result *= lidar_ext; // imu pose -> lidar pose
 
     PointCloudType::Ptr filter(new PointCloudType());
@@ -368,7 +375,8 @@ void Relocalization::set_bnb3d_param(const BnbOptions& match_option, const Pose&
     }
     LOG_WARN("pc_resolutions: [ %s]", resolutions.str().c_str());
     LOG_WARN("bnb_depth: %d", bnb_option.bnb_depth);
-    LOG_WARN("bnb_min_score: %lf", bnb_option.min_score);
+    LOG_WARN("min_score: %lf", bnb_option.min_score);
+    LOG_WARN("enough_score: %lf", bnb_option.enough_score);
     LOG_WARN("min_xy_resolution: %lf", bnb_option.min_xy_resolution);
     LOG_WARN("min_z_resolution: %lf", bnb_option.min_z_resolution);
     LOG_WARN("min_angular_resolution: %lf", bnb_option.min_angular_resolution);

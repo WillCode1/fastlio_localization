@@ -1,6 +1,5 @@
 dataset_paths: [
                 "/home/will/data/testbag",
-                "/home/will/data/work_testbags",
                 "/home/will/Downloads/UrbanLoco/HK",
                 "/home/will/Downloads/UrbanLoco/CA",
                 "/home/will/Downloads/nclt", 

@@ -61,6 +61,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
         match_option.pc_resolutions = config["bnb3d"]["pc_resolutions"].IsDefined() ? config["bnb3d"]["pc_resolutions"].as<vector<double>>() : vector<double>();
         match_option.bnb_depth = config["bnb3d"]["bnb_depth"].IsDefined() ? config["bnb3d"]["bnb_depth"].as<int>() : 5;
         match_option.min_score = config["bnb3d"]["min_score"].IsDefined() ? config["bnb3d"]["min_score"].as<double>() : 0.1;
+        match_option.enough_score = config["bnb3d"]["enough_score"].IsDefined() ? config["bnb3d"]["enough_score"].as<double>() : 0.8;
         match_option.min_xy_resolution = config["bnb3d"]["min_xy_resolution"].IsDefined() ? config["bnb3d"]["min_xy_resolution"].as<double>() : 0.2;
         match_option.min_z_resolution = config["bnb3d"]["min_z_resolution"].IsDefined() ? config["bnb3d"]["min_z_resolution"].as<double>() : 0.1;
         match_option.min_angular_resolution = config["bnb3d"]["min_angular_resolution"].IsDefined() ? config["bnb3d"]["min_angular_resolution"].as<double>() : 0.1;
