@@ -98,9 +98,9 @@ inline bool check_for_not_converged(const double &timestamp, int step)
 {
     static unsigned int cnt = 0;
     static double last_timestamp = 0;
-    // LOG_WARN("check_for_not_converged = %f, %d", timestamp - last_timestamp, cnt);
+    // LOG_WARN("check_for_not_converged = %f, %f, %f, %d", timestamp, last_timestamp, timestamp - last_timestamp, cnt);
 
-    if (timestamp < last_timestamp)         // for test
+    if (timestamp <= last_timestamp)         // for test
         cnt = 0;
 
     if (cnt == 0)
@@ -117,7 +117,10 @@ inline bool check_for_not_converged(const double &timestamp, int step)
     if (cnt % step == 0)
     {
         if (timestamp - last_timestamp <= 1)
+        {
             flag = true;
+            // LOG_WARN("check_for_not_converged = %f, %d", timestamp - last_timestamp, cnt);
+        }
         last_timestamp = timestamp;
     }
     ++cnt;
