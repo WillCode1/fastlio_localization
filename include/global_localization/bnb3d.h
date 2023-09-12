@@ -19,6 +19,7 @@ struct BnbOptions
     std::vector<double> pc_resolutions = {0.2, 0.3, 0.5}; // meter
     int bnb_depth = 3;
     double min_score = 0.3; // for pruning, speed up
+    double enough_score = 0.8;
 
     // min resolution
     double min_xy_resolution = 0.2;
@@ -309,7 +310,8 @@ public:
     bool MatchWithMatchOptions(const Pose &init_pose, Pose &res_pose,
                                const PointCloudType::Ptr &scan,
                                const BnbOptions &match_option,
-                               const Eigen::Matrix4d &lidar_ext)
+                               const Eigen::Matrix4d &lidar_ext,
+                               double &score)
     {
         sort_cnt = 0;
         init_lidar_orientation_ = lidar_ext;
@@ -328,6 +330,7 @@ public:
         {
             res_pose = discrete_candidate_pose.discrete_pose[best_candidate.discrete_index];
             res_pose += best_candidate.offset;
+            score = best_candidate.score;
             return true;
         }
         return false;

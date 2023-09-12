@@ -65,7 +65,8 @@ bnb3d:
     angular_search_window: 180  # degree 0~180
     pc_resolutions: [0.2, 0.3, 0.5]
     bnb_depth: 3
-    bnb_min_score: 0.3
+    min_score: 0.3
+    enough_score: 0.7
 
     min_xy_resolution: 0.2
     min_z_resolution: 0.1

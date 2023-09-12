@@ -142,6 +142,7 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
     bag_total_time += bag_duration;
 
     LOG_INFO("Test rosbag %s...", bagfile.c_str());
+    LOG_INFO("fopen \"%s\"", std::string("localization_trajectory_" + std::to_string(test_localization_times) + ".txt").c_str());
     printProgressBar(0, bag_duration);
 
     for (const rosbag::MessageInstance& msg : view)
