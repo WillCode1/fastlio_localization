@@ -183,8 +183,8 @@ public:
         static bool first = true;
         if (first)
         {
-            fprintf(fout_fastlio_log, "time_stamp, total time, feats_undistort size, incremental time, search time, delete size, delete time, "
-                         "kdtree size, kdtree size end, add point size, preprocess time\n");
+            fprintf(fout_fastlio_log, "time_stamp,total time,feats_undistort size,incremental time,search time,delete size,delete time,"
+                                      "kdtree size,kdtree size end,add point size,preprocess time\n");
             first = false;
         }
 
