@@ -27,14 +27,12 @@ public:
         feats_undistort.reset(new PointCloudType());
 
         file_pose_unoptimized = fopen(DEBUG_FILE_DIR("keyframe_pose.txt").c_str(), "w");
-        file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
-
         fprintf(file_pose_unoptimized, "# keyframe trajectory unoptimized\n# timestamp tx ty tz qx qy qz qw\n");
-        fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
     }
 
     ~System()
     {
+        fclose(file_pose_unoptimized);
     }
 
     void init_system_mode()
@@ -228,8 +226,8 @@ public:
             return false;
         }
 
-        loger.update_average_time();
-        loger.frame_log_output_to_csv(measures->lidar_beg_time);
+        loger.print_fastlio_cost_time();
+        loger.output_fastlio_log_to_csv(measures->lidar_beg_time);
 #if 0
         // for test
         loger.save_trajectory(file_pose_unoptimized, frontend->state.pos, frontend->state.rot, measures->lidar_end_time);
@@ -265,7 +263,6 @@ public:
 
     /*** keyframe config ***/
     FILE *file_pose_unoptimized;
-    FILE *file_pose_gnss;
     PointCloudType::Ptr feats_undistort;
 
     /*** global map maintain ***/
