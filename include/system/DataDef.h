@@ -171,8 +171,8 @@ public:
         fprintf(fp, "%lf %lf %lf ", state.ba(0), state.ba(1), state.ba(2));                               // Bias_a
         fprintf(fp, "%lf %lf %lf ", ext_rot_LI(0), ext_rot_LI(1), ext_rot_LI(2));                         // ext_R_LI
         fprintf(fp, "%lf %lf %lf ", state.offset_T_L_I(0), state.offset_T_L_I(1), state.offset_T_L_I(2)); // ext_T_LI
-        fprintf(fp, "%lf %lf %lf ", state.grav[0], state.grav[1], state.grav[2]);                         // gravity
-        fprintf(fp, "\r\n");
+        fprintf(fp, "%lf %lf %lf", state.grav[0], state.grav[1], state.grav[2]);                         // gravity
+        fprintf(fp, "\n");
         fflush(fp);
     }
 
@@ -183,7 +183,7 @@ public:
         static bool first = true;
         if (first)
         {
-            fprintf(fout_fastlio_log, "time_stamp,total time,feats_undistort size,incremental time,search time,delete size,delete time,"
+            fprintf(fout_fastlio_log, "timestamp,total time,feats_undistort size,incremental time,search time,delete size,delete time,"
                                       "kdtree size,kdtree size end,add point size,preprocess time\n");
             first = false;
         }
