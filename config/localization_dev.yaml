@@ -59,7 +59,7 @@ relocalization_cfg:
     lidar_ext/yaw: 0
 
 scan_context:
-    lidar_height: 2.2
+    lidar_height: 2.183
     sc_dist_thres: 0.7
 
 bnb3d:
