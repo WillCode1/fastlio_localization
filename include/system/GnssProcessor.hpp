@@ -26,6 +26,13 @@ public:
   GnssProcessor()
   {
     extrinsic_Lidar2Gnss.setIdentity();
+    file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
+    fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+  }
+
+  ~GnssProcessor()
+  {
+    fclose(file_pose_gnss);
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -39,7 +46,12 @@ public:
   deque<GnssPose> gnss_buffer;
 
 private:
+  bool check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold);
+
+private:
   Eigen::Matrix4d extrinsic_Lidar2Gnss;
+  LogAnalysis loger;
+  FILE *file_pose_gnss;
 };
 
 void GnssProcessor::set_extrinsic(const Eigen::Matrix4d &extrinsic)
@@ -47,10 +59,40 @@ void GnssProcessor::set_extrinsic(const Eigen::Matrix4d &extrinsic)
   extrinsic_Lidar2Gnss = extrinsic;
 }
 
+bool GnssProcessor::check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold)
+{
+  V3D mean = V3D::Zero();
+  V3D variance = V3D::Zero();
+
+  for (const V3D &vec : start_point)
+  {
+    mean += vec;
+  }
+  mean /= start_point.size();
+
+  for (const V3D &vec : start_point)
+  {
+    V3D diff = vec - mean;
+    variance += diff;
+  }
+  variance /= (start_point.size() - 1); // 使用样本方差，除以 (n-1)
+
+  LOG_WARN("check_mean_and_variance. mean = (%.5f, %.5f, %.5f), variance = (%.5f, %.5f, %.5f).", mean.x(), mean.y(), mean.z(), variance.x(), variance.y(), variance.z());
+
+  if (variance.x() > variance_thold || variance.y() > variance_thold || variance.z() > variance_thold)
+    return false;
+
+  utm_origin.east = mean.x();
+  utm_origin.north = mean.y();
+  utm_origin.up = mean.z();
+  return true;
+}
+
 void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
 {
   static int count = 0;
   static utm_coordinate::utm_point utm_origin;
+  static std::vector<V3D> start_point;
   count++;
 
   utm_coordinate::geographic_position lla;
@@ -60,22 +102,32 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
   lla.altitude = gnss_raw.gnss_position(2);
   utm_coordinate::LLAtoUTM(lla, utm);
 
-  if (count < 10)
+  if (count <= 10)
   {
     utm_origin = utm;
     printf("--utm_origin: east: %.5f, north: %.5f, up: %.5f, zone: %s\n", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
+    start_point.emplace_back(V3D(utm_origin.east, utm_origin.north, utm_origin.up));
     return;
   }
-  else if (count == 10)
+  else if (count == 11)
   {
-    // TODO: 计算方差，判断是否稳定
-
-    LOG_WARN("gnss init successfully! utm_origin: east: %.5f, north: %.5f, up: %.5f, zone: %s.", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
+    if (check_mean_and_variance(start_point, utm_origin, 0.05))
+    {
+      LOG_WARN("gnss init successfully! utm_origin_mean: east: %.5f, north: %.5f, up: %.5f, zone: %s.", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
+    }
+    else
+    {
+      count = 0;
+      start_point.clear();
+      LOG_WARN("gnss init failed!");
+      return;
+    }
   }
 
   GnssPose utm_pose = gnss_raw;
   utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.north);
   gnss_buffer.push_back(utm_pose);
+  loger.save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.rpy, gnss_raw.timestamp);
 }
 
 bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z)

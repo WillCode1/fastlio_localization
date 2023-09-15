@@ -123,10 +123,9 @@ public:
         imu_process_avetime = downsample_avetime = kdtree_search_avetime = match_avetime = cal_H_avetime = iterate_ekf_avetime = 0;
         meas_update_avetime = kdtree_incremental_avetime = kdtree_delete_avetime = map_incre_avetime = map_remove_avetime = total_avetime = 0;
 
-        fp = fopen(DEBUG_FILE_DIR("state_log.txt").c_str(), "w");
-        fp2 = fopen(DEBUG_FILE_DIR("fast_lio_log.csv").c_str(), "w");
-        fout_predict.open(DEBUG_FILE_DIR("state_predict.txt"), ios::out);
-        fout_update.open(DEBUG_FILE_DIR("state_update.txt"), ios::out);
+        fout_predict = fopen(DEBUG_FILE_DIR("state_predict.txt").c_str(), "w");
+        fout_update = fopen(DEBUG_FILE_DIR("state_update.txt").c_str(), "w");
+        fout_fastlio_log = fopen(DEBUG_FILE_DIR("fast_lio_log.csv").c_str(), "w");
 
         if (fout_predict && fout_update)
             cout << "~~~~" << ROOT_DIR << " file opened" << endl;
@@ -136,10 +135,16 @@ public:
 
     ~LogAnalysis()
     {
-        fout_predict.close();
-        fout_update.close();
-        fclose(fp);
-        fclose(fp2);
+        fclose(fout_predict);
+        fclose(fout_update);
+        fclose(fout_fastlio_log);
+    }
+
+    void print_pose(const state_ikfom &state, const std::string &print)
+    {
+        const auto &xyz = state.pos;
+        const auto &rpy = EigenMath::Quaternion2RPY(state.rot);
+        LOG_INFO("%s, xyz, rpy: (%.5f, %.5f, %.5f, %.5f, %.5f, %.5f)", print.c_str(), xyz(0), xyz(1), xyz(2), RAD2DEG(rpy(0)), RAD2DEG(rpy(1)), RAD2DEG(rpy(2)));
     }
 
     void print_extrinsic(const state_ikfom &state, bool need_print)
@@ -149,25 +154,13 @@ public:
         LOG_INFO_COND(need_print, "extrinsic_est: (%.5f, %.5f, %.5f, %.5f, %.5f, %.5f)", offset_xyz(0), offset_xyz(1), offset_xyz(2), RAD2DEG(offset_rpy(0)), RAD2DEG(offset_rpy(1)), RAD2DEG(offset_rpy(2)));
     }
 
-    void output2file(const state_ikfom &state, ofstream &fout_file, const double &delta_time)
+    void dump_state_to_log(FILE *fp, const state_ikfom &state, const double &delta_time)
     {
         if (!runtime_log)
             return;
 
-        auto cur_euler = EigenMath::RotationMatrix2RPY(state.rot.toRotationMatrix());
-        auto ext_euler = EigenMath::RotationMatrix2RPY(state.offset_R_L_I.toRotationMatrix());
-        fout_file << setw(20) << delta_time << " " << cur_euler.transpose() << " " << state.pos.transpose()
-                  << " " << ext_euler.transpose() << " " << state.offset_T_L_I.transpose() << " " << state.vel.transpose()
-                  << " " << state.bg.transpose() << " " << state.ba.transpose() << " " << state.grav << endl;
-    }
-
-    void dump_state_to_log(const state_ikfom &state, const double &delta_time)
-    {
-        if (!runtime_log)
-            return;
-
-        V3D rot_ang(SO3Math::Log(state.rot.toRotationMatrix()));
-        V3D ext_rot_LI(SO3Math::Log(state.offset_R_L_I.toRotationMatrix()));
+        V3D rot_ang = EigenMath::RotationMatrix2RPY2(state.rot.toRotationMatrix());
+        V3D ext_rot_LI = EigenMath::RotationMatrix2RPY2(state.offset_R_L_I.toRotationMatrix());
         fprintf(fp, "%lf ", delta_time);
         fprintf(fp, "%lf %lf %lf ", rot_ang(0), rot_ang(1), rot_ang(2));                                  // Angle
         fprintf(fp, "%lf %lf %lf ", state.pos(0), state.pos(1), state.pos(2));                            // Pos
@@ -183,19 +176,19 @@ public:
         fflush(fp);
     }
 
-    void frame_log_output_to_csv(const double &lidar_beg_time)
+    void output_fastlio_log_to_csv(const double &lidar_beg_time)
     {
         if (!runtime_log)
             return;
         static bool first = true;
         if (first)
         {
-            fprintf(fp2, "time_stamp, total time, feats_undistort size, incremental time, search time, delete size, delete time, "
+            fprintf(fout_fastlio_log, "time_stamp, total time, feats_undistort size, incremental time, search time, delete size, delete time, "
                          "kdtree size, kdtree size end, add point size, preprocess time\n");
             first = false;
         }
 
-        fprintf(fp2, "%0.8f,%0.8f,%d,%0.8f,%0.8f,%d,%0.8f,%d,%d,%d,%0.8f\n",
+        fprintf(fout_fastlio_log, "%0.8f,%0.8f,%d,%0.8f,%0.8f,%d,%0.8f,%d,%d,%d,%0.8f\n",
                 lidar_beg_time, total_time, feats_undistort_size, kdtree_incremental_time, kdtree_search_time,
                 kdtree_delete_counter, kdtree_delete_time, kdtree_size, kdtree_size_end, add_point_size, preprocess_time);
     }
@@ -227,7 +220,7 @@ public:
         feats_down_size = 0;
     }
 
-    void update_average_time()
+    void print_fastlio_cost_time()
     {
         if (!runtime_log)
             return;
@@ -267,6 +260,11 @@ public:
 #endif
     }
 
+    void save_gps_pose(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Vector3d &eular, const double &time)
+    {
+        fprintf(fp, "%0.4lf %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f\n", time, pos.x(), pos.y(), pos.z(), eular.x(), eular.y(), eular.z());
+    }
+
     // 0 : not, 1 : TUM
     void save_trajectory(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Quaterniond &quat, const double &time, int save_traj_fmt = 1)
     {
@@ -285,9 +283,8 @@ public:
     bool inited_first_lidar_beg_time = false;
     double first_lidar_beg_time;
 
-    FILE *fp;
-    FILE *fp2;
-    ofstream fout_predict, fout_update;
+    FILE *fout_fastlio_log;
+    FILE *fout_predict, *fout_update;
     Timer timer;
 
     long unsigned int frame_num;
