@@ -80,6 +80,7 @@ public:
         }
 
         loger.kdtree_size = ikdtree.size();
+        loger.dump_state_to_log(loger.fout_predict, state, measures.lidar_beg_time - loger.first_lidar_beg_time);
 
         /*** interval sample and downsample the feature points in a scan ***/
         feats_down_lidar->clear();
@@ -94,7 +95,6 @@ public:
         feats_down_size = feats_down_lidar->points.size();
         loger.feats_down_size = feats_down_size;
         loger.downsample_time = loger.timer.elapsedLast();
-        loger.dump_state_to_log(loger.fout_predict, state, measures.lidar_beg_time - loger.first_lidar_beg_time);
 
         /*** iterated state estimation ***/
         point_matched_surface.resize(feats_down_size);
@@ -112,10 +112,9 @@ public:
             LOG_ERROR("Iteration doesn't converge beyond the limit, reset the system!");
             return false;
         }
-        state = kf.get_x();
         loger.meas_update_time = loger.timer.elapsedLast();
         loger.dump_state_to_log(loger.fout_update, state, measures.lidar_beg_time - loger.first_lidar_beg_time);
-
+        state = kf.get_x();
 
         if (false)
         {
