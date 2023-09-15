@@ -1,6 +1,7 @@
 #pragma once
 #include <deque>
 #include "global_localization/UtmCoordinate.h"
+#include "DataDef.h"
 #include "utility/Header.h"
 
 struct GnssPose
@@ -73,7 +74,9 @@ bool GnssProcessor::check_mean_and_variance(const std::vector<V3D> &start_point,
   for (const V3D &vec : start_point)
   {
     V3D diff = vec - mean;
-    variance += diff;
+    variance.x() += diff.x() * diff.x();
+    variance.y() += diff.y() * diff.y();
+    variance.z() += diff.z() * diff.z();
   }
   variance /= (start_point.size() - 1); // 使用样本方差，除以 (n-1)
 
