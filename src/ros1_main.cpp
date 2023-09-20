@@ -87,7 +87,7 @@ void publish_tf(const geometry_msgs::Pose &pose, const double& lidar_end_time)
 }
 
 // 发布里程计
-void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom &state, const esekfom::esekf<state_ikfom, 12, input_ikfom> &kf, const double& lidar_end_time)
+void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom &state, const double& lidar_end_time)
 {
     nav_msgs::Odometry odomAftMapped;
     odomAftMapped.header.frame_id = map_frame;
@@ -95,19 +95,6 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
     odomAftMapped.header.stamp = ros::Time().fromSec(lidar_end_time);
     set_posestamp(odomAftMapped.pose, state);
     pubOdomAftMapped.publish(odomAftMapped);
-    auto P = kf.get_P();
-    for (int i = 0; i < 6; i++)
-    {
-        int k = i < 3 ? i + 3 : i - 3;
-        // 设置协方差 P里面先是旋转后是位置 这个POSE里面先是位置后是旋转 所以对应的协方差要对调一下
-        odomAftMapped.pose.covariance[i * 6 + 0] = P(k, 3);
-        odomAftMapped.pose.covariance[i * 6 + 1] = P(k, 4);
-        odomAftMapped.pose.covariance[i * 6 + 2] = P(k, 5);
-        odomAftMapped.pose.covariance[i * 6 + 3] = P(k, 0);
-        odomAftMapped.pose.covariance[i * 6 + 4] = P(k, 1);
-        odomAftMapped.pose.covariance[i * 6 + 5] = P(k, 2);
-    }
-
     publish_tf(odomAftMapped.pose.pose, lidar_end_time);
 }
 
@@ -144,7 +131,7 @@ void sensor_data_process()
         const auto &state = slam.frontend->state;
 
         /******* Publish odometry *******/
-        publish_odometry(pubOdomAftMapped, state, slam.frontend->kf, slam.lidar_end_time);
+        publish_odometry(pubOdomAftMapped, state, slam.lidar_end_time);
 
         /******* Publish points *******/
         if (path_en)
