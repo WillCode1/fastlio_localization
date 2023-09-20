@@ -98,6 +98,10 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     vector<double> gravity;
     gravity = config["localization"]["gravity"].IsDefined() ? config["localization"]["gravity"].as<vector<double>>() : vector<double>();
 
+    vector<int> valid_ring_index;
+    valid_ring_index = config["localization"]["valid_ring"].IsDefined() ? config["localization"]["valid_ring"].as<vector<int>>() : vector<int>();
+    slam.lidar->valid_ring.insert(valid_ring_index.begin(), valid_ring_index.end());
+
     slam.lidar->init(n_scans, scan_rate, time_unit, blind, detect_range);
     slam.imu->set_gyr_cov(V3D(gyr_cov, gyr_cov, gyr_cov));
     slam.imu->set_acc_cov(V3D(acc_cov, acc_cov, acc_cov));

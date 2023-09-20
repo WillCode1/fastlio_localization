@@ -1,6 +1,7 @@
 #pragma once
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <unordered_set>
 #include <deque>
 #include "utility/Header.h"
 using namespace std;
@@ -86,6 +87,7 @@ public:
   void velodyne_handler(const pcl::PointCloud<velodyne_ros::Point> &pl_orig, PointCloudType::Ptr &pcl_out);
 
   double blind, detect_range;
+  unordered_set<int> valid_ring;
   deque<double> time_buffer;
   deque<PointCloudType::Ptr> lidar_buffer;
 
@@ -218,6 +220,11 @@ void LidarProcessor::velodyne_handler(const pcl::PointCloud<velodyne_ros::Point>
 
   for (int i = 0; i < plsize; i++)
   {
+    if (valid_ring.count(pl_orig.points[i].ring) == 0)
+    {
+      continue;
+    }
+
     PointType added_pt;
     // cout<<"!!!!!!"<<i<<" "<<plsize<<endl;
 
