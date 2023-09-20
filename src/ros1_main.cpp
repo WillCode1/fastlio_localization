@@ -26,72 +26,20 @@ System slam;
 std::string map_frame;
 std::string body_frame;
 
+bool path_en = true, scan_pub_en = false, dense_pub_en = false;
+ros::Publisher pubLaserCloudFull;
+ros::Publisher pubLaserCloudEffect;
+ros::Publisher pubLaserCloudMap;
+ros::Publisher pubOdomAftMapped;
+ros::Publisher pubImuPath;
+ros::Publisher pubrelocalizationDebug;
+ros::Publisher pubMsf;
+
 bool flg_exit = false;
 void SigHandle(int sig)
 {
     flg_exit = true;
     LOG_WARN("catch sig %d", sig);
-}
-
-void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
-{
-    Timer timer;
-    pcl::PointCloud<ouster_ros::Point> pl_orig_oust;
-    pcl::PointCloud<velodyne_ros::Point> pl_orig_velo;
-    PointCloudType::Ptr scan(new PointCloudType());
-
-    switch (lidar_type)
-    {
-    case OUST64:
-        pcl::fromROSMsg(*msg, pl_orig_oust);
-        slam.lidar->oust64_handler(pl_orig_oust, scan);
-        break;
-
-    case VELO16:
-        pcl::fromROSMsg(*msg, pl_orig_velo);
-        slam.lidar->velodyne_handler(pl_orig_velo, scan);
-        break;
-
-    default:
-        printf("Error LiDAR Type");
-        break;
-    }
-
-    slam.cache_pointcloud_data(msg->header.stamp.toSec(), scan);
-    slam.loger.preprocess_time = timer.elapsedStart();
-}
-
-void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
-{
-    Timer timer;
-    auto plsize = msg->point_num;
-    PointCloudType::Ptr scan(new PointCloudType());
-    PointCloudType::Ptr pl_orig(new PointCloudType());
-    pl_orig->reserve(plsize);
-    PointType point;
-    for (uint i = 1; i < plsize; i++)
-    {
-        if (((msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00))
-        {
-            point.x = msg->points[i].x;
-            point.y = msg->points[i].y;
-            point.z = msg->points[i].z;
-            point.intensity = msg->points[i].reflectivity;
-            point.curvature = msg->points[i].offset_time / float(1000000); // use curvature as time of each laser points, curvature unit: ms
-
-            pl_orig->points.push_back(point);
-        }
-    }
-    slam.lidar->avia_handler(pl_orig, scan);
-    slam.cache_pointcloud_data(msg->header.stamp.toSec(), scan);
-    slam.loger.preprocess_time = timer.elapsedStart();
-}
-
-void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
-{
-    slam.cache_imu_data(msg->header.stamp.toSec(),
-                        V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z), 
-                        V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));
 }
 
 void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, const double& lidar_end_time, const std::string& frame_id)
@@ -258,6 +206,112 @@ void publish_imu_path(const ros::Publisher &pubPath, const state_ikfom &state, c
     }
 }
 
+void sensor_data_process()
+{
+    if (flg_exit)
+        return;
+
+    if (!slam.sync_sensor_data())
+        return;
+
+    if (slam.run())
+    {
+        const auto &state = slam.frontend->state;
+
+        /******* Publish odometry *******/
+        // publish_odometry(pubOdomAftMapped, state, slam.frontend->kf, slam.lidar_end_time);
+        publish_odometry2(pubMsf, state, slam.measures->lidar_beg_time, slam.system_state_vaild);
+
+        /******* Publish points *******/
+        if (path_en)
+            publish_imu_path(pubImuPath, state, slam.lidar_end_time);
+        if (scan_pub_en)
+            if (dense_pub_en)
+                publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.lidar_end_time);
+            else
+                publish_cloud_world(pubLaserCloudFull, slam.frontend->feats_down_lidar, state, slam.lidar_end_time);
+
+        // publish_cloud_world(pubLaserCloudEffect, laserCloudOri, state, slam.lidar_end_time);
+        if (0)
+        {
+            PointCloudType::Ptr featsFromMap(new PointCloudType());
+            slam.frontend->get_ikdtree_point(featsFromMap);
+            publish_ikdtree_map(pubLaserCloudMap, featsFromMap, slam.lidar_end_time);
+        }
+    }
+    else
+    {
+        publish_odometry2(pubMsf, slam.frontend->state, slam.measures->lidar_beg_time, slam.system_state_vaild);
+#ifdef DEDUB_MODE
+        publish_cloud_world(pubrelocalizationDebug, slam.measures->lidar, slam.frontend->state, slam.lidar_end_time);
+#endif
+    }
+}
+
+void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
+{
+    Timer timer;
+    pcl::PointCloud<ouster_ros::Point> pl_orig_oust;
+    pcl::PointCloud<velodyne_ros::Point> pl_orig_velo;
+    PointCloudType::Ptr scan(new PointCloudType());
+
+    switch (lidar_type)
+    {
+    case OUST64:
+        pcl::fromROSMsg(*msg, pl_orig_oust);
+        slam.lidar->oust64_handler(pl_orig_oust, scan);
+        break;
+
+    case VELO16:
+        pcl::fromROSMsg(*msg, pl_orig_velo);
+        slam.lidar->velodyne_handler(pl_orig_velo, scan);
+        break;
+
+    default:
+        printf("Error LiDAR Type");
+        break;
+    }
+
+    slam.cache_pointcloud_data(msg->header.stamp.toSec(), scan);
+    slam.loger.preprocess_time = timer.elapsedStart();
+    sensor_data_process();
+}
+
+void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
+{
+    Timer timer;
+    auto plsize = msg->point_num;
+    PointCloudType::Ptr scan(new PointCloudType());
+    PointCloudType::Ptr pl_orig(new PointCloudType());
+    pl_orig->reserve(plsize);
+    PointType point;
+    for (uint i = 1; i < plsize; i++)
+    {
+        if (((msg->points[i].tag & 0x30) == 0x10 || (msg->points[i].tag & 0x30) == 0x00))
+        {
+            point.x = msg->points[i].x;
+            point.y = msg->points[i].y;
+            point.z = msg->points[i].z;
+            point.intensity = msg->points[i].reflectivity;
+            point.curvature = msg->points[i].offset_time / float(1000000); // use curvature as time of each laser points, curvature unit: ms
+
+            pl_orig->points.push_back(point);
+        }
+    }
+    slam.lidar->avia_handler(pl_orig, scan);
+    slam.cache_pointcloud_data(msg->header.stamp.toSec(), scan);
+    slam.loger.preprocess_time = timer.elapsedStart();
+    sensor_data_process();
+}
+
+void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
+{
+    slam.cache_imu_data(msg->header.stamp.toSec(),
+                        V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z), 
+                        V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));
+    sensor_data_process();
+}
+
 void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
 {
     const geometry_msgs::Pose &pose = msg->pose.pose;
@@ -279,7 +333,6 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "SLAM");
     ros::NodeHandle nh;
-    bool path_en = true, scan_pub_en = false, dense_pub_en = false;
     string lidar_topic, imu_topic, config_file;
 
     ros::param::param("config_file", config_file, std::string(""));
@@ -290,65 +343,22 @@ int main(int argc, char **argv)
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
     // 发布当前正在扫描的点云，topic名字为/cloud_registered
-    ros::Publisher pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
+    pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
     // not used
-    ros::Publisher pubLaserCloudEffect = nh.advertise<sensor_msgs::PointCloud2>("/cloud_effected", 100000);
+    pubLaserCloudEffect = nh.advertise<sensor_msgs::PointCloud2>("/cloud_effected", 100000);
     // not used
-    ros::Publisher pubLaserCloudMap = nh.advertise<sensor_msgs::PointCloud2>("/Laser_map", 100000);
-    ros::Publisher pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
-    ros::Publisher pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
+    pubLaserCloudMap = nh.advertise<sensor_msgs::PointCloud2>("/Laser_map", 100000);
+    pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
+    pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
 
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
-    ros::Publisher pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
+    pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 
-    ros::Publisher pubMsf = nh.advertise<ant_robot_msgs::PoseDynamicData>("/ant_robot/pose_dynamic_data", 1);
+    pubMsf = nh.advertise<ant_robot_msgs::PoseDynamicData>("/ant_robot/pose_dynamic_data", 1);
     //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
-    ros::Rate rate(5000);
-    while (ros::ok())
-    {
-        if (flg_exit)
-            break;
-        ros::spinOnce();
 
-        if (!slam.sync_sensor_data())
-            continue;
-
-        if (slam.run())
-        {
-            const auto &state = slam.frontend->state;
-
-            /******* Publish odometry *******/
-            // publish_odometry(pubOdomAftMapped, state, slam.frontend->kf, slam.lidar_end_time);
-            publish_odometry2(pubMsf, state, slam.measures->lidar_beg_time, slam.system_state_vaild);
-
-            /******* Publish points *******/
-            if (path_en)
-                publish_imu_path(pubImuPath, state, slam.lidar_end_time);
-            if (scan_pub_en)
-                if (dense_pub_en)
-                    publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.lidar_end_time);
-                else
-                    publish_cloud_world(pubLaserCloudFull, slam.frontend->feats_down_lidar, state, slam.lidar_end_time);
-
-            // publish_cloud_world(pubLaserCloudEffect, laserCloudOri, state, slam.lidar_end_time);
-            if (0)
-            {
-                PointCloudType::Ptr featsFromMap(new PointCloudType());
-                slam.frontend->get_ikdtree_point(featsFromMap);
-                publish_ikdtree_map(pubLaserCloudMap, featsFromMap, slam.lidar_end_time);
-            }
-        }
-        else
-        {
-            publish_odometry2(pubMsf, slam.frontend->state, slam.measures->lidar_beg_time, slam.system_state_vaild);
-#ifdef DEDUB_MODE
-            publish_cloud_world(pubrelocalizationDebug, slam.measures->lidar, slam.frontend->state, slam.lidar_end_time);
-#endif
-        }
-
-        rate.sleep();
-    }
+    ros::spin();
 
     return 0;
 }
