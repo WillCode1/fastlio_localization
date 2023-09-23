@@ -38,7 +38,7 @@ mapping:
     #                0, 0, 1 ]
 
 localization:
-    gravity: [ 0.0, 0.0, -9.81 ]
+    gravity: [ 0.0, 0.0, 9.81 ]
 
 publish:
     path_en:  true
