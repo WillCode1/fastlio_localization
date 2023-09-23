@@ -335,7 +335,7 @@ void Relocalization::set_init_pose(const Pose &_manual_pose)
         manual_pos.x = manual_pose.x;
         manual_pos.y = manual_pose.y;
         kdtree.setInputCloud(trajectory_poses);
-        kdtree.radiusSearch(manual_pos, 10, indices, distances, 1);
+        kdtree.radiusSearch(manual_pos, 15, indices, distances, 1);
 
         if (indices.size() == 1)
         {
