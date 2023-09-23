@@ -99,6 +99,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     gravity = config["localization"]["gravity"].IsDefined() ? config["localization"]["gravity"].as<vector<double>>() : vector<double>();
 
     slam.lidar->init(n_scans, scan_rate, time_unit, blind, detect_range);
+    slam.imu->imu_rate = config["preprocess"]["imu_rate"].IsDefined() ? config["preprocess"]["imu_rate"].as<int>() : 200;
     slam.imu->set_gyr_cov(V3D(gyr_cov, gyr_cov, gyr_cov));
     slam.imu->set_acc_cov(V3D(acc_cov, acc_cov, acc_cov));
     slam.imu->set_gyr_bias_cov(V3D(b_gyr_cov, b_gyr_cov, b_gyr_cov));
