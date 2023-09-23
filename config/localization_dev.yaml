@@ -28,14 +28,14 @@ mapping:
     b_acc_cov: 0.0001
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
-    # extrinsic_T: [ -0.00665, 0, -1.51277]
-    # extrinsic_R: [ 1, 0, 0, 
-    #                0, -1, 0, 
-    #                0, 0, -1 ]
-    extrinsic_T: [ 1.061, 0, 1.651 ]
+    extrinsic_T: [ -0.00665, 0, -1.51277]
     extrinsic_R: [ 1, 0, 0, 
-                   0, 1, 0, 
-                   0, 0, 1 ]
+                   0, -1, 0, 
+                   0, 0, -1 ]
+    # extrinsic_T: [ 1.061, 0, 1.651 ]
+    # extrinsic_R: [ 1, 0, 0, 
+    #                0, 1, 0, 
+    #                0, 0, 1 ]
 
 localization:
     gravity: [ 0.0, 0.0, -9.81 ]
@@ -51,10 +51,10 @@ relocalization_cfg:
     # algorithm_type: "manually_set"
 
     # lidar extrinsic to imu
-    lidar_ext/x: 1.061
+    lidar_ext/x: -0.00665
     lidar_ext/y: 0
-    lidar_ext/z: 1.651
-    lidar_ext/roll: 0
+    lidar_ext/z: -1.51277
+    lidar_ext/roll: 180
     lidar_ext/pitch: 0
     lidar_ext/yaw: 0
 
@@ -64,7 +64,6 @@ scan_context:
 
 bnb3d:
     linear_xy_window_size: 5   # meter
-    # linear_xy_window_size: 10   # meter
     linear_z_window_size: 0.5  # meter
     angular_search_window: 180  # degree 0~180
     pc_resolutions: [0.2, 0.3, 0.5]
