@@ -237,6 +237,9 @@ void sensor_data_process()
 
 void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
+    static double last_time = 0;
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.lidar->scan_rate, "lidar");
+
     Timer timer;
     pcl::PointCloud<ouster_ros::Point> pl_orig_oust;
     pcl::PointCloud<velodyne_ros::Point> pl_orig_velo;
@@ -266,6 +269,9 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 
 void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
 {
+    static double last_time = 0;
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.lidar->scan_rate, "lidar");
+
     Timer timer;
     auto plsize = msg->point_num;
     PointCloudType::Ptr scan(new PointCloudType());
@@ -293,6 +299,9 @@ void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
 
 void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
 {
+    static double last_time = 0;
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.imu->imu_rate, "imu");
+
     slam.cache_imu_data(msg->header.stamp.toSec(),
                         V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z), 
                         V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));

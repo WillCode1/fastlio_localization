@@ -127,4 +127,19 @@ inline bool check_for_not_converged(const double &timestamp, int step)
     return flag;
 }
 
+inline void check_time_interval(double &last_time, const double &cur_time, const double &expected_time, const std::string& what)
+{
+    auto delta_time = cur_time - last_time;
+    if (last_time < 1e-6)
+    {
+        last_time = cur_time;
+    }
+    else if (delta_time >= 2.0 * expected_time)
+    {
+        LOG_WARN("%s time interval is %.3fs, more than expected %.3fs, last_time = %.3fs, cur_time = %.3fs.",
+                 what.c_str(), delta_time, expected_time, last_time, cur_time);
+    }
+    last_time = cur_time;
+}
+
 // #define DEDUB_MODE

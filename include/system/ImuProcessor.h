@@ -38,6 +38,7 @@ public:
   V3D cov_bias_gyr;
   V3D cov_bias_acc;
   deque<ImuData::Ptr> imu_buffer;
+  int imu_rate = 200;
 
 private:
   void IMU_init(const MeasureCollection &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, int &N);
