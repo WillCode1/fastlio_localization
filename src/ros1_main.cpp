@@ -216,7 +216,7 @@ void sensor_data_process()
             if (dense_pub_en)
                 publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.frontend->lidar_end_time);
             else
-                publish_cloud_world(pubLaserCloudFull, slam.frontend->feats_down_lidar, state, slam.frontend->lidar_end_time);
+                publish_cloud(pubLaserCloudFull, slam.frontend->feats_down_world, slam.frontend->lidar_end_time, map_frame);
     }
     else
     {
