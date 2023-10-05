@@ -1,16 +1,10 @@
 #include "ImuProcessor.h"
 
-const bool time_list(PointType &x, PointType &y) { return (x.curvature < y.curvature); };
 
 ImuProcessor::ImuProcessor()
     : b_first_frame_(true), imu_need_init_(true)
 {
   init_iter_num = 1;
-  Q = process_noise_cov();
-  cov_acc = V3D(0.1, 0.1, 0.1);
-  cov_gyr = V3D(0.1, 0.1, 0.1);
-  cov_bias_gyr = V3D(0.0001, 0.0001, 0.0001);
-  cov_bias_acc = V3D(0.0001, 0.0001, 0.0001);
   mean_acc = V3D(0, 0, -1.0);
   mean_gyr = V3D(0, 0, 0);
   angvel_last = ZERO3D;
@@ -21,67 +15,39 @@ ImuProcessor::~ImuProcessor() {}
 
 void ImuProcessor::Reset()
 {
-  // LOG_WARN("Reset ImuProcessor");
+  LOG_WARN("Reset ImuProcessor");
   mean_acc = V3D(0, 0, -1.0);
   mean_gyr = V3D(0, 0, 0);
   angvel_last = ZERO3D;
   imu_need_init_ = true;
   init_iter_num = 1;
-  imu_buffer.clear();
   imu_states.clear();
   last_imu_.reset(new ImuData());
 }
 
-void ImuProcessor::set_gyr_cov(const V3D &scaler)
+void ImuProcessor::set_imu_cov(const Eigen::Matrix<double, 12, 12> &imu_cov)
 {
-  cov_gyr_scale = scaler;
+  Q = imu_cov;
 }
 
-void ImuProcessor::set_acc_cov(const V3D &scaler)
+void ImuProcessor::IMU_init(const MeasureCollection &meas, int &N)
 {
-  cov_acc_scale = scaler;
-}
+  LOG_INFO("IMU Initializing: %.1f %%", double(N) / MAX_INI_COUNT * 100);
 
-void ImuProcessor::set_gyr_bias_cov(const V3D &b_g)
-{
-  cov_bias_gyr = b_g;
-}
-
-void ImuProcessor::set_acc_bias_cov(const V3D &b_a)
-{
-  cov_bias_acc = b_a;
-}
-
-/**
- * 1. 初始化重力、陀螺偏差、acc和陀螺仪协方差
- * 2. 将加速度测量值标准化为单位重力
- **/
-void ImuProcessor::IMU_init(const MeasureCollection &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, int &N)
-{
-  /** 1. initializing the gravity, gyro bias, acc and gyro covariance
-   ** 2. normalize the acceleration measurenments to unit gravity **/
-
-  V3D cur_acc, cur_gyr;
-
-  // 这里应该是静止初始化
   if (b_first_frame_)
   {
     Reset();
     N = 1;
     b_first_frame_ = false;
-    const auto &imu_acc = meas.imu.front()->linear_acceleration;
-    const auto &gyr_acc = meas.imu.front()->angular_velocity;
-    mean_acc = imu_acc; // 加速度测量作为初始化均值
-    mean_gyr = gyr_acc; // 角速度测量作为初始化均值
+    mean_acc = meas.imu.front()->linear_acceleration; // 加速度测量作为初始化均值
+    mean_gyr = meas.imu.front()->angular_velocity;    // 角速度测量作为初始化均值
   }
 
   // 增量计算平均值和方差: https://blog.csdn.net/weixin_42040262/article/details/127345225
   for (const auto &imu : meas.imu)
   {
-    const auto &imu_acc = imu->linear_acceleration;
-    const auto &gyr_acc = imu->angular_velocity;
-    cur_acc = imu_acc;
-    cur_gyr = gyr_acc;
+    const auto &cur_acc = imu->linear_acceleration;
+    const auto &cur_gyr = imu->angular_velocity;
 
     mean_acc += (cur_acc - mean_acc) / N;
     mean_gyr += (cur_gyr - mean_gyr) / N;
@@ -94,31 +60,13 @@ void ImuProcessor::IMU_init(const MeasureCollection &meas, esekfom::esekf<state_
     // cov_acc = cov_acc * (N - 1.0) / N + (cur_acc - mean_acc).cwiseProduct(cur_acc - 上一次的mean_acc)  / N;
     // cov_gyr = cov_gyr * (N - 1.0) / N + (cur_gyr - mean_gyr).cwiseProduct(cur_gyr - 上一次的mean_gyr)  / N;
 
-    // cout<<"acc norm: "<<cur_acc.norm()<<" "<<mean_acc.norm()<<endl;
-
     N++;
   }
-  state_ikfom init_state = kf_state.get_x();
-  // init_state.grav = S2(-mean_acc / mean_acc.norm() * G_m_s2);
-
-  // state_inout.rot = EYE3D; // Exp(mean_acc.cross(V3D(0, 0, -1 / scale_gravity)));
-  init_state.bg = mean_gyr;                  // 静止初始化, 使用角速度测量作为陀螺仪偏差
-  kf_state.change_x(init_state);
-
-  esekfom::esekf<state_ikfom, 12, input_ikfom>::cov init_P = kf_state.get_P();
-  init_P.setIdentity();                                      // 将协方差矩阵置为单位阵
-  init_P(6, 6) = init_P(7, 7) = init_P(8, 8) = 0.00001;      // 将协方差矩阵的位置和旋转的协方差置为0.00001
-  init_P(9, 9) = init_P(10, 10) = init_P(11, 11) = 0.00001;  // 将协方差矩阵的速度和位姿的协方差置为0.00001
-  init_P(15, 15) = init_P(16, 16) = init_P(17, 17) = 0.0001; // 将协方差矩阵的重力和姿态的协方差置为0.0001
-  init_P(18, 18) = init_P(19, 19) = init_P(20, 20) = 0.001;  // 将协方差矩阵的陀螺仪偏差和姿态的协方差置为0.001
-  init_P(21, 21) = init_P(22, 22) = 0.00001;                 // 将协方差矩阵的lidar和imu外参位移量的协方差置为0.00001
-  kf_state.change_P(init_P);
-  last_imu_ = meas.imu.back();                               // 将最后一帧的imu数据传入last_imu_中，暂时没用到
 }
 
 /**
- * 1.imu数据更新, 并积分imu位姿
- * 2.当前帧点云去畸变
+ * 1.正向传播积分imu
+ * 2.反向传播去畸变
  */
 void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudType &pcl_out)
 {
@@ -132,9 +80,7 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
 
   /*** sort point clouds by offset time ***/
   pcl_out = *(meas.lidar);
-  sort(pcl_out.points.begin(), pcl_out.points.end(), time_list);
-  // cout<<"[ IMU Process ]: Process lidar from "<<pcl_beg_time<<" to "<<pcl_end_time<<", " \
-  //          <<meas.imu.size()<<" imu msgs from "<<imu_beg_time<<" to "<<imu_end_time<<endl;
+  sort(pcl_out.points.begin(), pcl_out.points.end(), compare_timestamp);
 
   /*** Initialize IMU pose ***/
   state_ikfom imu_state = kf_state.get_x(); // 获取上一次KF估计的后验状态作为本次IMU预测的初始状态
@@ -177,15 +123,8 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
       dt = tail->timestamp - head->timestamp;
     }
 
-    // 原始测量的中值作为更新
     in.acc = acc_avr;
     in.gyro = angvel_avr;
-    // 配置协方差矩阵
-    Q.block<3, 3>(0, 0).diagonal() = cov_gyr;
-    Q.block<3, 3>(3, 3).diagonal() = cov_acc;
-    Q.block<3, 3>(6, 6).diagonal() = cov_bias_gyr;
-    Q.block<3, 3>(9, 9).diagonal() = cov_bias_acc;
-    // IMU前向传播，每次传播的时间间隔为dt
     kf_state.predict(dt, Q, in);
 
     /* save the poses at each IMU measurements */
@@ -278,29 +217,93 @@ void ImuProcessor::Process(const MeasureCollection &meas, esekfom::esekf<state_i
   if (imu_need_init_)
   {
     /// The very first lidar frame
-    IMU_init(meas, kf_state, init_iter_num);
+    IMU_init(meas, init_iter_num);
 
-    last_imu_ = meas.imu.back();
+    last_imu_ = meas.imu.back(); // 将最后一帧的imu数据传入last_imu_中，暂时没用到
 
-    state_ikfom imu_state = kf_state.get_x();
     if (init_iter_num > MAX_INI_COUNT)
     {
-      cov_acc *= pow(G_m_s2 / mean_acc.norm(), 2);
+      LOG_INFO("IMU Initializing: %.1f %%", 100.0);
       imu_need_init_ = false;
-
-      cov_acc = cov_acc_scale;
-      cov_gyr = cov_gyr_scale;
-      // cov_acc = cov_acc.cwiseProduct(cov_acc_scale);
-      // cov_gyr = cov_gyr.cwiseProduct(cov_gyr_scale);
-
-      LOG_INFO("IMU Initial Done");
-      // LOG_INFO("IMU Initial Done: Gravity: %.4f %.4f %.4f %.4f; state.bias_g: %.4f %.4f %.4f; acc covarience: %.8f %.8f %.8f; gry covarience: %.8f %.8f %.8f",\
-      //          imu_state.grav[0], imu_state.grav[1], imu_state.grav[2], mean_acc.norm(), cov_bias_gyr[0], cov_bias_gyr[1], cov_bias_gyr[2], cov_acc[0], cov_acc[1], cov_acc[2], cov_gyr[0], cov_gyr[1], cov_gyr[2]);
+      UndistortPcl(meas, kf_state, *cur_pcl_un_);
     }
 
     return;
   }
+  if (!gravity_align_)
+    gravity_align_ = true;
 
   // 正向传播积分imu, 反向传播去畸变
   UndistortPcl(meas, kf_state, *cur_pcl_un_);
+}
+
+void ImuProcessor::Process(const MeasureCollection &meas, PointCloudType::Ptr cur_pcl_un_, bool imu_en)
+{
+  if (imu_en)
+  {
+    if (meas.imu.empty())
+      return;
+    assert(meas.lidar != nullptr);
+
+    if (imu_need_init_)
+    {
+      /// The very first lidar frame
+      IMU_init(meas, init_iter_num);
+
+      if (init_iter_num > MAX_INI_COUNT)
+      {
+        LOG_INFO("IMU Initializing: %.1f %%", 100.0);
+        imu_need_init_ = false;
+        *cur_pcl_un_ = *(meas.lidar);
+      }
+      return;
+    }
+    if (!gravity_align_)
+      gravity_align_ = true;
+    *cur_pcl_un_ = *(meas.lidar);
+  }
+  else
+  {
+    if (!b_first_frame_)
+    {
+      if (!gravity_align_)
+        gravity_align_ = true;
+    }
+    else
+    {
+      b_first_frame_ = false;
+      return;
+    }
+    *cur_pcl_un_ = *(meas.lidar);
+  }
+}
+
+/**
+ * @brief 将预设重力方向和测量到的重力方向对比，将imu初始姿态对齐到地图
+ * @param preset_gravity 预设重力方向，也就是map方向
+ * @param meas_gravity 测量到的重力
+ * @param rot_init 返回的imu初始姿态
+ */
+void ImuProcessor::get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_gravity, M3D &rot_init)
+{
+  M3D hat_grav = SO3Math::get_skew_symmetric(-preset_gravity);
+  // sin(theta) = a^b/(|a|*|b|) = |axb|/(|a|*|b|)
+  double align_sin = (hat_grav * meas_gravity).norm() / meas_gravity.norm() / preset_gravity.norm();
+  // cos(theta) = a*b/(|a|*|b|)
+  double align_cos = preset_gravity.transpose() * meas_gravity;
+  align_cos = align_cos / preset_gravity.norm() / meas_gravity.norm();
+
+  if (align_sin < 1e-6)
+  {
+    if (align_cos > 1e-6)
+      rot_init = EYE3D;
+    else
+      rot_init = -EYE3D;
+  }
+  else
+  {
+    // 沿着axb方向旋转对应夹角，得到imu初始姿态
+    V3D align_angle = hat_grav * meas_gravity / (hat_grav * meas_gravity).norm() * acos(align_cos);
+    rot_init = SO3Math::Exp(align_angle);
+  }
 }

@@ -4,7 +4,7 @@ common:
     map_frame:  "camera_init"
     body_frame:  "body"
     timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
-    
+
 preprocess:
     lidar_type: 3                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
     scan_line: 64
@@ -13,11 +13,20 @@ preprocess:
     det_range: 150.0
 
 mapping:
+    start_in_aggressive_motion: false   # if true, a preknown gravity should be provided in following gravity_init
+    gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+    preset_gravity: [0, 0, -9.81]       # [0.0, 9.810, 0.0] # the direction of gravity(map) to be aligned
+    gravity_align: true                 # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
+    frontend_type: 0                    # frontend type
+
+    # fastlio
     point_skip_num: 4
+    space_down_sample: true
     surf_frame_ds_res: 0.5
     max_iteration: 3
     ikdtree_resolution: 0.5
     lidar_model_search_range: 5
+    lidar_meas_cov: 0.001
     cube_side_length: 1000
     runtime_log_enable: 0
 
@@ -30,8 +39,6 @@ mapping:
     extrinsic_R: [1, 0, 0,
                   0, 1, 0,
                   0, 0, 1]
-localization:
-    gravity: [ 0.0425684, 0.116608, -9.80821 ]
 
 scan_context:
     lidar_height: 2

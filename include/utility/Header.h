@@ -94,6 +94,8 @@ float pointDistance(const PointType& p1, const PointType& p2)
     return sqrt(pointDistanceSquare(p1, p2));
 }
 
+inline const bool compare_timestamp(PointType &x, PointType &y) { return (x.curvature < y.curvature); };
+
 inline bool check_for_not_converged(const double &timestamp, int step)
 {
     static unsigned int cnt = 0;

@@ -15,12 +15,21 @@ preprocess:
     det_range: 200.0
 
 mapping:
+    start_in_aggressive_motion: true   # if true, a preknown gravity should be provided in following gravity_init
+    gravity_init: [0, 0, 9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+    preset_gravity: [0, 0, -9.81]       # [0.0, 9.810, 0.0] # the direction of gravity(map) to be aligned
+    gravity_align: false                # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
+    frontend_type: 0                    # frontend type
+
+    # fastlio
     point_skip_num: 4
     # point_skip_num: 1            # for mapping, Increase accuracy 4 -> 1
+    space_down_sample: true
     surf_frame_ds_res: 0.5       # In unstructured scenarios, smaller is more likely to degenerate
     max_iteration: 3
     ikdtree_resolution: 0.5      # In unstructured scenarios, smaller is more likely to degenerate
     lidar_model_search_range: 5
+    lidar_meas_cov: 0.001
     cube_side_length: 10000
     runtime_log_enable: 0
 

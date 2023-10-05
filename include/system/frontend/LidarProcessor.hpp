@@ -87,8 +87,6 @@ public:
 
   int scan_rate;
   double blind, detect_range;
-  deque<double> time_buffer;
-  deque<PointCloudType::Ptr> lidar_buffer;
 
 private:
   int n_scans, time_unit;
@@ -222,6 +220,7 @@ void LidarProcessor::velodyne_handler(const pcl::PointCloud<velodyne_ros::Point>
     PointType added_pt;
     // cout<<"!!!!!!"<<i<<" "<<plsize<<endl;
 
+    // added_pt.normal_x = pl_orig[i].ring;
     added_pt.normal_x = 0;
     added_pt.normal_y = 0;
     added_pt.normal_z = 0;
