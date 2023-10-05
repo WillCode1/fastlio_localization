@@ -151,12 +151,12 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     odom.enu_vel[0] = state.vel(0);
     odom.enu_vel[1] = -state.vel(1);
     odom.enu_vel[2] = -state.vel(2);
-    odom.angular_vel[0] = slam.angular_velocity(0);
-    odom.angular_vel[1] = -slam.angular_velocity(1);
-    odom.angular_vel[2] = -slam.angular_velocity(2);
-    odom.body_accel[0] = slam.linear_acceleration(0);
-    odom.body_accel[1] = -slam.linear_acceleration(1);
-    odom.body_accel[2] = -slam.linear_acceleration(2);
+    odom.angular_vel[0] = slam.frontend->angular_velocity(0);
+    odom.angular_vel[1] = -slam.frontend->angular_velocity(1);
+    odom.angular_vel[2] = -slam.frontend->angular_velocity(2);
+    odom.body_accel[0] = slam.frontend->linear_acceleration(0);
+    odom.body_accel[1] = -slam.frontend->linear_acceleration(1);
+    odom.body_accel[2] = -slam.frontend->linear_acceleration(2);
 
     pubMsf.publish(odom);
 
@@ -198,39 +198,31 @@ void sensor_data_process()
     if (flg_exit)
         return;
 
-    if (!slam.sync_sensor_data())
+    if (!slam.frontend->sync_sensor_data())
         return;
 
     if (slam.run())
     {
-        const auto &state = slam.frontend->state;
+        const auto &state = slam.frontend->get_state();
 
         /******* Publish odometry *******/
-        // publish_odometry(pubOdomAftMapped, state, slam.lidar_end_time);
-        publish_odometry2(pubMsf, state, slam.measures->lidar_beg_time, slam.system_state_vaild);
+        // publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time);
+        publish_odometry2(pubMsf, state, slam.frontend->measures->lidar_beg_time, slam.system_state_vaild);
 
         /******* Publish points *******/
         if (path_en)
-            publish_imu_path(pubImuPath, state, slam.lidar_end_time);
+            publish_imu_path(pubImuPath, state, slam.frontend->lidar_end_time);
         if (scan_pub_en)
             if (dense_pub_en)
-                publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.lidar_end_time);
+                publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.frontend->lidar_end_time);
             else
-                publish_cloud_world(pubLaserCloudFull, slam.frontend->feats_down_lidar, state, slam.lidar_end_time);
-
-        // publish_cloud_world(pubLaserCloudEffect, laserCloudOri, state, slam.lidar_end_time);
-        if (0)
-        {
-            PointCloudType::Ptr featsFromMap(new PointCloudType());
-            slam.frontend->get_ikdtree_point(featsFromMap);
-            publish_ikdtree_map(pubLaserCloudMap, featsFromMap, slam.lidar_end_time);
-        }
+                publish_cloud_world(pubLaserCloudFull, slam.frontend->feats_down_lidar, state, slam.frontend->lidar_end_time);
     }
     else
     {
-        publish_odometry2(pubMsf, slam.frontend->state, slam.measures->lidar_beg_time, slam.system_state_vaild);
+        publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild);
 #ifdef DEDUB_MODE
-        publish_cloud_world(pubrelocalizationDebug, slam.measures->lidar, slam.frontend->state, slam.lidar_end_time);
+        publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.lidar_end_time);
 #endif
     }
 }
@@ -238,7 +230,7 @@ void sensor_data_process()
 void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
     static double last_time = 0;
-    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.lidar->scan_rate, "lidar");
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar");
 
     Timer timer;
     pcl::PointCloud<ouster_ros::Point> pl_orig_oust;
@@ -249,12 +241,12 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
     {
     case OUST64:
         pcl::fromROSMsg(*msg, pl_orig_oust);
-        slam.lidar->oust64_handler(pl_orig_oust, scan);
+        slam.frontend->lidar->oust64_handler(pl_orig_oust, scan);
         break;
 
     case VELO16:
         pcl::fromROSMsg(*msg, pl_orig_velo);
-        slam.lidar->velodyne_handler(pl_orig_velo, scan);
+        slam.frontend->lidar->velodyne_handler(pl_orig_velo, scan);
         break;
 
     default:
@@ -262,15 +254,15 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
         break;
     }
 
-    slam.cache_pointcloud_data(msg->header.stamp.toSec(), scan);
-    slam.loger.preprocess_time = timer.elapsedStart();
+    slam.frontend->cache_pointcloud_data(msg->header.stamp.toSec(), scan);
+    slam.frontend->loger.preprocess_time = timer.elapsedStart();
     sensor_data_process();
 }
 
 void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
 {
     static double last_time = 0;
-    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.lidar->scan_rate, "lidar");
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar");
 
     Timer timer;
     auto plsize = msg->point_num;
@@ -291,20 +283,20 @@ void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
             pl_orig->points.push_back(point);
         }
     }
-    slam.lidar->avia_handler(pl_orig, scan);
-    slam.cache_pointcloud_data(msg->header.stamp.toSec(), scan);
-    slam.loger.preprocess_time = timer.elapsedStart();
+    slam.frontend->lidar->avia_handler(pl_orig, scan);
+    slam.frontend->cache_pointcloud_data(msg->header.stamp.toSec(), scan);
+    slam.frontend->loger.preprocess_time = timer.elapsedStart();
     sensor_data_process();
 }
 
 void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
 {
     static double last_time = 0;
-    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.imu->imu_rate, "imu");
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->imu->imu_rate, "imu");
 
-    slam.cache_imu_data(msg->header.stamp.toSec(),
-                        V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z), 
-                        V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));
+    slam.frontend->cache_imu_data(msg->header.stamp.toSec(),
+                                  V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z),
+                                  V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));
     sensor_data_process();
 }
 

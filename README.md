@@ -1,6 +1,6 @@
 ## Related Works and Extended Application
 
-1. [fast_lio_sam](https://github.com/WillCode1/fast_lio_sam): fastlio + gtsam + map update.
+1. [fast_lio_sam](https://github.com/WillCode1/fast_lio_sam): fastlio + gtsam + map update(uncompleted).
 2. [fastlio_localization](https://github.com/WillCode1/fastlio_localization): fastlio_localization + scancontext + bnb.
 
 ## Related papers

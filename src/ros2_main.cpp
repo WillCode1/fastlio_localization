@@ -51,7 +51,7 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::SharedPtr msg)
     }
 
     slam.cache_pointcloud_data(msg->header.stamp.sec + msg->header.stamp.nanosec * 1.0e-9, scan);
-    slam.loger.preprocess_time = timer.elapsedStart();
+    slam.frontend->loger.preprocess_time = timer.elapsedStart();
 }
 
 void livox_pcl_cbk(const livox_interfaces2::msg::CustomMsg::SharedPtr msg)
@@ -77,7 +77,7 @@ void livox_pcl_cbk(const livox_interfaces2::msg::CustomMsg::SharedPtr msg)
     }
     slam.lidar->avia_handler(pl_orig, scan);
     slam.cache_pointcloud_data(msg->header.stamp.sec + msg->header.stamp.nanosec * 1.0e-9, scan);
-    slam.loger.preprocess_time = timer.elapsedStart();
+    slam.frontend->loger.preprocess_time = timer.elapsedStart();
 }
 
 void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg)
@@ -236,14 +236,6 @@ int main(int argc, char **argv)
                     publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.lidar_end_time);
                 else
                     publish_cloud_world(pubLaserCloudFull, slam.frontend->feats_down_lidar, state, slam.lidar_end_time);
-
-            // publish_cloud_world(pubLaserCloudEffect, laserCloudOri, state, slam.lidar_end_time);
-            if (0)
-            {
-                PointCloudType::Ptr featsFromMap(new PointCloudType());
-                slam.frontend->get_ikdtree_point(featsFromMap);
-                publish_ikdtree_map(pubLaserCloudMap, featsFromMap, slam.lidar_end_time);
-            }
         }
 
         rate.sleep();
