@@ -145,7 +145,7 @@ void sensor_data_process()
     else
     {
 #ifdef DEDUB_MODE
-        publish_cloud_world(pubrelocalizationDebug, slam.measures->lidar, slam.frontend->state, slam.lidar_end_time);
+        publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.lidar_end_time);
 #endif
     }
 }
