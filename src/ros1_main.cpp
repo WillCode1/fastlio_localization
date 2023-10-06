@@ -111,10 +111,6 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     odom.header.stamp = ros::Time().fromSec(lidar_end_time);
     odom.is_valid = vaild;
 
-    // odom.latitude = 0;
-    // odom.longitude = 0;
-    // odom.altitude = 0;
-
     Eigen::Matrix4d pose_mat = Eigen::Matrix4d::Identity();
     pose_mat.topLeftCorner(3, 3) = state.rot.toRotationMatrix();
     pose_mat.topRightCorner(3, 1) = state.pos;
