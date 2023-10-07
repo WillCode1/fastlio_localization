@@ -1,4 +1,6 @@
 #include "Scancontext.h"
+#include <fstream>
+#include <iomanip>
 
 namespace ScanContext
 {
