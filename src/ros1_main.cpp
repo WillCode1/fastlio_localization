@@ -24,8 +24,6 @@ std::string body_frame;
 
 bool path_en = true, scan_pub_en = false, dense_pub_en = false;
 ros::Publisher pubLaserCloudFull;
-ros::Publisher pubLaserCloudEffect;
-ros::Publisher pubLaserCloudMap;
 ros::Publisher pubOdomAftMapped;
 ros::Publisher pubImuPath;
 ros::Publisher pubrelocalizationDebug;
@@ -51,12 +49,6 @@ void publish_cloud_world(const ros::Publisher &pubLaserCloudFull, PointCloudType
     PointCloudType::Ptr laserCloudWorld(new PointCloudType);
     pointcloudLidarToWorld(laserCloud, laserCloudWorld, state);
     publish_cloud(pubLaserCloudFull, laserCloudWorld, lidar_end_time, map_frame);
-}
-
-// 发布ikd-tree地图
-void publish_ikdtree_map(const ros::Publisher &pubLaserCloudMap, PointCloudType::Ptr featsFromMap, const double& lidar_end_time)
-{
-    publish_cloud(pubLaserCloudMap, featsFromMap, lidar_end_time, map_frame);
 }
 
 // 设置输出的t,q，在publish_odometry，publish_path调用
@@ -255,10 +247,6 @@ int main(int argc, char **argv)
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
     // 发布当前正在扫描的点云，topic名字为/cloud_registered
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
-    // not used
-    pubLaserCloudEffect = nh.advertise<sensor_msgs::PointCloud2>("/cloud_effected", 100000);
-    // not used
-    pubLaserCloudMap = nh.advertise<sensor_msgs::PointCloud2>("/Laser_map", 100000);
     pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
     pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
 
