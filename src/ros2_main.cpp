@@ -98,7 +98,7 @@ void publish_cloud(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr &
 
 void publish_cloud_world(rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr &pubLaserCloudFull, PointCloudType::Ptr laserCloud, const state_ikfom &state, const double& lidar_end_time)
 {
-    PointCloudType::Ptr laserCloudWorld(new PointCloudType);
+    PointCloudType::Ptr laserCloudWorld(new PointCloudType(laserCloud->size(), 1));
     pointcloudLidarToWorld(laserCloud, laserCloudWorld, state);
     publish_cloud(pubLaserCloudFull, laserCloudWorld, lidar_end_time, map_frame);
 }
