@@ -117,17 +117,6 @@ public:
 
 public:
     bool system_state_vaild = false; // true: system ok
-    LogAnalysis loger;
-
-    /*** sensor data processor ***/
-    shared_ptr<LidarProcessor> lidar;
-    shared_ptr<ImuProcessor> imu;
-
-    double latest_lidar_beg_time = 0;
-    double latest_timestamp_imu = -1.0;
-    double timedelay_lidar2imu = 0.0;
-    double lidar_end_time = 0;
-    mutex mtx_buffer;
 
     /*** module ***/
     shared_ptr<FastlioOdometry> frontend;
