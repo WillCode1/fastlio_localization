@@ -51,7 +51,7 @@ void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, co
 
 void publish_cloud_world(const ros::Publisher &pubLaserCloudFull, PointCloudType::Ptr laserCloud, const state_ikfom &state, const double& lidar_end_time)
 {
-    PointCloudType::Ptr laserCloudWorld(new PointCloudType);
+    PointCloudType::Ptr laserCloudWorld(new PointCloudType(laserCloud->size(), 1));
     pointcloudLidarToWorld(laserCloud, laserCloudWorld, state);
     publish_cloud(pubLaserCloudFull, laserCloudWorld, lidar_end_time, map_frame);
 }
