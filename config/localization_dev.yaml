@@ -22,8 +22,7 @@ mapping:
     frontend_type: 0                    # frontend type
 
     # fastlio
-    point_skip_num: 4
-    # point_skip_num: 1            # for mapping, Increase accuracy 4 -> 1
+    point_skip_num: 4            # for mapping, Increase accuracy 4 -> 1
     space_down_sample: true
     surf_frame_ds_res: 0.5       # In unstructured scenarios, smaller is more likely to degenerate
     max_iteration: 3
@@ -46,9 +45,6 @@ mapping:
     # extrinsic_R: [ 1, 0, 0, 
     #                0, 1, 0, 
     #                0, 0, 1 ]
-
-localization:
-    gravity: [ 0.0, 0.0, 9.81 ]
 
 publish:
     path_en:  true
