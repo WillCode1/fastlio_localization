@@ -117,13 +117,6 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
         0, 0, 0, 1;
 
     auto baselink2imu = top2baselink * top2imu.inverse();
-#define TARNS_IMU
-#ifdef TARNS_IMU
-    Eigen::Matrix4d tran = Eigen::Matrix4d::Identity();
-    tran(1, 1) = -1;
-    tran(2, 2) = -1;
-    pose_mat = tran * pose_mat; // add tran
-#endif
     pose_mat = pose_mat * baselink2imu.inverse();
 
     odom.enu_pos[0] = pose_mat(0, 3);
@@ -136,14 +129,14 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
 
     odom.ahead_speed = std::hypot(state.vel(0), state.vel(1));
     odom.enu_vel[0] = state.vel(0);
-    odom.enu_vel[1] = -state.vel(1);
-    odom.enu_vel[2] = -state.vel(2);
+    odom.enu_vel[1] = state.vel(1);
+    odom.enu_vel[2] = state.vel(2);
     odom.angular_vel[0] = slam.frontend->angular_velocity(0);
-    odom.angular_vel[1] = -slam.frontend->angular_velocity(1);
-    odom.angular_vel[2] = -slam.frontend->angular_velocity(2);
+    odom.angular_vel[1] = slam.frontend->angular_velocity(1);
+    odom.angular_vel[2] = slam.frontend->angular_velocity(2);
     odom.body_accel[0] = slam.frontend->linear_acceleration(0);
-    odom.body_accel[1] = -slam.frontend->linear_acceleration(1);
-    odom.body_accel[2] = -slam.frontend->linear_acceleration(2);
+    odom.body_accel[1] = slam.frontend->linear_acceleration(1);
+    odom.body_accel[2] = slam.frontend->linear_acceleration(2);
 
     pubMsf.publish(odom);
 
