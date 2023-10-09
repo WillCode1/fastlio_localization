@@ -15,7 +15,7 @@ public:
 
     virtual ~PointlioOdometry() {}
 
-    virtual void init_estimator(LogAnalysis& loger)
+    virtual void init_estimator()
     {
         auto lidar_meas_model_input = [&](state_input &a, esekfom::dyn_share_modified<double> &b) { this->lidar_meas_model_input(a, b); };
         auto lidar_meas_model_output = [&](state_output &a, esekfom::dyn_share_modified<double> &b) { this->lidar_meas_model_output(a, b); };
