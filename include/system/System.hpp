@@ -18,14 +18,6 @@ public:
         relocalization = make_shared<Relocalization>();
 
         feats_undistort.reset(new PointCloudType());
-
-        file_pose_unoptimized = fopen(DEBUG_FILE_DIR("keyframe_pose.txt").c_str(), "w");
-        fprintf(file_pose_unoptimized, "# keyframe trajectory unoptimized\n# timestamp tx ty tz qx qy qz qw\n");
-    }
-
-    ~System()
-    {
-        fclose(file_pose_unoptimized);
     }
 
     void init_system_mode()
@@ -106,11 +98,6 @@ public:
             return false;
         }
 
-#if 0
-        // for test
-        loger.save_trajectory(file_pose_unoptimized, frontend->state.pos, frontend->state.rot, measures->lidar_end_time);
-#endif
-
         system_state_vaild = true;
         return system_state_vaild;
     }
@@ -123,7 +110,6 @@ public:
     shared_ptr<Relocalization> relocalization;
 
     /*** keyframe config ***/
-    FILE *file_pose_unoptimized;
     PointCloudType::Ptr feats_undistort;
 
     /*** global map maintain ***/
