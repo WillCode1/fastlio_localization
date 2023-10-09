@@ -45,13 +45,13 @@ public:
   float gpsCovThreshold = 2;
   bool useGpsElevation = false; // 是否使用gps高程优化
   deque<GnssPose> gnss_buffer;
+  bool need_record_gnss = false;
 
 private:
   bool check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold);
 
 private:
   Eigen::Matrix4d extrinsic_Lidar2Gnss;
-  LogAnalysis loger;
   FILE *file_pose_gnss;
 };
 
@@ -130,7 +130,8 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
   GnssPose utm_pose = gnss_raw;
   utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.north);
   gnss_buffer.push_back(utm_pose);
-  loger.save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.rpy, gnss_raw.timestamp);
+  if (need_record_gnss)
+    LogAnalysis::save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.rpy, gnss_raw.timestamp);
 }
 
 bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z)
