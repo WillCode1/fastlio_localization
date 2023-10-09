@@ -129,8 +129,8 @@ struct DiscretePose3D
                 {
                     for (auto discrete_angular = init_discrete_angular; discrete_angular <= initial_pose.yaw + match_option.angular_search_window; discrete_angular += discrete_angular_step)
                     {
-                        discrete_pose.emplace_back(discrete_x, discrete_y, discrete_z, 0, 0, discrete_angular);
-                        // discrete_pose.emplace_back(discrete_x, discrete_y, discrete_z, initial_pose.roll, initial_pose.pitch, discrete_angular);
+                        // discrete_pose.emplace_back(discrete_x, discrete_y, discrete_z, 0, 0, discrete_angular);
+                        discrete_pose.emplace_back(discrete_x, discrete_y, discrete_z, initial_pose.roll, initial_pose.pitch, discrete_angular);
                     }
                 }
             }
