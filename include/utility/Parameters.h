@@ -120,7 +120,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
 
 
     vector<int> valid_ring_index;
-    valid_ring_index = config["localization"]["valid_ring"].IsDefined() ? config["localization"]["valid_ring"].as<vector<int>>() : vector<int>();
+    valid_ring_index = config["mapping"]["valid_ring"].IsDefined() ? config["mapping"]["valid_ring"].as<vector<int>>() : vector<int>();
     slam.frontend->lidar->valid_ring.insert(valid_ring_index.begin(), valid_ring_index.end());
     slam.frontend->lidar->init(n_scans, scan_rate, time_unit, blind, detect_range);
     slam.frontend->imu->imu_rate = config["preprocess"]["imu_rate"].IsDefined() ? config["preprocess"]["imu_rate"].as<int>() : 200;
