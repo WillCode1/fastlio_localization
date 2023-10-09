@@ -336,13 +336,13 @@ public:
 #endif
     }
 
-    void save_gps_pose(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Vector3d &eular, const double &time)
+    static void save_gps_pose(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Vector3d &eular, const double &time)
     {
         fprintf(fp, "%0.4lf %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f\n", time, pos.x(), pos.y(), pos.z(), eular.x(), eular.y(), eular.z());
     }
 
     // 0 : not, 1 : TUM
-    void save_trajectory(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Quaterniond &quat, const double &time, int save_traj_fmt = 1)
+    static void save_trajectory(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Quaterniond &quat, const double &time, int save_traj_fmt = 1)
     {
         if (save_traj_fmt == 1)
         {

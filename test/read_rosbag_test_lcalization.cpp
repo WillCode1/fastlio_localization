@@ -31,17 +31,6 @@ void SigHandle(int sig)
     LOG_WARN("catch sig %d", sig);
 }
 
-void save_trajectory(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Quaterniond &quat, const double &time, int save_traj_fmt = 1)
-{
-    if (save_traj_fmt == 1)
-    {
-        fprintf(fp, "%0.4lf %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f\n", time,
-                pos.x(), pos.y(), pos.z(), quat.x(), quat.y(), quat.z(), quat.w());
-    }
-
-    fflush(fp);
-}
-
 void standard_pcl_cbk(System& slam, const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
     Timer timer;
@@ -117,7 +106,7 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
         if (slam.system_state_vaild)
         {
             const auto &imu_state = slam.frontend->get_state();
-            save_trajectory(fp, imu_state.pos, imu_state.rot, time_stamp);
+            LogAnalysis::save_trajectory(fp, imu_state.pos, imu_state.rot, time_stamp);
         }
     };
 

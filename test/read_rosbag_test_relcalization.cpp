@@ -29,17 +29,6 @@ void SigHandle(int sig)
     LOG_WARN("catch sig %d", sig);
 }
 
-void save_trajectory(FILE *fp, const Eigen::Vector3d &pos, const Eigen::Quaterniond &quat, const double &time, int save_traj_fmt = 1)
-{
-    if (save_traj_fmt == 1)
-    {
-        fprintf(fp, "%0.4lf %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f\n", time,
-                pos.x(), pos.y(), pos.z(), quat.x(), quat.y(), quat.z(), quat.w());
-    }
-
-    fflush(fp);
-}
-
 void standard_pcl_cbk(System& slam, const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
     Timer timer;
@@ -118,11 +107,11 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
             Eigen::Matrix4d imu_pose;
             bool flag = slam.relocalization->run(slam.frontend->measures->lidar, imu_pose);
             const auto &imu_state = slam.frontend->get_state();
-            save_trajectory(fp, imu_state.pos, imu_state.rot, time_stamp);
+            LogAnalysis::save_trajectory(fp, imu_state.pos, imu_state.rot, time_stamp);
             if (flag)
-                save_trajectory(fp2, imu_pose.topRightCorner(3, 1), Eigen::Quaterniond(Eigen::Matrix3d(imu_pose.topLeftCorner(3, 3))), time_stamp);
+                LogAnalysis::save_trajectory(fp2, imu_pose.topRightCorner(3, 1), Eigen::Quaterniond(Eigen::Matrix3d(imu_pose.topLeftCorner(3, 3))), time_stamp);
             else
-                save_trajectory(fp3, imu_pose.topRightCorner(3, 1), Eigen::Quaterniond(Eigen::Matrix3d(imu_pose.topLeftCorner(3, 3))), time_stamp);
+                LogAnalysis::save_trajectory(fp3, imu_pose.topRightCorner(3, 1), Eigen::Quaterniond(Eigen::Matrix3d(imu_pose.topLeftCorner(3, 3))), time_stamp);
             LOG_ERROR_COND(!flag, "%f relocalization failed!", time_stamp);
         }
     };
