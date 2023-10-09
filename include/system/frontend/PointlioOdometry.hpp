@@ -220,12 +220,14 @@ public:
 
     virtual bool run(PointCloudType::Ptr &feats_undistort)
     {
+#ifndef NO_LOGER
         if (loger.runtime_log && !loger.inited_first_lidar_beg_time)
         {
             loger.first_lidar_beg_time = measures->lidar_beg_time;
             loger.inited_first_lidar_beg_time = true;
         }
         loger.resetTimer();
+#endif
         imu->Process(*measures, feats_undistort, imu_en);
 
         if (feats_undistort->empty() || (feats_undistort == NULL))
@@ -237,6 +239,7 @@ public:
         if (!imu->gravity_align_)
             init_state(imu);
 
+#ifndef NO_LOGER
         loger.imu_process_time = loger.timer.elapsedLast();
         loger.feats_undistort_size = feats_undistort->points.size();
         loger.kdtree_size = ikdtree.size();
@@ -244,6 +247,7 @@ public:
             loger.dump_state_to_log(loger.fout_predict, state_in, measures->lidar_beg_time - loger.first_lidar_beg_time);
         else
             loger.dump_state_to_log(loger.fout_predict, state_out, measures->lidar_beg_time - loger.first_lidar_beg_time);
+#endif
 
         /*** interval sample and downsample the feature points in a scan ***/
         feats_down_lidar->clear();
@@ -262,8 +266,10 @@ public:
         time_seq = time_compressing(feats_down_lidar);
 
         feats_down_size = feats_down_lidar->points.size();
+#ifndef NO_LOGER
         loger.feats_down_size = feats_down_size;
         loger.downsample_time = loger.timer.elapsedLast();
+#endif
 
         /*** iterated state estimation ***/
         feats_down_world->resize(feats_down_size);
@@ -489,12 +495,14 @@ public:
             state_out = kf_output.get_x();
         }
 
+#ifndef NO_LOGER
         // kf.update_iterated_dyn_share_modified(lidar_meas_cov, loger.iterate_ekf_time);
         loger.meas_update_time = loger.timer.elapsedLast();
         if (use_imu_as_input)
             loger.dump_state_to_log(loger.fout_update, state_in, measures->lidar_beg_time - loger.first_lidar_beg_time);
         else
             loger.dump_state_to_log(loger.fout_update, state_out, measures->lidar_beg_time - loger.first_lidar_beg_time);
+#endif
 
         /*** map update ***/
         V3D pos_Lidar_world;
@@ -503,12 +511,16 @@ public:
         else
             pos_Lidar_world = state_out.pos + state_out.rot.normalized() * state_out.offset_T_L_I;
         lasermap_fov_segment(pos_Lidar_world);
+#ifndef NO_LOGER
         loger.map_remove_time = loger.timer.elapsedLast();
+#endif
         map_incremental();
+#ifndef NO_LOGER
         loger.map_incre_time = loger.timer.elapsedLast();
         loger.kdtree_size_end = ikdtree.size();
         loger.print_fastlio_cost_time();
         loger.output_fastlio_log_to_csv(measures->lidar_beg_time);
+#endif
         return true;
     }
 
@@ -789,8 +801,10 @@ protected:
         double st_time = omp_get_wtime();
         ikdtree.Add_Points(PointToAdd, true);
         ikdtree.Add_Points(PointNoNeedDownsample, false);
+#ifndef NO_LOGER
         loger.add_point_size = PointToAdd.size() + PointNoNeedDownsample.size();
         loger.kdtree_incremental_time = (omp_get_wtime() - st_time) * 1000;
+#endif
     }
 
     // 压缩相同时间的点，一起更新

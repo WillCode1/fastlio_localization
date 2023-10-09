@@ -242,7 +242,6 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
     }
 
     slam.frontend->cache_pointcloud_data(msg->header.stamp.toSec(), scan);
-    slam.frontend->loger.preprocess_time = timer.elapsedStart();
     sensor_data_process();
 }
 
@@ -272,7 +271,6 @@ void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
     }
     slam.frontend->lidar->avia_handler(pl_orig, scan);
     slam.frontend->cache_pointcloud_data(msg->header.stamp.toSec(), scan);
-    slam.frontend->loger.preprocess_time = timer.elapsedStart();
     sensor_data_process();
 }
 

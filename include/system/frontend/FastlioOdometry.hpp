@@ -11,6 +11,7 @@
 #include "LidarProcessor.hpp"
 #include "utility/Header.h"
 
+#define NO_LOGER
 
 class FastlioOdometry
 {
@@ -218,12 +219,14 @@ public:
 
     virtual bool run(PointCloudType::Ptr &feats_undistort)
     {
+#ifndef NO_LOGER
         if (loger.runtime_log && !loger.inited_first_lidar_beg_time)
         {
             loger.first_lidar_beg_time = measures->lidar_beg_time;
             loger.inited_first_lidar_beg_time = true;
         }
         loger.resetTimer();
+#endif
         imu->Process(*measures, kf, feats_undistort);
 
         if (feats_undistort->empty() || (feats_undistort == NULL))
@@ -236,10 +239,12 @@ public:
             init_state(imu);
 
         state = kf.get_x();
+#ifndef NO_LOGER
         loger.imu_process_time = loger.timer.elapsedLast();
         loger.feats_undistort_size = feats_undistort->points.size();
         loger.kdtree_size = ikdtree.size();
         loger.dump_state_to_log(loger.fout_predict, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
+#endif
 
         /*** interval sample and downsample the feature points in a scan ***/
         feats_down_lidar->clear();
@@ -255,8 +260,10 @@ public:
             surf_frame_ds_filter.filter(*feats_down_lidar);
         }
         feats_down_size = feats_down_lidar->points.size();
+#ifndef NO_LOGER
         loger.feats_down_size = feats_down_size;
         loger.downsample_time = loger.timer.elapsedLast();
+#endif
 
         /*** iterated state estimation ***/
         feats_down_world->resize(feats_down_size);
@@ -264,7 +271,12 @@ public:
         nearest_points.resize(feats_down_size);
         normvec->resize(feats_down_size);
         bool measure_valid = true, iter_converge = false;
+#ifndef NO_LOGER
         kf.update_iterated_dyn_share_modified(lidar_meas_cov, loger.iterate_ekf_time, measure_valid, iter_converge);
+#else
+        double iterate_ekf_time = 0;
+        kf.update_iterated_dyn_share_modified(lidar_meas_cov, iterate_ekf_time, measure_valid, iter_converge);
+#endif
         if (!measure_valid)
         {
             LOG_ERROR("Lidar degradation!");
@@ -275,8 +287,10 @@ public:
             LOG_ERROR("Iteration doesn't converge beyond the limit, reset the system!");
             return false;
         }
+#ifndef NO_LOGER
         loger.meas_update_time = loger.timer.elapsedLast();
         loger.dump_state_to_log(loger.fout_update, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
+#endif
         state = kf.get_x();
 
         if (false)
@@ -285,13 +299,19 @@ public:
             // TODO: location mode dongtai load submap, and when not in raw map, could add new scan into ikdtree.
             V3D pos_Lidar_world = state.pos + state.rot * state.offset_T_L_I;
             lasermap_fov_segment(pos_Lidar_world);
+#ifndef NO_LOGER
             loger.map_remove_time = loger.timer.elapsedLast();
+#endif
             map_incremental();
+#ifndef NO_LOGER
             loger.map_incre_time = loger.timer.elapsedLast();
             loger.kdtree_size_end = ikdtree.size();
+#endif
         }
+#ifndef NO_LOGER
         loger.print_fastlio_cost_time();
         loger.output_fastlio_log_to_csv(measures->lidar_beg_time);
+#endif
         return true;
     }
 
@@ -317,11 +337,15 @@ private:
     // 计算lidar point-to-plane Jacobi和残差
     void lidar_meas_model(state_ikfom &state, esekfom::dyn_share_datastruct<double> &ekfom_data)
     {
+#ifndef NO_LOGER
         double match_start = omp_get_wtime();
+#endif
         normvec->clear();
         effect_features.clear();
 
+#ifndef NO_LOGER
         double search_start = omp_get_wtime();
+#endif
         M3D lidar_rot = state.rot.toRotationMatrix() * state.offset_R_L_I;
         V3D lidar_pos = state.rot * state.offset_T_L_I + state.pos;
         /** closest surface search and residual computation **/
@@ -368,7 +392,9 @@ private:
                 }
             }
         }
+#ifndef NO_LOGER
         loger.kdtree_search_time += (omp_get_wtime() - search_start) * 1000;
+#endif
 
         // omp中无法push_back
         for (int i = 0; i < feats_down_size; i++)
@@ -391,8 +417,10 @@ private:
             return;
         }
 
+#ifndef NO_LOGER
         loger.match_time += (omp_get_wtime() - match_start) * 1000;
         double solve_start = omp_get_wtime();
+#endif
 
         /*** Computation of Measuremnt Jacobian matrix H and measurents vector ***/
         ekfom_data.h_x = MatrixXd::Zero(effct_feat_num, 12);
@@ -429,7 +457,9 @@ private:
             /*** Measuremnt: distance to the closest plane ***/
             ekfom_data.h(i) = -effect_features[i].residual;
         }
+#ifndef NO_LOGER
         loger.cal_H_time += (omp_get_wtime() - solve_start) * 1000;
+#endif
     }
 
 protected:
@@ -441,7 +471,9 @@ protected:
      */
     virtual void lasermap_fov_segment(const V3D &pos_Lidar_world)
     {
+#ifndef NO_LOGER
         loger.kdtree_delete_counter = 0; // for debug
+#endif
         vector<BoxPointType> cub_needrm;
 
         // 初始化局部地图包围盒角点，以为w系下lidar位置为中心,得到长宽高200*200*200的局部地图
@@ -494,10 +526,16 @@ protected:
         }
         local_map_bbox = New_LocalMap_Points;
 
+#ifndef NO_LOGER
         double delete_begin = omp_get_wtime();
+#endif
         if (cub_needrm.size() > 0)
+#ifndef NO_LOGER
             loger.kdtree_delete_counter = ikdtree.Delete_Point_Boxes(cub_needrm);
         loger.kdtree_delete_time = (omp_get_wtime() - delete_begin) * 1000;
+#else
+            ikdtree.Delete_Point_Boxes(cub_needrm);
+#endif
     }
 
     virtual void map_incremental()
@@ -549,11 +587,15 @@ protected:
             }
         }
 
+#ifndef NO_LOGER
         double st_time = omp_get_wtime();
+#endif
         ikdtree.Add_Points(PointToAdd, true);
         ikdtree.Add_Points(PointNoNeedDownsample, false);
+#ifndef NO_LOGER
         loger.add_point_size = PointToAdd.size() + PointNoNeedDownsample.size();
         loger.kdtree_incremental_time = (omp_get_wtime() - st_time) * 1000;
+#endif
     }
 
     bool esti_plane(Vector4d &pca_result, const PointVector &point, const double &threshold)
@@ -614,7 +656,9 @@ public:
     /*** backup for relocalization reset ***/
     V3D offset_Tli;
     M3D offset_Rli;
+#ifndef NO_LOGER
     LogAnalysis loger;
+#endif
 
     /*** sensor data processor ***/
     shared_ptr<LidarProcessor> lidar;
