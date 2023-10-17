@@ -227,6 +227,15 @@ public:
         }
         loger.resetTimer();
 #endif
+#if 1
+        feats_down_lidar->clear();
+        for (int i = 0; i < measures->lidar->points.size(); i++)
+            if (i % point_skip_num == 0)
+            {
+                feats_down_lidar->points.push_back(measures->lidar->points[i]);
+            }
+        measures->lidar = feats_down_lidar;
+#endif
         imu->Process(*measures, kf, feats_undistort);
 
         if (feats_undistort->empty() || (feats_undistort == NULL))
@@ -247,16 +256,18 @@ public:
 #endif
 
         /*** interval sample and downsample the feature points in a scan ***/
+#if 0
         feats_down_lidar->clear();
         for (int i = 0; i < feats_undistort->size(); i++)
             if (i % point_skip_num == 0)
             {
                 feats_down_lidar->points.push_back(feats_undistort->points[i]);
             }
+#endif
         if (space_down_sample)
         {
             surf_frame_ds_filter.setLeafSize(surf_frame_ds_res, surf_frame_ds_res, surf_frame_ds_res);
-            surf_frame_ds_filter.setInputCloud(feats_down_lidar);
+            surf_frame_ds_filter.setInputCloud(feats_undistort);
             surf_frame_ds_filter.filter(*feats_down_lidar);
         }
         feats_down_size = feats_down_lidar->points.size();
