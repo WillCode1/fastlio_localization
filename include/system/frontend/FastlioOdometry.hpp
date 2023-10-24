@@ -198,8 +198,8 @@ public:
             loger.first_lidar_beg_time = measures->lidar_beg_time;
             loger.inited_first_lidar_beg_time = true;
         }
-        loger.resetTimer();
 #endif
+        loger.resetTimer();
         feats_down_lidar->clear();
         for (int i = 0; i < measures->lidar->points.size(); i++)
             if (i % point_skip_num == 0)
