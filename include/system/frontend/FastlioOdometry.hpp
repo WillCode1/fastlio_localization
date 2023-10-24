@@ -245,8 +245,8 @@ public:
             LOG_ERROR("Iteration doesn't converge beyond the limit, reset the system!");
             return false;
         }
-        loger.meas_update_time = loger.timer.elapsedLast();
         state = kf.get_x();
+        loger.meas_update_time = loger.timer.elapsedLast();
         loger.dump_state_to_log(loger.fout_update, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
 
         if (false)
