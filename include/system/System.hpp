@@ -2,7 +2,6 @@
 #include <omp.h>
 #include <math.h>
 #include <thread>
-#include <thread>
 #include <pcl/io/pcd_io.h>
 #include "ikd-Tree/ikd_Tree.h"
 #include "frontend/FastlioOdometry.hpp"

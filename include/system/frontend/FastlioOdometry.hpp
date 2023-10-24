@@ -11,7 +11,6 @@
 #include "LidarProcessor.hpp"
 #include "utility/Header.h"
 
-#define NO_LOGER
 
 class FastlioOdometry
 {
@@ -39,16 +38,16 @@ public:
     {
         double epsi[23] = {0.001};
         fill(epsi, epsi + 23, 0.001);
-        auto lidar_meas_model = [&](state_ikfom &a, esekfom::dyn_share_datastruct<double> &b) { this->lidar_meas_model(a, b); };
+        auto lidar_meas_model = [&](state_ikfom &a, esekfom::fastlio_datastruct<double> &b) { this->lidar_meas_model(a, b); };
         kf.init_dyn_share(get_f, df_dx, df_dw, lidar_meas_model, num_max_iterations, epsi);
 
         Eigen::Matrix<double, 23, 23> init_P;
         init_P.setIdentity();
-        init_P.block<3, 3>(6, 6).diagonal() << 0.00001, 0.00001, 0.00001;   // lidar和imu外参旋转量协方差
-        init_P.block<3, 3>(9, 9).diagonal() << 0.00001, 0.00001, 0.00001;   // lidar和imu外参平移量协方差
-        init_P.block<3, 3>(15, 15).diagonal() << 0.0001, 0.0001, 0.0001;    // 陀螺仪偏差协方差
-        init_P.block<3, 3>(18, 18).diagonal() << 0.001, 0.001, 0.001;       // 加速度偏差协方差
-        init_P.block<2, 2>(21, 21).diagonal() << 0.00001, 0.00001;          // 重力协方差
+        init_P.block<3, 3>(6, 6).diagonal() << 0.00001, 0.00001, 0.00001; // lidar和imu外参旋转量协方差
+        init_P.block<3, 3>(9, 9).diagonal() << 0.00001, 0.00001, 0.00001; // lidar和imu外参平移量协方差
+        init_P.block<3, 3>(15, 15).diagonal() << 0.0001, 0.0001, 0.0001;  // 陀螺仪偏差协方差
+        init_P.block<3, 3>(18, 18).diagonal() << 0.001, 0.001, 0.001;     // 加速度偏差协方差
+        init_P.block<2, 2>(21, 21).diagonal() << 0.00001, 0.00001;        // 重力协方差
         kf.change_P(init_P);
     }
 
@@ -65,33 +64,7 @@ public:
 
     virtual void init_state(shared_ptr<ImuProcessor> &imu)
     {
-        /* 
-         * 1. initializing the gravity, gyro bias, acc and gyro covariance
-         * 2. normalize the acceleration measurenments to unit gravity
-         */
-        if (non_station_start)
-        {
-            state.grav.vec << VEC_FROM_ARRAY(gravity_init);
-        }
-        else
-        {
-            const auto& mean_acc = imu->mean_acc;
-            state.grav = S2(-mean_acc / mean_acc.norm() * G_m_s2);
-            LOG_WARN_COND(std::abs(mean_acc.x()) > 0.1 || std::abs(mean_acc.y()) > 0.1,
-                          "The direction of gravity is not vertical (%f, %f, %f), and the map coordinate system is tilted.", -mean_acc.x(), -mean_acc.y(), -mean_acc.z());
-            std::cout << state.grav << std::endl;
-        }
-        if (gravity_align)
-        {
-            M3D rot_init;
-            V3D preset_gravity;
-            preset_gravity << VEC_FROM_ARRAY(preset_gravity_vec);
-            imu->get_imu_init_rot(preset_gravity, state.grav.vec, rot_init);
-            state.grav.vec = preset_gravity;
-            state.rot = rot_init;
-            state.rot.normalize();
-        }
-
+        state.grav.vec << VEC_FROM_ARRAY(gravity_init);
         state.bg = imu->mean_gyr; // 静止初始化, 使用角速度测量作为陀螺仪偏差
         kf.change_x(state);
     }
@@ -111,7 +84,7 @@ public:
         kf.change_x(state);
     }
 
-    virtual void cache_imu_data(double timestamp, const V3D &angular_velocity, const V3D &linear_acceleration)
+    virtual void cache_imu_data(double timestamp, const V3D &angular_velocity, const V3D &linear_acceleration, const QD &orientation)
     {
         timestamp = timestamp + timedelay_lidar2imu; // 时钟同步该采样同步td
         std::lock_guard<std::mutex> lock(mtx_buffer);
@@ -123,7 +96,7 @@ public:
         }
 
         latest_timestamp_imu = timestamp;
-        imu_buffer.push_back(make_shared<ImuData>(latest_timestamp_imu, angular_velocity, linear_acceleration));
+        imu_buffer.push_back(make_shared<ImuData>(latest_timestamp_imu, angular_velocity, linear_acceleration, orientation));
     }
 
     virtual void cache_pointcloud_data(const double &lidar_beg_time, const PointCloudType::Ptr &scan)
@@ -227,7 +200,6 @@ public:
         }
         loger.resetTimer();
 #endif
-#if 1
         feats_down_lidar->clear();
         for (int i = 0; i < measures->lidar->points.size(); i++)
             if (i % point_skip_num == 0)
@@ -235,7 +207,6 @@ public:
                 feats_down_lidar->points.push_back(measures->lidar->points[i]);
             }
         measures->lidar = feats_down_lidar;
-#endif
         imu->Process(*measures, kf, feats_undistort);
 
         if (feats_undistort->empty() || (feats_undistort == NULL))
@@ -248,22 +219,14 @@ public:
             init_state(imu);
 
         state = kf.get_x();
-#ifndef NO_LOGER
         loger.imu_process_time = loger.timer.elapsedLast();
         loger.feats_undistort_size = feats_undistort->points.size();
         loger.kdtree_size = ikdtree.size();
+#ifndef NO_LOGER
         loger.dump_state_to_log(loger.fout_predict, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
 #endif
 
         /*** interval sample and downsample the feature points in a scan ***/
-#if 0
-        feats_down_lidar->clear();
-        for (int i = 0; i < feats_undistort->size(); i++)
-            if (i % point_skip_num == 0)
-            {
-                feats_down_lidar->points.push_back(feats_undistort->points[i]);
-            }
-#endif
         if (space_down_sample)
         {
             surf_frame_ds_filter.setLeafSize(surf_frame_ds_res, surf_frame_ds_res, surf_frame_ds_res);
@@ -271,10 +234,8 @@ public:
             surf_frame_ds_filter.filter(*feats_down_lidar);
         }
         feats_down_size = feats_down_lidar->points.size();
-#ifndef NO_LOGER
         loger.feats_down_size = feats_down_size;
         loger.downsample_time = loger.timer.elapsedLast();
-#endif
 
         /*** iterated state estimation ***/
         feats_down_world->resize(feats_down_size);
@@ -282,12 +243,7 @@ public:
         nearest_points.resize(feats_down_size);
         normvec->resize(feats_down_size);
         bool measure_valid = true, iter_converge = false;
-#ifndef NO_LOGER
-        kf.update_iterated_dyn_share_modified(lidar_meas_cov, loger.iterate_ekf_time, measure_valid, iter_converge);
-#else
-        double iterate_ekf_time = 0;
-        kf.update_iterated_dyn_share_modified(lidar_meas_cov, iterate_ekf_time, measure_valid, iter_converge);
-#endif
+        kf.update_iterated_fastlio2(measure_valid, iter_converge);
         if (!measure_valid)
         {
             LOG_ERROR("Lidar degradation!");
@@ -298,11 +254,11 @@ public:
             LOG_ERROR("Iteration doesn't converge beyond the limit, reset the system!");
             return false;
         }
-#ifndef NO_LOGER
+        state = kf.get_x();
         loger.meas_update_time = loger.timer.elapsedLast();
+#ifndef NO_LOGER
         loger.dump_state_to_log(loger.fout_update, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
 #endif
-        state = kf.get_x();
 
         if (false)
         {
@@ -310,24 +266,20 @@ public:
             // TODO: location mode dongtai load submap, and when not in raw map, could add new scan into ikdtree.
             V3D pos_Lidar_world = state.pos + state.rot * state.offset_T_L_I;
             lasermap_fov_segment(pos_Lidar_world);
-#ifndef NO_LOGER
             loger.map_remove_time = loger.timer.elapsedLast();
-#endif
             map_incremental();
-#ifndef NO_LOGER
             loger.map_incre_time = loger.timer.elapsedLast();
             loger.kdtree_size_end = ikdtree.size();
-#endif
         }
-#ifndef NO_LOGER
         loger.print_fastlio_cost_time();
+#ifndef NO_LOGER
         loger.output_fastlio_log_to_csv(measures->lidar_beg_time);
 #endif
         return true;
     }
 
 public:
-    void init_global_map(PointCloudType::Ptr& submap)
+    void init_global_map(PointCloudType::Ptr &submap)
     {
         if (ikdtree.Root_Node != nullptr)
         {
@@ -346,17 +298,11 @@ public:
 
 private:
     // 计算lidar point-to-plane Jacobi和残差
-    void lidar_meas_model(state_ikfom &state, esekfom::dyn_share_datastruct<double> &ekfom_data)
+    void lidar_meas_model(state_ikfom &state, esekfom::fastlio_datastruct<double> &ekfom_data)
     {
-#ifndef NO_LOGER
-        double match_start = omp_get_wtime();
-#endif
         normvec->clear();
         effect_features.clear();
 
-#ifndef NO_LOGER
-        double search_start = omp_get_wtime();
-#endif
         M3D lidar_rot = state.rot.toRotationMatrix() * state.offset_R_L_I;
         V3D lidar_pos = state.rot * state.offset_T_L_I + state.pos;
         /** closest surface search and residual computation **/
@@ -403,9 +349,6 @@ private:
                 }
             }
         }
-#ifndef NO_LOGER
-        loger.kdtree_search_time += (omp_get_wtime() - search_start) * 1000;
-#endif
 
         // omp中无法push_back
         for (int i = 0; i < feats_down_size; i++)
@@ -428,14 +371,9 @@ private:
             return;
         }
 
-#ifndef NO_LOGER
-        loger.match_time += (omp_get_wtime() - match_start) * 1000;
-        double solve_start = omp_get_wtime();
-#endif
-
         /*** Computation of Measuremnt Jacobian matrix H and measurents vector ***/
-        ekfom_data.h_x = MatrixXd::Zero(effct_feat_num, 12);
-        ekfom_data.h.resize(effct_feat_num);
+        ekfom_data.H = MatrixXd::Zero(effct_feat_num, 12);
+        ekfom_data.z.resize(effct_feat_num);
 
         // 求观测值与误差的雅克比矩阵，如论文式14以及式12、13
 #ifdef MP_EN
@@ -443,10 +381,10 @@ private:
 #endif
         for (int i = 0; i < effct_feat_num; i++)
         {
-            const V3D& point_lidar = effect_features[i].point_lidar;
-            const M3D& point_be_crossmat = SO3Math::get_skew_symmetric(point_lidar);
-            const V3D& point_imu = state.offset_R_L_I * point_lidar + state.offset_T_L_I;
-            const M3D& point_crossmat = SO3Math::get_skew_symmetric(point_imu);
+            const V3D &point_lidar = effect_features[i].point_lidar;
+            const M3D &point_be_crossmat = SO3Math::get_skew_symmetric(point_lidar);
+            const V3D &point_imu = state.offset_R_L_I * point_lidar + state.offset_T_L_I;
+            const M3D &point_crossmat = SO3Math::get_skew_symmetric(point_imu);
 
             /*** get the normal vector of closest surface ***/
             const V3D &norm_vec = effect_features[i].norm_vec;
@@ -458,19 +396,17 @@ private:
             if (extrinsic_est_en)
             {
                 V3D B(point_be_crossmat * state.offset_R_L_I.conjugate() * C);
-                ekfom_data.h_x.block<1, 12>(i, 0) << VEC_FROM_ARRAY(norm_vec), VEC_FROM_ARRAY(A), VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
+                ekfom_data.H.block<1, 12>(i, 0) << VEC_FROM_ARRAY(norm_vec), VEC_FROM_ARRAY(A), VEC_FROM_ARRAY(B), VEC_FROM_ARRAY(C);
             }
             else
             {
-                ekfom_data.h_x.block<1, 12>(i, 0) << VEC_FROM_ARRAY(norm_vec), VEC_FROM_ARRAY(A), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
+                ekfom_data.H.block<1, 12>(i, 0) << VEC_FROM_ARRAY(norm_vec), VEC_FROM_ARRAY(A), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
             }
 
             /*** Measuremnt: distance to the closest plane ***/
-            ekfom_data.h(i) = -effect_features[i].residual;
+            ekfom_data.z(i) = -effect_features[i].residual;
         }
-#ifndef NO_LOGER
-        loger.cal_H_time += (omp_get_wtime() - solve_start) * 1000;
-#endif
+        ekfom_data.R = lidar_meas_cov;
     }
 
 protected:
@@ -482,14 +418,11 @@ protected:
      */
     virtual void lasermap_fov_segment(const V3D &pos_Lidar_world)
     {
-#ifndef NO_LOGER
-        loger.kdtree_delete_counter = 0; // for debug
-#endif
         vector<BoxPointType> cub_needrm;
 
         // 初始化局部地图包围盒角点，以为w系下lidar位置为中心,得到长宽高200*200*200的局部地图
         if (!localmap_initialized)
-        { 
+        {
             for (int i = 0; i < 3; i++)
             {
                 local_map_bbox.vertex_min[i] = pos_Lidar_world(i) - cube_len / 2.0;
@@ -537,16 +470,8 @@ protected:
         }
         local_map_bbox = New_LocalMap_Points;
 
-#ifndef NO_LOGER
-        double delete_begin = omp_get_wtime();
-#endif
         if (cub_needrm.size() > 0)
-#ifndef NO_LOGER
-            loger.kdtree_delete_counter = ikdtree.Delete_Point_Boxes(cub_needrm);
-        loger.kdtree_delete_time = (omp_get_wtime() - delete_begin) * 1000;
-#else
             ikdtree.Delete_Point_Boxes(cub_needrm);
-#endif
     }
 
     virtual void map_incremental()
@@ -570,7 +495,7 @@ protected:
                 mid_point.z = (floor(feats_down_world->points[i].z / ikdtree_resolution) + 0.5) * ikdtree_resolution;
 
                 if (fabs(points_near[0].x - mid_point.x) > 0.5 * ikdtree_resolution &&
-                    fabs(points_near[0].y - mid_point.y) > 0.5 * ikdtree_resolution && 
+                    fabs(points_near[0].y - mid_point.y) > 0.5 * ikdtree_resolution &&
                     fabs(points_near[0].z - mid_point.z) > 0.5 * ikdtree_resolution)
                 {
                     PointNoNeedDownsample.push_back(feats_down_world->points[i]);
@@ -598,15 +523,8 @@ protected:
             }
         }
 
-#ifndef NO_LOGER
-        double st_time = omp_get_wtime();
-#endif
         ikdtree.Add_Points(PointToAdd, true);
         ikdtree.Add_Points(PointNoNeedDownsample, false);
-#ifndef NO_LOGER
-        loger.add_point_size = PointToAdd.size() + PointNoNeedDownsample.size();
-        loger.kdtree_incremental_time = (omp_get_wtime() - st_time) * 1000;
-#endif
     }
 
     bool esti_plane(Vector4d &pca_result, const PointVector &point, const double &threshold)
@@ -659,17 +577,12 @@ protected:
 public:
     bool extrinsic_est_en = false;
     /*** for gravity align ***/
-    bool non_station_start = false;
-    bool gravity_align = true;
     std::vector<double> gravity_init;
-    std::vector<double> preset_gravity_vec;
 
     /*** backup for relocalization reset ***/
     V3D offset_Tli;
     M3D offset_Rli;
-#ifndef NO_LOGER
     LogAnalysis loger;
-#endif
 
     /*** sensor data processor ***/
     shared_ptr<LidarProcessor> lidar;

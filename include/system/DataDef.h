@@ -32,17 +32,19 @@ struct ImuData
 {
     using Ptr = std::shared_ptr<ImuData>;
 
-    ImuData(const double &t = 0, const V3D &av = ZERO3D, const V3D &la = ZERO3D)
+    ImuData(const double &t = 0, const V3D &av = ZERO3D, const V3D &la = ZERO3D, const QD &ori = QD::Identity())
     {
         timestamp = t;
         angular_velocity = av;
         linear_acceleration = la;
+        orientation = ori;
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
     V3D angular_velocity;
     V3D linear_acceleration;
+    QD orientation;
 };
 
 struct MeasureCollection
@@ -143,15 +145,18 @@ inline PointCloudType::Ptr pointcloudKeyframeToWorld(const PointCloudType::Ptr &
     return cloud_out;
 }
 
+#define NO_LOGER
+
 class LogAnalysis
 {
 public:
     LogAnalysis()
     {
         frame_num = preprocess_time = preprocess_avetime = 0;
-        imu_process_avetime = downsample_avetime = kdtree_search_avetime = match_avetime = cal_H_avetime = iterate_ekf_avetime = 0;
+        imu_process_avetime = downsample_avetime = kdtree_search_avetime = match_avetime = cal_H_avetime = 0;
         meas_update_avetime = kdtree_incremental_avetime = kdtree_delete_avetime = map_incre_avetime = map_remove_avetime = total_avetime = 0;
 
+#ifndef NO_LOGER
         fout_predict = fopen(DEBUG_FILE_DIR("state_predict.txt").c_str(), "w");
         fout_update = fopen(DEBUG_FILE_DIR("state_update.txt").c_str(), "w");
         fout_fastlio_log = fopen(DEBUG_FILE_DIR("fast_lio_log.csv").c_str(), "w");
@@ -160,6 +165,7 @@ public:
             cout << "~~~~" << ROOT_DIR << " file opened" << endl;
         else
             cout << "~~~~" << ROOT_DIR << " doesn't exist" << endl;
+#endif
     }
 
     ~LogAnalysis()
@@ -191,8 +197,8 @@ public:
         if (!runtime_log)
             return;
 
-        V3D rot_ang = EigenMath::RotationMatrix2RPY2(state.rot.toRotationMatrix());
-        V3D ext_rot_LI = EigenMath::RotationMatrix2RPY2(state.offset_R_L_I.toRotationMatrix());
+        V3D rot_ang = EigenMath::Quaternion2RPY(state.rot);
+        V3D ext_rot_LI = EigenMath::Quaternion2RPY(state.offset_R_L_I);
         fprintf(fp, "%lf ", delta_time);
         fprintf(fp, "%lf %lf %lf ", rot_ang(0), rot_ang(1), rot_ang(2));                                  // Angle
         fprintf(fp, "%lf %lf %lf ", state.pos(0), state.pos(1), state.pos(2));                            // Pos
@@ -213,8 +219,8 @@ public:
         if (!runtime_log)
             return;
 
-        V3D rot_ang = EigenMath::RotationMatrix2RPY2(state.rot.toRotationMatrix());
-        V3D ext_rot_LI = EigenMath::RotationMatrix2RPY2(state.offset_R_L_I.toRotationMatrix());
+        V3D rot_ang = EigenMath::Quaternion2RPY(state.rot);
+        V3D ext_rot_LI = EigenMath::Quaternion2RPY(state.offset_R_L_I);
         fprintf(fp, "%lf ", delta_time);
         fprintf(fp, "%lf %lf %lf ", rot_ang(0), rot_ang(1), rot_ang(2));                                  // Angle
         fprintf(fp, "%lf %lf %lf ", state.pos(0), state.pos(1), state.pos(2));                            // Pos
@@ -235,8 +241,8 @@ public:
         if (!runtime_log)
             return;
 
-        V3D rot_ang = EigenMath::RotationMatrix2RPY2(state.rot.toRotationMatrix());
-        V3D ext_rot_LI = EigenMath::RotationMatrix2RPY2(state.offset_R_L_I.toRotationMatrix());
+        V3D rot_ang = EigenMath::Quaternion2RPY(state.rot);
+        V3D ext_rot_LI = EigenMath::Quaternion2RPY(state.offset_R_L_I);
         fprintf(fp, "%lf ", delta_time);
         fprintf(fp, "%lf %lf %lf ", rot_ang(0), rot_ang(1), rot_ang(2));                                  // Angle
         fprintf(fp, "%lf %lf %lf ", state.pos(0), state.pos(1), state.pos(2));                            // Pos
@@ -282,7 +288,6 @@ public:
         kdtree_search_time = 0;
         match_time = 0;
         cal_H_time = 0;
-        iterate_ekf_time = 0;
         meas_update_time = 0;
 
         kdtree_incremental_time = 0;
@@ -311,7 +316,6 @@ public:
         kdtree_search_avetime = (kdtree_search_avetime * (frame_num - 1) + kdtree_search_time) / frame_num;
         match_avetime = (match_avetime * (frame_num - 1) + match_time) / frame_num;
         cal_H_avetime = (cal_H_avetime * (frame_num - 1) + cal_H_time) / frame_num;
-        iterate_ekf_avetime = (iterate_ekf_avetime * (frame_num - 1) + iterate_ekf_time) / frame_num;
         meas_update_avetime = (meas_update_avetime * (frame_num - 1) + meas_update_time) / frame_num;
 
         kdtree_incremental_avetime = (kdtree_incremental_avetime * (frame_num - 1) + kdtree_incremental_time) / frame_num;
@@ -364,10 +368,10 @@ public:
     Timer timer;
 
     long unsigned int frame_num;
-    double preprocess_time, imu_process_time, downsample_time, kdtree_search_time, match_time, cal_H_time, iterate_ekf_time;
+    double preprocess_time, imu_process_time, downsample_time, kdtree_search_time, match_time, cal_H_time;
     double meas_update_time, kdtree_incremental_time, kdtree_delete_time, map_incre_time, map_remove_time, total_time;
 
-    double preprocess_avetime, imu_process_avetime, downsample_avetime, kdtree_search_avetime, match_avetime, cal_H_avetime, iterate_ekf_avetime;
+    double preprocess_avetime, imu_process_avetime, downsample_avetime, kdtree_search_avetime, match_avetime, cal_H_avetime;
     double meas_update_avetime, kdtree_incremental_avetime, kdtree_delete_avetime, map_incre_avetime, map_remove_avetime, total_avetime;
 
     int feats_undistort_size = 0, feats_down_size = 0, kdtree_size = 0, kdtree_size_end = 0, add_point_size = 0, kdtree_delete_counter = 0;

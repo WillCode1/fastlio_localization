@@ -227,7 +227,6 @@ void LidarProcessor::velodyne_handler(const pcl::PointCloud<velodyne_ros::Point>
     PointType added_pt;
     // cout<<"!!!!!!"<<i<<" "<<plsize<<endl;
 
-    // added_pt.normal_x = pl_orig[i].ring;
     added_pt.normal_x = 0;
     added_pt.normal_y = 0;
     added_pt.normal_z = 0;

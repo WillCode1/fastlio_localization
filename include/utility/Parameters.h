@@ -35,7 +35,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     n_scans = config["preprocess"]["scan_line"].IsDefined() ? config["preprocess"]["scan_line"].as<int>() : 16;
     time_unit = config["preprocess"]["timestamp_unit"].IsDefined() ? config["preprocess"]["timestamp_unit"].as<int>() : US;
     scan_rate = config["preprocess"]["scan_rate"].IsDefined() ? config["preprocess"]["scan_rate"].as<int>() : 10;
-
+    
     slam.relocalization->sc_manager->LIDAR_HEIGHT = config["scan_context"]["lidar_height"].IsDefined() ? config["scan_context"]["lidar_height"].as<double>() : 2.0;
     slam.relocalization->sc_manager->SC_DIST_THRES = config["scan_context"]["sc_dist_thres"].IsDefined() ? config["scan_context"]["sc_dist_thres"].as<double>() : 0.5;
 
@@ -118,7 +118,6 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
         exit(100);
     }
 
-
     vector<int> valid_ring_index;
     valid_ring_index = config["mapping"]["valid_ring"].IsDefined() ? config["mapping"]["valid_ring"].as<vector<int>>() : vector<int>();
     slam.frontend->lidar->valid_ring.insert(valid_ring_index.begin(), valid_ring_index.end());
@@ -127,10 +126,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     slam.frontend->imu->set_imu_cov(process_noise_cov(gyr_cov, acc_cov, b_gyr_cov, b_acc_cov));
 
     slam.frontend->timedelay_lidar2imu = config["common"]["timedelay_lidar2imu"].IsDefined() ? config["common"]["timedelay_lidar2imu"].as<double>() : 0;
-    slam.frontend->non_station_start = config["mapping"]["start_in_aggressive_motion"].IsDefined() ? config["mapping"]["start_in_aggressive_motion"].as<bool>() : false;
-    slam.frontend->gravity_align = config["mapping"]["gravity_align"].IsDefined() ? config["mapping"]["gravity_align"].as<bool>() : true;
     slam.frontend->gravity_init = config["mapping"]["gravity_init"].IsDefined() ? config["mapping"]["gravity_init"].as<vector<double>>() : vector<double>();
-    slam.frontend->preset_gravity_vec = config["mapping"]["preset_gravity"].IsDefined() ? config["mapping"]["preset_gravity"].as<vector<double>>() : vector<double>();
 
     slam.frontend->num_max_iterations = config["mapping"]["max_iteration"].IsDefined() ? config["mapping"]["max_iteration"].as<int>() : 4;
     slam.frontend->surf_frame_ds_res = config["mapping"]["surf_frame_ds_res"].IsDefined() ? config["mapping"]["surf_frame_ds_res"].as<double>() : 0.5;
@@ -141,6 +137,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     slam.frontend->lidar_meas_cov = config["mapping"]["lidar_meas_cov"].IsDefined() ? config["mapping"]["lidar_meas_cov"].as<double>() : 0.001;
     slam.frontend->cube_len = config["mapping"]["cube_side_length"].IsDefined() ? config["mapping"]["cube_side_length"].as<double>() : 200;
     slam.frontend->extrinsic_est_en = config["mapping"]["extrinsic_est_en"].IsDefined() ? config["mapping"]["extrinsic_est_en"].as<bool>() : true;
+    slam.frontend->loger.runtime_log = config["mapping"]["runtime_log_enable"].IsDefined() ? config["mapping"]["runtime_log_enable"].as<int>() : 0;
 
     extrinT = config["mapping"]["extrinsic_T"].IsDefined() ? config["mapping"]["extrinsic_T"].as<vector<double>>() : vector<double>();
     extrinR = config["mapping"]["extrinsic_R"].IsDefined() ? config["mapping"]["extrinsic_R"].as<vector<double>>() : vector<double>();
