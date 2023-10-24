@@ -226,7 +226,6 @@ public:
         loger.dump_state_to_log(loger.fout_predict, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
 #endif
 
-
         /*** interval sample and downsample the feature points in a scan ***/
         if (space_down_sample)
         {
