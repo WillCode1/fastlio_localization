@@ -15,10 +15,7 @@ preprocess:
     det_range: 200.0
 
 mapping:
-    start_in_aggressive_motion: true   # if true, a preknown gravity should be provided in following gravity_init
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
-    preset_gravity: [0, 0, -9.81]       # [0.0, 9.810, 0.0] # the direction of gravity(map) to be aligned
-    gravity_align: false                # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
     frontend_type: 0                    # frontend type
 
     # fastlio
@@ -41,10 +38,6 @@ mapping:
     extrinsic_R: [ 1, 0, 0, 
                    0, -1, 0, 
                    0, 0, -1 ]
-    # extrinsic_T: [ 1.061, 0, 1.651 ]
-    # extrinsic_R: [ 1, 0, 0, 
-    #                0, 1, 0, 
-    #                0, 0, 1 ]
 
 publish:
     path_en:  true

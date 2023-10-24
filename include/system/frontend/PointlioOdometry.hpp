@@ -17,9 +17,9 @@ public:
 
     virtual void init_estimator()
     {
-        auto lidar_meas_model_input = [&](state_input &a, esekfom::dyn_share_modified<double> &b) { this->lidar_meas_model_input(a, b); };
-        auto lidar_meas_model_output = [&](state_output &a, esekfom::dyn_share_modified<double> &b) { this->lidar_meas_model_output(a, b); };
-        auto imu_meas_model_output = [&](state_output &a, esekfom::dyn_share_modified<double> &b) { this->imu_meas_model_output(a, b); };
+        auto lidar_meas_model_input = [&](state_input &a, esekfom::pointlio_datastruct<double> &b) { this->lidar_meas_model_input(a, b); };
+        auto lidar_meas_model_output = [&](state_output &a, esekfom::pointlio_datastruct<double> &b) { this->lidar_meas_model_output(a, b); };
+        auto imu_meas_model_output = [&](state_output &a, esekfom::pointlio_datastruct<double> &b) { this->imu_meas_model_output(a, b); };
         kf_input.init_dyn_share_modified(get_f_input, df_dx_input, lidar_meas_model_input);
         kf_output.init_dyn_share_modified_2h(get_f_output, df_dx_output, lidar_meas_model_output, imu_meas_model_output);
 
@@ -60,10 +60,6 @@ public:
     virtual void init_state(shared_ptr<ImuProcessor> &imu)
     {
         acc_norm = imu->mean_acc.norm();
-        /* 
-         * 1. initializing the gravity, gyro bias, acc and gyro covariance
-         * 2. normalize the acceleration measurenments to unit gravity
-         */
         if (imu_en)
         {
             while (measures->lidar_beg_time > imu_next.timestamp)
@@ -72,40 +68,11 @@ public:
                 imu_next = *(imu_buffer.front());
                 imu_buffer.pop_front();
             }
-            if (non_station_start)
-            {
-                state_in.gravity << VEC_FROM_ARRAY(gravity_init);
-                state_out.gravity << VEC_FROM_ARRAY(gravity_init);
-                state_out.acc = -state_out.gravity;
-            }
-            else
-            {
-                const auto& mean_acc = imu->mean_acc;
-                state_in.gravity = state_out.gravity = -mean_acc / acc_norm * G_m_s2;
-                state_out.acc = -state_out.gravity;
-                LOG_WARN_COND(std::abs(mean_acc.x()) > 0.1 || std::abs(mean_acc.y()) > 0.1,
-                              "The direction of gravity is not vertical (%f, %f, %f), and the map coordinate system is tilted.", -mean_acc.x(), -mean_acc.y(), -mean_acc.z());
-                std::cout << state_in.gravity << std::endl;
-            }
-            if (gravity_align)
-            {
-                M3D rot_init;
-                V3D preset_gravity;
-                preset_gravity << VEC_FROM_ARRAY(preset_gravity_vec);
-                imu->get_imu_init_rot(preset_gravity, state_in.gravity, rot_init);
-                state_in.gravity = state_out.gravity = preset_gravity;
-                state_in.rot = state_out.rot = QD(rot_init).normalized();
-                state_out.acc = -rot_init.transpose() * state_out.gravity;
-            }
-
             state_in.bg = state_out.bg = imu->mean_gyr; // 静止初始化, 使用角速度测量作为陀螺仪偏差
         }
-        else
-        {
-            state_in.gravity << VEC_FROM_ARRAY(gravity_init);
-            state_out.gravity << VEC_FROM_ARRAY(gravity_init);
-            state_out.acc = -state_out.gravity;
-        }
+        state_in.gravity << VEC_FROM_ARRAY(gravity_init);
+        state_out.gravity << VEC_FROM_ARRAY(gravity_init);
+        state_out.acc = -state_out.gravity;
 
         kf_input.change_x(state_in);
         kf_output.change_x(state_out);
@@ -349,7 +316,7 @@ public:
 
                 // propag_time += omp_get_wtime() - propag_start;
                 // double t_update_start = omp_get_wtime();
-                if (!kf_input.update_iterated_dyn_share_modified())
+                if (!kf_input.update_iterated_pointlio())
                 {
                     idx += time_seq[k];
                     continue;
@@ -452,7 +419,7 @@ public:
                 time_predict_last = time_current;
 
                 // double t_update_start = omp_get_wtime();
-                if (!kf_output.update_iterated_dyn_share_modified())
+                if (!kf_output.update_iterated_pointlio())
                 {
                     idx += time_seq[k];
                     continue;
@@ -536,7 +503,7 @@ public:
 
 private:
     // 计算lidar point-to-plane Jacobi和残差
-    void lidar_meas_model_input(state_input &state, esekfom::dyn_share_modified<double> &ekfom_data)
+    void lidar_meas_model_input(state_input &state, esekfom::pointlio_datastruct<double> &ekfom_data)
     {
         normvec->resize(time_seq[k]);
         int effect_num_k = 0;
@@ -622,7 +589,7 @@ private:
         }
     }
 
-    void lidar_meas_model_output(state_output &state, esekfom::dyn_share_modified<double> &ekfom_data)
+    void lidar_meas_model_output(state_output &state, esekfom::pointlio_datastruct<double> &ekfom_data)
     {
         normvec->resize(time_seq[k]);
         int effect_num_k = 0;
@@ -709,7 +676,7 @@ private:
         }
     }
 
-    void imu_meas_model_output(state_output &state, esekfom::dyn_share_modified<double> &ekfom_data)
+    void imu_meas_model_output(state_output &state, esekfom::pointlio_datastruct<double> &ekfom_data)
     {
         std::memset(ekfom_data.satu_check, false, 6);
         ekfom_data.z_IMU.block<3, 1>(0, 0) = angvel_avr - state.omg - state.bg;

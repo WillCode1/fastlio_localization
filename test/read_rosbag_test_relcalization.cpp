@@ -85,7 +85,8 @@ void imu_cbk(System& slam, const sensor_msgs::Imu::ConstPtr &msg)
 {
     slam.frontend->cache_imu_data(msg->header.stamp.toSec(),
                                   V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z),
-                                  V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));
+                                  V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z),
+                                  QD(msg->orientation.w, msg->orientation.x, msg->orientation.y, msg->orientation.z));
 }
 
 void test_rosbag(const std::string &bagfile, const std::string &config_path, const std::vector<std::string> &topics, const std::string &bag_path)

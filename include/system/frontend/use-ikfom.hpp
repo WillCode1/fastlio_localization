@@ -86,7 +86,7 @@ Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
 	return res;
 }
 
-// eskf中，误差状态对各状态的雅克比矩阵F_x中的一部分(对应符合函数求导式展开后，g对误差状态的偏导数)，对应fast_lio2论文公式(7)
+// eskf中，误差状态对各状态的雅克比矩阵F_x中的去掉对角线的一部分(对应符合函数求导式展开后，g对误差状态的偏导数)，对应fast_lio2论文公式(7)
 Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
 {
 	// 当中的23个对应了status的维度计算，为pos(3), rot(3),offset_R_L_I(3),offset_T_L_I(3), vel(3), bg(3), ba(3), grav(2);
@@ -178,16 +178,6 @@ Eigen::Matrix<double, 24, 24> df_dx_input(state_input &s, const input_ikfom &in)
 	return cov;
 }
 
-// Eigen::Matrix<double, 24, 12> df_dw_input(state_input &s, const input_ikfom &in)
-// {
-// 	Eigen::Matrix<double, 24, 12> cov = Eigen::Matrix<double, 24, 12>::Zero();
-// 	cov.template block<3, 3>(3, 0) = -Eigen::Matrix3d::Identity();
-// 	cov.template block<3, 3>(12, 3) = -s.rot.toRotationMatrix();
-// 	cov.template block<3, 3>(15, 6) = Eigen::Matrix3d::Identity();
-// 	cov.template block<3, 3>(18, 9) = Eigen::Matrix3d::Identity();
-// 	return cov;
-// }
-
 Eigen::Matrix<double, 30, 30> df_dx_output(state_output &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 30, 30> cov = Eigen::Matrix<double, 30, 30>::Zero();
@@ -201,16 +191,5 @@ Eigen::Matrix<double, 30, 30> df_dx_output(state_output &s, const input_ikfom &i
 	cov.template block<3, 3>(12, 21) = Eigen::Matrix3d::Identity(); // grav_matrix;
 	return cov;
 }
-
-// Eigen::Matrix<double, 30, 15> df_dw_output(state_output &s)
-// {
-// 	Eigen::Matrix<double, 30, 15> cov = Eigen::Matrix<double, 30, 15>::Zero();
-// 	cov.template block<3, 3>(12, 0) = Eigen::Matrix3d::Identity();	// vel
-// 	cov.template block<3, 3>(15, 3) = Eigen::Matrix3d::Identity();	// w
-// 	cov.template block<3, 3>(18, 6) = Eigen::Matrix3d::Identity();	// a
-// 	cov.template block<3, 3>(24, 9) = Eigen::Matrix3d::Identity();	// bg
-// 	cov.template block<3, 3>(27, 12) = Eigen::Matrix3d::Identity();	// ba
-// 	return cov;
-// }
 
 #endif
