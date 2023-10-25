@@ -316,6 +316,12 @@ public:
 
                 // propag_time += omp_get_wtime() - propag_start;
                 // double t_update_start = omp_get_wtime();
+                if (feats_down_size < 1)
+                {
+                    LOG_WARN("No point, skip this scan!");
+                    idx += time_seq[k];
+                    continue;
+                }
                 if (!kf_input.update_iterated_pointlio())
                 {
                     idx += time_seq[k];
@@ -418,6 +424,12 @@ public:
                 // propag_time += omp_get_wtime() - propag_state_start;
                 time_predict_last = time_current;
 
+                if (feats_down_size < 1)
+                {
+                    LOG_WARN("No point, skip this scan!");
+                    idx += time_seq[k];
+                    continue;
+                }
                 // double t_update_start = omp_get_wtime();
                 if (!kf_output.update_iterated_pointlio())
                 {

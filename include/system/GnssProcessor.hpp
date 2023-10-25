@@ -6,16 +6,17 @@
 
 struct GnssPose
 {
-  GnssPose(const double &time = 0, const V3D &pos = ZERO3D, const V3D &cov = ZERO3D)
-      : timestamp(time), gnss_position(pos), covariance(cov) {}
+  GnssPose(const double &time = 0, const V3D &pos = ZERO3D, const V3D &rpy = ZERO3D, const V3D &cov = ZERO3D)
+      : timestamp(time), gnss_position(pos), gnss_rpy(rpy), covariance(cov) {}
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   double timestamp;
   V3D gnss_position;
-  V3D rpy;
-  V3D gnss_position_trans2imu; // utm add extrinsic
+  V3D gnss_rpy;
   V3D covariance;
+
   float current_gnss_interval;
+  V3D lidar_pos_fix; // utm add extrinsic
 };
 
 /*
@@ -26,7 +27,7 @@ class GnssProcessor
 public:
   GnssProcessor()
   {
-    extrinsic_Lidar2Gnss.setIdentity();
+    extrinsic_lidar2gnss.setIdentity();
     file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
     fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
   }
@@ -37,7 +38,7 @@ public:
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  void set_extrinsic(const Eigen::Matrix4d &extrinsic = Eigen::Matrix4d::Identity());
+  void set_extrinsic(const V3D &transl = ZERO3D, const M3D &rot = EYE3D);
   void gnss_handler(const GnssPose &gnss_raw);
   bool get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z);
 
@@ -51,13 +52,16 @@ private:
   bool check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold);
 
 private:
-  Eigen::Matrix4d extrinsic_Lidar2Gnss;
+  Eigen::Matrix4d extrinsic_lidar2gnss;
   FILE *file_pose_gnss;
 };
 
-void GnssProcessor::set_extrinsic(const Eigen::Matrix4d &extrinsic)
+void GnssProcessor::set_extrinsic(const V3D &transl, const M3D &rot)
 {
-  extrinsic_Lidar2Gnss = extrinsic;
+  Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Identity();
+  extrinsic.topLeftCorner(3, 3) = rot;
+  extrinsic.topRightCorner(3, 1) = transl;
+  extrinsic_lidar2gnss = extrinsic;
 }
 
 bool GnssProcessor::check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold)
@@ -131,7 +135,7 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
   utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.north);
   gnss_buffer.push_back(utm_pose);
   if (need_record_gnss)
-    LogAnalysis::save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.rpy, gnss_raw.timestamp);
+    LogAnalysis::save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.gnss_rpy, gnss_raw.timestamp);
 }
 
 bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z)
@@ -151,13 +155,17 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
     {
       // 找到时间间隔最小的
       thisGPS.current_gnss_interval = gnssValidInterval;
-      auto current_gnss_interval = std::abs(gnss_buffer.front().timestamp - lidar_end_time);
-      while (current_gnss_interval <= thisGPS.current_gnss_interval)
+      while (!gnss_buffer.empty())
       {
-        thisGPS.current_gnss_interval = current_gnss_interval;
-        thisGPS = gnss_buffer.front();
-        gnss_buffer.pop_front();
-        current_gnss_interval = std::abs(gnss_buffer.front().timestamp - lidar_end_time);
+        auto current_gnss_interval = std::abs(gnss_buffer.front().timestamp - lidar_end_time);
+        if (current_gnss_interval <= thisGPS.current_gnss_interval)
+        {
+          thisGPS = gnss_buffer.front();
+          thisGPS.current_gnss_interval = current_gnss_interval;
+          gnss_buffer.pop_front();
+        }
+        else
+          break;
       }
 
       // GPS噪声协方差太大，不能用
@@ -189,9 +197,9 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
       else
         lastGPSPoint = curGPSPoint;
 
-      Eigen::Matrix4d gnss_pose = EigenMath::CreateAffineMatrix(thisGPS.gnss_position, thisGPS.rpy);
-      gnss_pose *= extrinsic_Lidar2Gnss;
-      thisGPS.gnss_position_trans2imu = gnss_pose.topRightCorner(3, 1);
+      Eigen::Matrix4d gnss_pose = EigenMath::CreateAffineMatrix(thisGPS.gnss_position, thisGPS.gnss_rpy);
+      gnss_pose *= extrinsic_lidar2gnss;
+      thisGPS.lidar_pos_fix = gnss_pose.topRightCorner(3, 1);
       return true;
     }
   }

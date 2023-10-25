@@ -23,6 +23,8 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     int n_scans, scan_rate, time_unit;
     vector<double> extrinT;
     vector<double> extrinR;
+    V3D extrinT_eigen;
+    M3D extrinR_eigen;
     double gyr_cov, acc_cov, b_gyr_cov, b_acc_cov;
 
     gyr_cov = config["mapping"]["gyr_cov"].IsDefined() ? config["mapping"]["gyr_cov"].as<double>() : 0.1;
@@ -138,12 +140,9 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
 
     extrinT = config["mapping"]["extrinsic_T"].IsDefined() ? config["mapping"]["extrinsic_T"].as<vector<double>>() : vector<double>();
     extrinR = config["mapping"]["extrinsic_R"].IsDefined() ? config["mapping"]["extrinsic_R"].as<vector<double>>() : vector<double>();
-    // imu = R * lidar + t
-    V3D Lidar_T_wrt_IMU;
-    M3D Lidar_R_wrt_IMU;
-    Lidar_T_wrt_IMU << VEC_FROM_ARRAY(extrinT);
-    Lidar_R_wrt_IMU << MAT_FROM_ARRAY(extrinR);
-    slam.frontend->set_extrinsic(Lidar_T_wrt_IMU, Lidar_R_wrt_IMU);
+    extrinT_eigen << VEC_FROM_ARRAY(extrinT);
+    extrinR_eigen << MAT_FROM_ARRAY(extrinR);
+    slam.frontend->set_extrinsic(extrinT_eigen, extrinR_eigen);
 
     slam.init_system_mode();
 }
