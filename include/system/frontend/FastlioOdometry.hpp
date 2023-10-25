@@ -53,6 +53,7 @@ public:
 
     virtual void set_extrinsic(const V3D &transl, const M3D &rot)
     {
+        // imu = R * lidar + t
         state = kf.get_x();
         state.offset_T_L_I = transl;
         state.offset_R_L_I = rot;
@@ -221,10 +222,6 @@ public:
         state = kf.get_x();
         loger.imu_process_time = loger.timer.elapsedLast();
         loger.feats_undistort_size = feats_undistort->points.size();
-        loger.kdtree_size = ikdtree.size();
-#ifndef NO_LOGER
-        loger.dump_state_to_log(loger.fout_predict, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
-#endif
 
         /*** interval sample and downsample the feature points in a scan ***/
         if (space_down_sample)
@@ -236,6 +233,18 @@ public:
         feats_down_size = feats_down_lidar->points.size();
         loger.feats_down_size = feats_down_size;
         loger.downsample_time = loger.timer.elapsedLast();
+
+        loger.kdtree_size = ikdtree.size();
+
+        if (feats_down_size < 5)
+        {
+            LOG_WARN("No point, skip this scan!");
+            return true;
+        }
+
+#ifndef NO_LOGER
+        loger.dump_state_to_log(loger.fout_predict, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
+#endif
 
         /*** iterated state estimation ***/
         feats_down_world->resize(feats_down_size);

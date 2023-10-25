@@ -23,6 +23,8 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     int n_scans, scan_rate, time_unit;
     vector<double> extrinT;
     vector<double> extrinR;
+    V3D extrinT_eigen;
+    M3D extrinR_eigen;
     double gyr_cov, acc_cov, b_gyr_cov, b_acc_cov;
 
     gyr_cov = config["mapping"]["gyr_cov"].IsDefined() ? config["mapping"]["gyr_cov"].as<double>() : 0.1;
@@ -35,7 +37,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     n_scans = config["preprocess"]["scan_line"].IsDefined() ? config["preprocess"]["scan_line"].as<int>() : 16;
     time_unit = config["preprocess"]["timestamp_unit"].IsDefined() ? config["preprocess"]["timestamp_unit"].as<int>() : US;
     scan_rate = config["preprocess"]["scan_rate"].IsDefined() ? config["preprocess"]["scan_rate"].as<int>() : 10;
-    
+
     slam.relocalization->sc_manager->LIDAR_HEIGHT = config["scan_context"]["lidar_height"].IsDefined() ? config["scan_context"]["lidar_height"].as<double>() : 2.0;
     slam.relocalization->sc_manager->SC_DIST_THRES = config["scan_context"]["sc_dist_thres"].IsDefined() ? config["scan_context"]["sc_dist_thres"].as<double>() : 0.5;
 
@@ -141,12 +143,9 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
 
     extrinT = config["mapping"]["extrinsic_T"].IsDefined() ? config["mapping"]["extrinsic_T"].as<vector<double>>() : vector<double>();
     extrinR = config["mapping"]["extrinsic_R"].IsDefined() ? config["mapping"]["extrinsic_R"].as<vector<double>>() : vector<double>();
-    // imu = R * lidar + t
-    V3D Lidar_T_wrt_IMU;
-    M3D Lidar_R_wrt_IMU;
-    Lidar_T_wrt_IMU << VEC_FROM_ARRAY(extrinT);
-    Lidar_R_wrt_IMU << MAT_FROM_ARRAY(extrinR);
-    slam.frontend->set_extrinsic(Lidar_T_wrt_IMU, Lidar_R_wrt_IMU);
+    extrinT_eigen << VEC_FROM_ARRAY(extrinT);
+    extrinR_eigen << MAT_FROM_ARRAY(extrinR);
+    slam.frontend->set_extrinsic(extrinT_eigen, extrinR_eigen);
 
     slam.init_system_mode();
 }
