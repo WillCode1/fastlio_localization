@@ -202,9 +202,16 @@ bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d& resul
     Eigen::Matrix4d lidar_ext = lidar_extrinsic.toMatrix4d();
     bool success_flag = true;
     double score = 0;
+
+    if (run_gnss_relocalization(result))
+    {
+        LOG_WARN("relocalization successfully!!!!!!");
+        return true;
+    }
+
     if (algorithm_type.compare("scan_context") == 0)
     {
-        if (!run_gnss_relocalization(result) || !run_scan_context(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
+        if (!run_scan_context(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
         {
 #ifdef DEDUB_MODE
             result = EigenMath::CreateAffineMatrix(V3D(rough_pose.x, rough_pose.y, rough_pose.z), V3D(rough_pose.roll, rough_pose.pitch, rough_pose.yaw));
@@ -215,7 +222,7 @@ bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d& resul
     if (algorithm_type.compare("manually_set") == 0 || !success_flag)
     {
         success_flag = true;
-        if (!run_gnss_relocalization(result) || !run_manually_set(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
+        if (!run_manually_set(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
         {
 #ifdef DEDUB_MODE
             result = EigenMath::CreateAffineMatrix(V3D(manual_pose.x, manual_pose.y, manual_pose.z), V3D(manual_pose.roll, manual_pose.pitch, manual_pose.yaw));
