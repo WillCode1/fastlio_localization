@@ -121,7 +121,7 @@ void sensor_data_process()
         return;
 
     if (!slam.system_state_vaild)
-        slam.drop_data_timeout(ros::Time::now().toSec(), 0.5, 100);
+        slam.drop_data_timeout(ros::Time::now().toSec(), 0.5, 30);
 
     if (!slam.frontend->sync_sensor_data())
         return;

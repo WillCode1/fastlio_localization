@@ -65,7 +65,7 @@ public:
         frontend->init_global_map(global_map);
     }
 
-    void drop_data_timeout(const double &time_now, const double &drop_start = 0.5, const double &drop_end = 100)
+    void drop_data_timeout(const double &time_now, const double &drop_start = 0.5, const double &drop_end = 30)
     {
         while ((!frontend->imu_buffer.empty()) &&
                (time_now > frontend->imu_buffer.front()->timestamp + drop_start &&
