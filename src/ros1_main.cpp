@@ -8,6 +8,7 @@
 #include <pcl/point_types.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Imu.h>
+#include <sensor_msgs/NavSatFix.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
 #include <livox_ros_driver/CustomMsg.h>
@@ -109,10 +110,18 @@ void publish_imu_path(const ros::Publisher &pubPath, const state_ikfom &state, c
     }
 }
 
+void gnss_cbk(const sensor_msgs::NavSatFix::ConstPtr &msg)
+{
+    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), V3D(msg->latitude, msg->longitude, msg->altitude));
+}
+
 void sensor_data_process()
 {
     if (flg_exit)
         return;
+
+    if (!slam.system_state_vaild)
+        slam.drop_data_timeout(ros::Time::now().toSec(), 0.5, 100);
 
     if (!slam.frontend->sync_sensor_data())
         return;
