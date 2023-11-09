@@ -25,13 +25,13 @@ namespace ScanContext
         if (_x >= 0 & _y >= 0)
             return (180 / M_PI) * atan(_y / _x);
 
-        if (_x < 0 & _y >= 0)
+        else if (_x < 0 & _y >= 0)
             return 180 - ((180 / M_PI) * atan(_y / (-_x)));
 
-        if (_x < 0 & _y < 0)
+        else if (_x < 0 & _y < 0)
             return 180 + ((180 / M_PI) * atan(_y / _x));
 
-        if (_x >= 0 & _y < 0)
+        else
             return 360 - ((180 / M_PI) * atan((-_y) / _x));
     } // xy2theta
 
