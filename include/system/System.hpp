@@ -65,6 +65,25 @@ public:
         frontend->init_global_map(global_map);
     }
 
+    void drop_data_timeout(const double &time_now, const double &drop_start = 0.5, const double &drop_end = 30)
+    {
+        while ((!frontend->imu_buffer.empty()) &&
+               (time_now > frontend->imu_buffer.front()->timestamp + drop_start &&
+                time_now < frontend->imu_buffer.front()->timestamp + drop_end))
+        {
+            frontend->imu_buffer.pop_front();
+        }
+
+        while ((!frontend->imu_buffer.empty()) &&
+               (time_now > frontend->time_buffer.front() + drop_start &&
+                time_now < frontend->time_buffer.front() + drop_end))
+        {
+            // LOG_WARN("drop_lidar_data time = %f", frontend->time_buffer.front());
+            frontend->lidar_buffer.pop_front();
+            frontend->time_buffer.pop_front();
+        }
+    }
+
     bool run()
     {
         /*** relocalization for localization mode ***/
