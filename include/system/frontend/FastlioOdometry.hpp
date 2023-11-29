@@ -216,8 +216,8 @@ public:
             return true;
         }
 
-        if (!imu->gravity_align_)
-            init_state(imu);
+        // if (!imu->gravity_align_)
+            // init_state(imu);
 
         state = kf.get_x();
         loger.imu_process_time = loger.timer.elapsedLast();
