@@ -193,6 +193,8 @@ void sensor_data_process()
     if (slam.run())
     {
         const auto &state = slam.frontend->get_state();
+        LOG_INFO("location valid. feats_down = %d, cost time = %.1fms.", slam.frontend->loger.feats_down_size, slam.frontend->loger.total_time);
+        slam.frontend->loger.print_pose(state, "cur_imu_pose");
 
         /******* Publish odometry *******/
         // publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time);
@@ -209,6 +211,7 @@ void sensor_data_process()
     }
     else
     {
+        LOG_ERROR("location invalid!");
         publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild);
 #ifdef DEDUB_MODE
         publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.lidar_end_time);

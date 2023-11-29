@@ -180,7 +180,7 @@ public:
     {
         const auto &xyz = state.pos;
         const auto &rpy = EigenMath::Quaternion2RPY(state.rot);
-        LOG_INFO("%s, xyz, rpy: (%.5f, %.5f, %.5f, %.5f, %.5f, %.5f)", print.c_str(), xyz(0), xyz(1), xyz(2), RAD2DEG(rpy(0)), RAD2DEG(rpy(1)), RAD2DEG(rpy(2)));
+        LOG_INFO("%s (xyz, rpy): (%.5f, %.5f, %.5f, %.5f, %.5f, %.5f)", print.c_str(), xyz(0), xyz(1), xyz(2), RAD2DEG(rpy(0)), RAD2DEG(rpy(1)), RAD2DEG(rpy(2)));
     }
 
     template <typename ikfom_state>
@@ -303,10 +303,11 @@ public:
 
     void print_fastlio_cost_time()
     {
+        total_time = preprocess_time + imu_process_time + downsample_time + meas_update_time + map_incre_time + map_remove_time;
+
         if (!runtime_log)
             return;
 
-        total_time = preprocess_time + imu_process_time + downsample_time + meas_update_time + map_incre_time + map_remove_time;
         frame_num++;
 
         preprocess_avetime = (preprocess_avetime * (frame_num - 1) + preprocess_time) / frame_num;
