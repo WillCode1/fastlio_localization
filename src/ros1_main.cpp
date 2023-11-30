@@ -120,11 +120,22 @@ void sensor_data_process()
     if (flg_exit)
         return;
 
-    if (!slam.system_state_vaild)
-        slam.drop_data_timeout(ros::Time::now().toSec(), 0.5, 30);
-
     if (!slam.frontend->sync_sensor_data())
         return;
+
+    if (!slam.system_state_vaild)
+    {
+        if (!slam.run_relocalization_thread)
+        {
+            if (slam.relocalization_thread.joinable())
+                slam.relocalization_thread.join();
+
+            PointCloudType::Ptr cur_scan(new PointCloudType);
+            *cur_scan = *slam.frontend->measures->lidar;
+            slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
+        }
+        return;
+    }
 
     if (slam.run())
     {
