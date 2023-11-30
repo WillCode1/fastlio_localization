@@ -65,47 +65,8 @@ public:
         frontend->init_global_map(global_map);
     }
 
-    void drop_data_timeout(const double &time_now, const double &drop_start = 0.5, const double &drop_end = 30)
-    {
-        while ((!frontend->imu_buffer.empty()) &&
-               (time_now > frontend->imu_buffer.front()->timestamp + drop_start &&
-                time_now < frontend->imu_buffer.front()->timestamp + drop_end))
-        {
-            frontend->imu_buffer.pop_front();
-        }
-
-        while ((!frontend->imu_buffer.empty()) &&
-               (time_now > frontend->time_buffer.front() + drop_start &&
-                time_now < frontend->time_buffer.front() + drop_end))
-        {
-            // LOG_WARN("drop_lidar_data time = %f", frontend->time_buffer.front());
-            frontend->lidar_buffer.pop_front();
-            frontend->time_buffer.pop_front();
-        }
-    }
-
     bool run()
     {
-        /*** relocalization for localization mode ***/
-        if (!system_state_vaild)
-        {
-            Eigen::Matrix4d imu_pose;
-            if (relocalization->run(frontend->measures->lidar, imu_pose))
-            {
-                frontend->reset_state(imu_pose);
-                system_state_vaild = true;
-            }
-            else
-            {
-#ifdef DEDUB_MODE
-                frontend->reset_state(imu_pose);
-#endif
-                system_state_vaild = false;
-                return system_state_vaild;
-            }
-        }
-
-        /*** frontend ***/
         if (!frontend->run(feats_undistort))
         {
             system_state_vaild = false;
@@ -120,8 +81,33 @@ public:
         return system_state_vaild;
     }
 
+    bool run_relocalization(PointCloudType::Ptr scan)
+    {
+        run_relocalization_thread = true;
+        if (!system_state_vaild)
+        {
+            Eigen::Matrix4d imu_pose;
+            if (relocalization->run(scan, imu_pose))
+            {
+                frontend->reset_state(imu_pose);
+                system_state_vaild = true;
+            }
+            else
+            {
+#ifdef DEDUB_MODE
+                frontend->reset_state(imu_pose);
+#endif
+                system_state_vaild = false;
+            }
+        }
+        run_relocalization_thread = false;
+        return system_state_vaild;
+    }
+
 public:
     bool system_state_vaild = false; // true: system ok
+    bool run_relocalization_thread = false;
+    std::thread relocalization_thread;
 
     /*** module ***/
     shared_ptr<FastlioOdometry> frontend;
