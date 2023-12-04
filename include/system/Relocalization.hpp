@@ -366,7 +366,10 @@ bool Relocalization::fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &r
 
 void Relocalization::set_init_pose(const Pose &_manual_pose)
 {
-    manual_pose = _manual_pose;
+    manual_pose = _manual_pose; // imu_pose
+    manual_pose.roll -= lidar_extrinsic.roll;
+    manual_pose.pitch -= lidar_extrinsic.pitch;
+    manual_pose.yaw -= lidar_extrinsic.yaw;
 
     {
         std::vector<int> indices;
@@ -375,8 +378,9 @@ void Relocalization::set_init_pose(const Pose &_manual_pose)
         PointXYZIRPYT manual_pos;
         manual_pos.x = manual_pose.x;
         manual_pos.y = manual_pose.y;
+        manual_pos.z = manual_pose.z;
         kdtree.setInputCloud(trajectory_poses);
-        kdtree.radiusSearch(manual_pos, 15, indices, distances, 1);
+        kdtree.radiusSearch(manual_pos, 20, indices, distances, 1);
 
         if (indices.size() == 1)
         {
