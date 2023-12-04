@@ -198,7 +198,7 @@ void sensor_data_process()
             *cur_scan = *slam.frontend->measures->lidar;
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
         }
-        LOG_WARN("Relocalization has not succeeded! Drop out one laser data.");
+        // LOG_WARN("Relocalization has not succeeded! Drop out one laser data.");
         return;
     }
 
