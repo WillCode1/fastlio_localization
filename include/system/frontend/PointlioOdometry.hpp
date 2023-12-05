@@ -246,7 +246,7 @@ public:
                 pointLidarToWorld(point_this, point_this, kf_input.x_);
             else
                 pointLidarToWorld(point_this, point_this, kf_output.x_);
-            crossmat_list[i] = SO3Math::get_skew_symmetric(point_this);
+            crossmat_list[i] = hat(point_this);
         }
 
         if (use_imu_as_input)
@@ -542,7 +542,7 @@ private:
                 {
                     Eigen::Vector4d abcd;
                     point_matched_surface[idx + j + 1] = false;
-                    float plane_thr = 0.1;   // plane_thr: the threshold for plane criteria, the smaller, the flatter a plane
+                    float plane_thr = 0.1; // plane_thr: the threshold for plane criteria, the smaller, the flatter a plane
                     if (esti_plane(abcd, points_near, plane_thr))
                     {
                         float dis = abcd(0) * point_world.x + abcd(1) * point_world.y + abcd(2) * point_world.z + abcd(3);
@@ -580,9 +580,9 @@ private:
                 {
                     V3D p_body = V3D(feats_down_lidar->points[idx + j + 1].x, feats_down_lidar->points[idx + j + 1].y, feats_down_lidar->points[idx + j + 1].z);
                     M3D p_crossmat, p_imu_crossmat;
-                    p_crossmat = SO3Math::get_skew_symmetric(p_body);
+                    p_crossmat = hat(p_body);
                     V3D point_imu = state.offset_R_L_I.normalized() * p_body + state.offset_T_L_I;
-                    p_imu_crossmat = SO3Math::get_skew_symmetric(point_imu);
+                    p_imu_crossmat = hat(point_imu);
                     V3D C(state.rot.conjugate().normalized() * norm_vec);
                     V3D A(p_imu_crossmat * C);
                     V3D B(p_crossmat * state.offset_R_L_I.conjugate().normalized() * C);
@@ -628,7 +628,7 @@ private:
                 {
                     Eigen::Vector4d abcd;
                     point_matched_surface[idx + j + 1] = false;
-                    float plane_thr = 0.1;   // plane_thr: the threshold for plane criteria, the smaller, the flatter a plane
+                    float plane_thr = 0.1; // plane_thr: the threshold for plane criteria, the smaller, the flatter a plane
                     if (esti_plane(abcd, points_near, plane_thr))
                     {
                         float dis = abcd(0) * point_world.x + abcd(1) * point_world.y + abcd(2) * point_world.z + abcd(3);
@@ -666,9 +666,9 @@ private:
                 {
                     V3D p_body = V3D(feats_down_lidar->points[idx + j + 1].x, feats_down_lidar->points[idx + j + 1].y, feats_down_lidar->points[idx + j + 1].z);
                     M3D p_crossmat, p_imu_crossmat;
-                    p_crossmat = SO3Math::get_skew_symmetric(p_body);
+                    p_crossmat = hat(p_body);
                     V3D point_imu = state.offset_R_L_I.normalized() * p_body + state.offset_T_L_I;
-                    p_imu_crossmat = SO3Math::get_skew_symmetric(point_imu);
+                    p_imu_crossmat = hat(point_imu);
                     V3D C(state.rot.conjugate().normalized() * norm_vec);
                     V3D A(p_imu_crossmat * C);
                     V3D B(p_crossmat * state.offset_R_L_I.conjugate().normalized() * C);

@@ -6,8 +6,8 @@
 #include "ikd-Tree/ikd_Tree.h"
 #include "frontend/FastlioOdometry.hpp"
 #include "frontend/PointlioOdometry.hpp"
-#include "Relocalization.hpp"
 #include "utility/Header.h"
+#include "Relocalization.hpp"
 
 class System
 {

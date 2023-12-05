@@ -1,6 +1,5 @@
 #include "ImuProcessor.h"
 
-
 ImuProcessor::ImuProcessor()
     : b_first_frame_(true), imu_need_init_(true)
 {
@@ -71,12 +70,12 @@ void ImuProcessor::IMU_init(const MeasureCollection &meas, int &N)
 void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudType &pcl_out)
 {
   /*** add the imu of the last frame-tail to the of current frame-head ***/
-  auto v_imu = meas.imu;                                            // 拿到当前的imu数据
-  v_imu.push_front(last_imu_);                                      // 将上一帧最后尾部的imu添加到当前帧头部的imu
-  const double &imu_beg_time = v_imu.front()->timestamp;            // 拿到当前帧头部的imu的时间（也就是上一帧尾部的imu时间戳）
-  const double &imu_end_time = v_imu.back()->timestamp;             // 拿到当前帧尾部的imu的时间
-  const double &pcl_beg_time = meas.lidar_beg_time;                 // 当前帧pcl的开始时间
-  const double &pcl_end_time = meas.lidar_end_time;                 // 当前帧pcl的结束时间
+  auto v_imu = meas.imu;                                 // 拿到当前的imu数据
+  v_imu.push_front(last_imu_);                           // 将上一帧最后尾部的imu添加到当前帧头部的imu
+  const double &imu_beg_time = v_imu.front()->timestamp; // 拿到当前帧头部的imu的时间（也就是上一帧尾部的imu时间戳）
+  const double &imu_end_time = v_imu.back()->timestamp;  // 拿到当前帧尾部的imu的时间
+  const double &pcl_beg_time = meas.lidar_beg_time;      // 当前帧pcl的开始时间
+  const double &pcl_end_time = meas.lidar_end_time;      // 当前帧pcl的结束时间
 
   /*** sort point clouds by offset time ***/
   pcl_out = *(meas.lidar);
@@ -129,13 +128,9 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
 
     /* save the poses at each IMU measurements */
     imu_state = kf_state.get_x();
-    angvel_last = angvel_avr - imu_state.bg;               // 角速度 - 预测的角速度bias
-    acc_s_last = imu_state.rot * (acc_avr - imu_state.ba); // 加速度 - 预测的加速度bias,并转到世界坐标系下
-    for (int i = 0; i < 3; i++)
-    {
-      acc_s_last[i] += imu_state.grav[i]; // 加上重力得到世界坐标系的加速度: f_k = a^w - g
-    }
-    double &&offs_t = tail->timestamp - pcl_beg_time; // 后一个IMU时刻距离此次雷达开始的时间间隔
+    angvel_last = angvel_avr - imu_state.bg;                                    // 角速度 - 预测的角速度bias
+    acc_s_last = imu_state.rot * (acc_avr - imu_state.ba) + imu_state.grav.vec; // 加速度 - 预测的加速度bias,并转到世界坐标系下
+    double &&offs_t = tail->timestamp - pcl_beg_time;                           // 后一个IMU时刻距离此次雷达开始的时间间隔
     imu_states.emplace_back(offs_t, acc_s_last, angvel_last, imu_state.vel, imu_state.pos, imu_state.rot.toRotationMatrix());
   }
 
@@ -177,7 +172,7 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
        * 注意: 补偿方向与帧的移动方向相反
        * 所以如果我们想补偿时间戳i到帧e的一个点
        * P_compensate = R_imu_e ^ T * (R_i * P_i + T_ei)  其中T_ei在全局框架中表示 */
-      M3D R_i(R_imu * SO3Math::Exp(angvel_avr * dt)); // 当前点时刻的imu在世界坐标系下姿态
+      M3D R_i(R_imu * Exp(angvel_avr, dt));                                       // 当前点时刻的imu在世界坐标系下姿态
       V3D P_i(it_pcl->x, it_pcl->y, it_pcl->z);                                   // 当前点位置(雷达坐标系下)
       V3D T_ei(pos_imu + vel_imu * dt + 0.5 * acc_imu * dt * dt - imu_state.pos); // 当前点的时刻imu在世界坐标系下位置 - end时刻IMU在世界坐标系下的位置
       // 原理: 对应fastlio公式(10)，通过世界坐标系过度，将当前时刻IMU坐标系下坐标转换到end时刻IMU坐标系下
@@ -286,7 +281,7 @@ void ImuProcessor::Process(const MeasureCollection &meas, PointCloudType::Ptr cu
  */
 void ImuProcessor::get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_gravity, M3D &rot_init)
 {
-  M3D hat_grav = SO3Math::get_skew_symmetric(-preset_gravity);
+  M3D hat_grav = hat(-preset_gravity);
   // sin(theta) = a^b/(|a|*|b|) = |axb|/(|a|*|b|)
   double align_sin = (hat_grav * meas_gravity).norm() / meas_gravity.norm() / preset_gravity.norm();
   // cos(theta) = a*b/(|a|*|b|)
@@ -304,6 +299,6 @@ void ImuProcessor::get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_g
   {
     // 沿着axb方向旋转对应夹角，得到imu初始姿态
     V3D align_angle = hat_grav * meas_gravity / (hat_grav * meas_gravity).norm() * acos(align_cos);
-    rot_init = SO3Math::Exp(align_angle);
+    rot_init = Exp(align_angle);
   }
 }

@@ -15,7 +15,6 @@
 #include "global_localization/bnb3d.h"
 #include "global_localization/scancontext/Scancontext.h"
 
-
 class Relocalization
 {
 public:
@@ -29,7 +28,7 @@ public:
     void set_bnb3d_param(const BnbOptions &match_option, const Pose &lidar_pose);
     void set_ndt_param(const double &_step_size, const double &_resolution);
     void set_gicp_param(bool _use_gicp, const double &filter_range, const double &gicp_ds, const double &search_radi, const double &tep, const double &fep, const double &fit_score);
-    void add_scancontext_descriptor(const PointCloudType::Ptr thiskeyframe, const std::string &path);
+    void add_keyframe_descriptor(const PointCloudType::Ptr thiskeyframe, const std::string &path);
 
     std::string algorithm_type = "UNKNOW";
     BnbOptions bnb_option;
@@ -80,7 +79,7 @@ Relocalization::~Relocalization()
 {
 }
 
-bool Relocalization::run_gnss_relocalization(Eigen::Matrix4d& result)
+bool Relocalization::run_gnss_relocalization(Eigen::Matrix4d &result)
 {
     auto now = std::chrono::system_clock::now();
     auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
@@ -197,7 +196,7 @@ bool Relocalization::run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d 
     return true;
 }
 
-bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d& result)
+bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &result)
 {
     Eigen::Matrix4d lidar_ext = lidar_extrinsic.toMatrix4d();
     bool success_flag = true;
@@ -258,7 +257,7 @@ bool Relocalization::load_keyframe_descriptor(const std::string &path)
     return true;
 }
 
-bool Relocalization::load_prior_map(const PointCloudType::Ptr& global_map)
+bool Relocalization::load_prior_map(const PointCloudType::Ptr &global_map)
 {
     bnb3d = std::make_shared<BranchAndBoundMatcher3D>(global_map, bnb_option);
     ndt.setInputTarget(global_map);
@@ -359,7 +358,7 @@ bool Relocalization::fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &r
 
         EigenMath::DecomposeAffineMatrix(result, pos, euler);
         LOG_WARN("gicp pose = (%.2lf,%.2lf,%.2lf,%.2lf,%.2lf,%.2lf), gicp_time = %.2lf ms",
-                pos(0), pos(1), pos(2), RAD2DEG(euler(0)), RAD2DEG(euler(1)), RAD2DEG(euler(2)), timer.elapsedLast());
+                 pos(0), pos(1), pos(2), RAD2DEG(euler(0)), RAD2DEG(euler(1)), RAD2DEG(euler(2)), timer.elapsedLast());
     }
     return true;
 }
@@ -406,7 +405,7 @@ void Relocalization::set_init_pose(const Pose &_manual_pose)
     prior_pose_inited = true;
 }
 
-void Relocalization::set_bnb3d_param(const BnbOptions& match_option, const Pose& lidar_pose)
+void Relocalization::set_bnb3d_param(const BnbOptions &match_option, const Pose &lidar_pose)
 {
     bnb_option = match_option;
     LOG_WARN("*********** BnB Localizer Param ***********");
@@ -414,7 +413,7 @@ void Relocalization::set_bnb3d_param(const BnbOptions& match_option, const Pose&
     LOG_WARN("linear_z_window_size: %lf m", bnb_option.linear_z_window_size);
     LOG_WARN("angular_search_window: %lf degree", bnb_option.angular_search_window);
     std::stringstream resolutions;
-    for (const auto& resolution: bnb_option.pc_resolutions)
+    for (const auto &resolution : bnb_option.pc_resolutions)
     {
         resolutions << resolution << " ";
     }
@@ -460,7 +459,7 @@ void Relocalization::set_gicp_param(bool _use_gicp, const double &_filter_range,
     fitness_score = fit_score;
 }
 
-void Relocalization::add_scancontext_descriptor(const PointCloudType::Ptr thiskeyframe, const std::string &path)
+void Relocalization::add_keyframe_descriptor(const PointCloudType::Ptr thiskeyframe, const std::string &path)
 {
     PointCloudType::Ptr thiskeyframeDS(new PointCloudType());
     pcl::PointCloud<SCPointType>::Ptr sc_input(new pcl::PointCloud<SCPointType>());

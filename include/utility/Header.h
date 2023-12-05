@@ -14,7 +14,7 @@
 #include "Timer.h"
 #include "FileOperation.h"
 #include "EigenMath.h"
-#include "SO3_Math.h"
+#include "MathTools.h"
 
 using namespace std;
 using namespace Eigen;
@@ -23,6 +23,10 @@ using namespace Eigen;
 
 #define VEC_FROM_ARRAY(v) v[0], v[1], v[2]
 #define MAT_FROM_ARRAY(v) v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7], v[8]
+#define LEFT_MULTIPLY_QUA(v) -v[1], -v[2], -v[3], \
+                             v[0], -v[3], v[2],   \
+                             v[3], v[0], -v[1],   \
+                             -v[2], v[1], v[0];
 #define CONSTRAIN(v, min, max) ((v > min) ? ((v < max) ? v : max) : min)
 #define ARRAY_FROM_EIGEN(mat) mat.data(), mat.data() + mat.rows() * mat.cols()
 #define STD_VEC_FROM_EIGEN(mat) vector<decltype(mat)::Scalar>(mat.data(), mat.data() + mat.rows() * mat.cols())
@@ -31,7 +35,7 @@ using namespace Eigen;
 
 /**
  * 6D位姿点云结构定义
-*/
+ */
 struct PointXYZIRPYT
 {
     PCL_ADD_POINT4D
@@ -44,7 +48,7 @@ struct PointXYZIRPYT
 } EIGEN_ALIGN16;
 
 POINT_CLOUD_REGISTER_POINT_STRUCT (PointXYZIRPYT,
-                                   (float, x, x) (float, y, y)
+                                  (float, x, x) (float, y, y)
                                    (float, z, z) (float, intensity, intensity)
                                    (float, roll, roll) (float, pitch, pitch) (float, yaw, yaw)
                                    (double, time, time))
@@ -71,25 +75,25 @@ using QF = Eigen::Quaternionf;
 #define ZERO3F (V3F::Zero())
 
 template <typename PointType>
-float pointDistanceSquare(const PointType& p)
+float pointDistanceSquare(const PointType &p)
 {
     return (p.x) * (p.x) + (p.y) * (p.y) + (p.z) * (p.z);
 }
 
 template <typename PointType>
-float pointDistanceSquare(const PointType& p1, const PointType& p2)
+float pointDistanceSquare(const PointType &p1, const PointType &p2)
 {
     return pcl::squaredEuclideanDistance(p1, p2);
 }
 
 template <typename PointType>
-float pointDistance(const PointType& p)
+float pointDistance(const PointType &p)
 {
     return sqrt(pointDistanceSquare(p));
 }
 
 template <typename PointType>
-float pointDistance(const PointType& p1, const PointType& p2)
+float pointDistance(const PointType &p1, const PointType &p2)
 {
     return sqrt(pointDistanceSquare(p1, p2));
 }
@@ -102,7 +106,7 @@ inline bool check_for_not_converged(const double &timestamp, int step)
     static double last_timestamp = 0;
     // LOG_WARN("check_for_not_converged = %f, %f, %f, %d", timestamp, last_timestamp, timestamp - last_timestamp, cnt);
 
-    if (timestamp <= last_timestamp)         // for test
+    if (timestamp <= last_timestamp) // for test
         cnt = 0;
 
     if (cnt == 0)
@@ -113,7 +117,7 @@ inline bool check_for_not_converged(const double &timestamp, int step)
     }
 
     bool flag = false;
-    if (timestamp - last_timestamp > 60)    // check only 60s
+    if (timestamp - last_timestamp > 60) // check only 60s
         return flag;
 
     if (cnt % step == 0)
@@ -129,7 +133,7 @@ inline bool check_for_not_converged(const double &timestamp, int step)
     return flag;
 }
 
-inline void check_time_interval(double &last_time, const double &cur_time, const double &expected_time, const std::string& what)
+inline void check_time_interval(double &last_time, const double &cur_time, const double &expected_time, const std::string &what)
 {
     auto delta_time = cur_time - last_time;
     if (last_time < 1e-6)
