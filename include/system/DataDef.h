@@ -277,9 +277,6 @@ public:
 
     void resetTimer()
     {
-        if (!runtime_log)
-            return;
-
         timer.restart();
 
         imu_process_time = 0;
