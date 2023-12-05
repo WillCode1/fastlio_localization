@@ -18,6 +18,7 @@
 
 using namespace std;
 using namespace Eigen;
+using namespace EigenMath;
 
 #define G_m_s2 (9.81) // Gravaty const in GuangDong/China
 
@@ -73,6 +74,8 @@ using QF = Eigen::Quaternionf;
 #define EYE3F (M3F::Identity())
 #define ZERO3D (V3D::Zero())
 #define ZERO3F (V3F::Zero())
+#define EYEQD (QD::Identity())
+#define EYEQF (QF::Identity())
 
 template <typename PointType>
 float pointDistanceSquare(const PointType &p)

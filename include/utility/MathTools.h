@@ -4,6 +4,7 @@
 
 #define SKEW_SYM_MATRX(v) 0.0, -v[2], v[1], v[2], 0.0, -v[0], -v[1], v[0], 0.0
 
+// https://blog.csdn.net/wsl_longwudi/article/details/127345908
 /****** SO3 math ******/
 // Hat (skew) operator
 template <typename T>
@@ -102,59 +103,8 @@ static Eigen::Matrix<T, 3, 3> J_l_inv(const Eigen::Matrix<T, 3, 1> &r)
 /****** SO3 math ******/
 
 /****** Quaternion math ******/
-// Convert from quaternion to rotation vector
-template <typename T>
-inline Eigen::Matrix<T, 3, 1> quaternionToRotationVector(const Eigen::Quaternion<T> &qua)
-{
-    Eigen::Matrix<T, 3, 3> mat = qua.toRotationMatrix();
-    Eigen::Matrix<T, 3, 1> rotation_vec;
-    Eigen::AngleAxis<T> angle_axis;
-    angle_axis.fromRotationMatrix(mat);
-    rotation_vec = angle_axis.angle() * angle_axis.axis();
-    return rotation_vec;
-}
-
-// Calculate the Jacobian with respect to the quaternion
-template <typename T>
-inline Eigen::Matrix<T, 3, 4> quaternionJacobian(const Eigen::Quaternion<T> &qua, const Eigen::Matrix<T, 3, 1> &vec)
-{
-    Eigen::Matrix<T, 3, 4> mat;
-    Eigen::Matrix<T, 3, 1> quaternion_imaginary(qua.x(), qua.y(), qua.z());
-
-    mat.template block<3, 1>(0, 0) = qua.w() * vec + quaternion_imaginary.cross(vec);
-    mat.template block<3, 3>(0, 1) = quaternion_imaginary.dot(vec) * Eigen::Matrix<T, 3, 3>::Identity() + quaternion_imaginary * vec.transpose() - vec * quaternion_imaginary.transpose() - qua.w() * hat(vec);
-    return T(2) * mat;
-}
-
-// Calculate the Jacobian with respect to the inverse quaternion
-template <typename T>
-inline Eigen::Matrix<T, 3, 4> quaternionInvJacobian(const Eigen::Quaternion<T> &qua, const Eigen::Matrix<T, 3, 1> &vec)
-{
-    Eigen::Matrix<T, 3, 4> mat;
-    Eigen::Matrix<T, 3, 1> quaternion_imaginary(qua.x(), qua.y(), qua.z());
-
-    mat.template block<3, 1>(0, 0) = qua.w() * vec + vec.cross(quaternion_imaginary);
-    mat.template block<3, 3>(0, 1) = quaternion_imaginary.dot(vec) * Eigen::Matrix<T, 3, 3>::Identity() + quaternion_imaginary * vec.transpose() - vec * quaternion_imaginary.transpose() + qua.w() * hat(vec);
-    return T(2) * mat;
-}
-
-// Calculate the Jacobian rotation vector to quaternion
-template <typename T>
-inline Eigen::Matrix<T, 3, 4> JacobianRotationVector2Quaternion(const Eigen::Quaternion<T> &qua)
-{
-    Eigen::Matrix<T, 3, 4> mat;
-
-    T c = 1 / (1 - qua.w() * qua.w());
-    T d = acos(qua.w()) / sqrt(1 - qua.w() * qua.w());
-
-    mat.template block<3, 1>(0, 0) = Eigen::Matrix<T, 3, 1>(c * qua.x() * (d * qua.x() - 1),
-                                                            c * qua.y() * (d * qua.x() - 1),
-                                                            c * qua.z() * (d * qua.x() - 1));
-    mat.template block<3, 3>(0, 1) = d * Eigen::Matrix<T, 3, 4>::Identity();
-    return T(2) * mat;
-}
-
 // https://zhuanlan.zhihu.com/p/67872858
+// 四元数叉乘矩阵形式: w,x,y,z
 template <typename Derived>
 static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qleft(const Eigen::QuaternionBase<Derived> &q)
 {
@@ -177,7 +127,95 @@ static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qright(const Eigen::Quatern
     return ans;
 }
 
-// get quaternion from rotation vector
+// 另一种顺序: x,y,z,w
+template <typename Derived>
+static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qleft2(const Eigen::QuaternionBase<Derived> &q)
+{
+    Eigen::Matrix<typename Derived::Scalar, 4, 4> ans;
+    ans.template block<3, 3>(0, 0) = q.w() * Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity() + hat(q.vec());
+    ans.template block<3, 1>(0, 3) = q.vec();
+    ans.template block<1, 3>(3, 0) = -q.vec().transpose();
+    ans(3, 3) = q.w();
+    return ans;
+}
+
+template <typename Derived>
+static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qright2(const Eigen::QuaternionBase<Derived> &q)
+{
+    Eigen::Matrix<typename Derived::Scalar, 4, 4> ans;
+    ans.template block<3, 3>(0, 0) = q.w() * Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity() - hat(q.vec());
+    ans.template block<3, 1>(0, 3) = q.vec();
+    ans.template block<1, 3>(3, 0) = -q.vec().transpose();
+    ans(3, 3) = q.w();
+    return ans;
+}
+
+// Calculate the Jacobian about d(Q * vec) / d(Q)
+// 由四元数向量乘法转矩阵形式并展开得来，参考: https://zhuanlan.zhihu.com/p/647605424
+template <typename T>
+static Eigen::Matrix<T, 3, 4> JacobianQuaternionRotatePoint(const Eigen::Quaternion<T> &Q, const Eigen::Matrix<T, 3, 1> &vec)
+{
+    Eigen::Matrix<T, 3, 4> mat;
+    mat.template block<3, 3>(0, 0) = Q.vec().dot(vec) * Eigen::Matrix<T, 3, 3>::Identity() + Q.vec() * vec.transpose() - vec * Q.vec().transpose() - Q.w() * hat(vec);
+    mat.template block<3, 1>(0, 3) = Q.w() * vec + hat(Q.vec()) * vec;
+    return T(2) * mat;
+}
+
+// Calculate the Jacobian about d(Q.inverse() * vec) / d(Q)
+// 由四元数向量乘法转矩阵后再转置并展开得来
+template <typename T>
+static Eigen::Matrix<T, 3, 4> JacobianQuaternionInvRotatePoint(const Eigen::Quaternion<T> &Q, const Eigen::Matrix<T, 3, 1> &vec)
+{
+    Eigen::Matrix<T, 3, 4> mat;
+    mat.template block<3, 3>(0, 0) = Q.vec().dot(vec) * Eigen::Matrix<T, 3, 3>::Identity() + Q.vec() * vec.transpose() - vec * Q.vec().transpose() + Q.w() * hat(vec);
+    mat.template block<3, 1>(0, 3) = Q.w() * vec - hat(Q.vec()) * vec;
+    return T(2) * mat;
+}
+
+// Calculate the Jacobian about so3: d(so3(Q1 * Q2)) / d(Q2)
+// so3对四元数(与四元数乘法)的偏导近似(只在so3较小时成立)，方式按照四元数乘法的实数和虚数位分别展开
+template <typename T>
+static Eigen::Matrix<T, 3, 4> JacobianQuaternionProductApproximate(const Eigen::Quaternion<T> &Q1)
+{
+    Eigen::Matrix<T, 3, 4> mat;
+    mat.template block<3, 3>(0, 0) = Q1.w() * Eigen::Matrix<T, 3, 3>::Identity() + hat(Q1.vec());
+    mat.template block<3, 1>(0, 3) = Q1.vec();
+    return T(2) * mat;
+}
+
+// Calculate the Jacobian about so3: d(so3(Q1 * Q2)) / d(Q2)
+template <typename T>
+static Eigen::Matrix<T, 3, 4> JacobianQuaternionProduct(const Eigen::Quaternion<T> &Q1)
+{
+    Eigen::Matrix<T, 3, 4> mat;
+#if 0
+    // TODO
+#else
+    mat = 0.5 * JacobianQuaternionProductApproximate(Q1);
+#endif
+    return T(2) * mat;
+}
+
+// Calculate the Jacobian rotation vector to quaternion: d(so3) / d(Q)
+template <typename T>
+inline Eigen::Matrix<T, 3, 4> JacobianQuaternion2AngleAxis(const Eigen::Quaternion<T> &Q)
+{
+    Eigen::Matrix<T, 3, 4> mat;
+#if 0
+    T c = 1 / (1 - Q.w() * Q.w());
+    T d = acos(Q.w()) / sqrt(1 - Q.w() * Q.w());
+
+    mat.template block<3, 3>(0, 0) = d * Eigen::Matrix<T, 3, 4>::Identity();
+    mat.template block<3, 1>(0, 3) = Eigen::Matrix<T, 3, 1>(c * Q.x() * (d * Q.x() - 1),
+                                                            c * Q.y() * (d * Q.x() - 1),
+                                                            c * Q.z() * (d * Q.x() - 1));
+#else
+    mat.setIdentity();
+#endif
+    return T(2) * mat;
+}
+
+// so3 -> quaternion
 template <typename Derived>
 Eigen::Quaternion<typename Derived::Scalar> deltaQ(const Eigen::MatrixBase<Derived> &theta)
 {
@@ -193,6 +231,24 @@ Eigen::Quaternion<typename Derived::Scalar> deltaQ(const Eigen::MatrixBase<Deriv
     return dq;
 }
 /****** Quaternion math ******/
+
+template <typename T>
+static Eigen::Matrix<T, 3, 1> quaternionToRotationVector(const Eigen::Quaternion<T> &quat)
+{
+    Eigen::Matrix<T, 3, 1> rotation_vec;
+    Eigen::Matrix<T, 3, 1> vec = quat.normalized().vec();
+    T vec_norm = vec.norm();
+    if (vec_norm < 1e-7)
+    {
+        rotation_vec = 2 * vec;
+    }
+    else
+    {
+        Eigen::AngleAxis<T> angle_axis(quat);
+        rotation_vec = angle_axis.angle() * angle_axis.axis();
+    }
+    return rotation_vec;
+}
 
 template <typename T>
 Eigen::Matrix<T, 3, 1> RotMtoEuler(const Eigen::Matrix<T, 3, 3> &rot)
@@ -214,4 +270,17 @@ Eigen::Matrix<T, 3, 1> RotMtoEuler(const Eigen::Matrix<T, 3, 3> &rot)
     }
     Eigen::Matrix<T, 3, 1> ang(x, y, z);
     return ang;
+}
+
+template <typename T>
+Eigen::Quaternion<T> unifyQuaternion(const Eigen::Quaternion<T> &q)
+{
+    if (q.w() >= 0)
+        return q;
+    else
+    {
+        // it means angle rotate another 360
+        Eigen::Quaternion<T> resultQ(-q.w(), -q.x(), -q.y(), -q.z());
+        return resultQ;
+    }
 }

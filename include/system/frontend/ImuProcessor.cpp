@@ -279,26 +279,32 @@ void ImuProcessor::Process(const MeasureCollection &meas, PointCloudType::Ptr cu
  * @param meas_gravity 测量到的重力
  * @param rot_init 返回的imu初始姿态
  */
-void ImuProcessor::get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_gravity, M3D &rot_init)
+void ImuProcessor::get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_gravity, QD &rot_init)
 {
   M3D hat_grav = hat(-preset_gravity);
-  // sin(theta) = a^b/(|a|*|b|) = |axb|/(|a|*|b|)
+  // sin(theta) = |a^b|/(|a|*|b|) = |axb|/(|a|*|b|)
   double align_sin = (hat_grav * meas_gravity).norm() / meas_gravity.norm() / preset_gravity.norm();
   // cos(theta) = a*b/(|a|*|b|)
   double align_cos = preset_gravity.transpose() * meas_gravity;
   align_cos = align_cos / preset_gravity.norm() / meas_gravity.norm();
 
+  M3D rot_mat_init;
+
   if (align_sin < 1e-6)
   {
     if (align_cos > 1e-6)
-      rot_init = EYE3D;
+      rot_mat_init = EYE3D;
     else
-      rot_init = -EYE3D;
+      rot_mat_init = -EYE3D;
   }
   else
   {
     // 沿着axb方向旋转对应夹角，得到imu初始姿态
     V3D align_angle = hat_grav * meas_gravity / (hat_grav * meas_gravity).norm() * acos(align_cos);
-    rot_init = Exp(align_angle);
+    rot_mat_init = Exp(align_angle);
   }
+
+  V3D rpy = EigenMath::RotationMatrix2RPY(rot_mat_init);
+  rpy.z() = 0;
+  rot_init = EigenMath::RPY2Quaternion(rpy);
 }
