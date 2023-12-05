@@ -181,24 +181,24 @@ void sensor_data_process()
             *cur_scan = *slam.frontend->measures->lidar;
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
         }
-        // LOG_WARN("Relocalization has not succeeded! Drop out one laser data.");
         return;
     }
 
+    QD baselink_rot;
+    V3D baselink_pos;
     if (slam.run())
     {
         const auto &state = slam.frontend->get_state();
         LOG_INFO("location valid. feats_down = %d, cost time = %.1fms.", slam.frontend->loger.feats_down_size, slam.frontend->loger.total_time);
         slam.frontend->loger.print_pose(state, "cur_imu_pose");
 
-        QD baselink_rot;
-        V3D baselink_pos;
         /******* Publish odometry *******/
         publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time, baselink_rot, baselink_pos);
 
-        /******* Publish points *******/
         if (path_en)
             publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->lidar_end_time);
+
+        /******* Publish points *******/
         if (scan_pub_en)
             if (dense_pub_en)
                 publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.frontend->lidar_end_time);
