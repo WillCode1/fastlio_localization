@@ -85,7 +85,6 @@ void publish_tf(const QD &rot, const V3D &pos, const double &lidar_end_time)
     br.sendTransform(tf::StampedTransform(transform, ros::Time().fromSec(lidar_end_time), map_frame, baselink_frame));
 }
 
-// 发布里程计
 void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom &state, const double &lidar_end_time, QD &baselink_rot, V3D &baselink_pos)
 {
     static bool first_time = true;

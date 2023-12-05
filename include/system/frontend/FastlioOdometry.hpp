@@ -217,7 +217,7 @@ public:
         }
 
         // if (!imu->gravity_align_)
-            // init_state(imu);
+        // init_state(imu);
 
         state = kf.get_x();
         loger.imu_process_time = loger.timer.elapsedLast();
@@ -391,9 +391,9 @@ private:
         for (int i = 0; i < effct_feat_num; i++)
         {
             const V3D &point_lidar = effect_features[i].point_lidar;
-            const M3D &point_be_crossmat = SO3Math::get_skew_symmetric(point_lidar);
+            const M3D &point_be_crossmat = hat(point_lidar);
             const V3D &point_imu = state.offset_R_L_I * point_lidar + state.offset_T_L_I;
-            const M3D &point_crossmat = SO3Math::get_skew_symmetric(point_imu);
+            const M3D &point_crossmat = hat(point_imu);
 
             /*** get the normal vector of closest surface ***/
             const V3D &norm_vec = effect_features[i].norm_vec;
