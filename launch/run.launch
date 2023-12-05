@@ -11,6 +11,8 @@
 
     <node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" /> 
 
+    <node pkg="tf" type="static_transform_publisher" name="lidar_to_baselink" args="-1.12 0 -1.99 0 0 0 /baselink /lidar 10" />
+
 	<group if="$(arg rviz)">
 		<!-- glbal map-->
 		<arg name="map" default="$(find fastlio_localization)/PCD/globalmap.pcd" />

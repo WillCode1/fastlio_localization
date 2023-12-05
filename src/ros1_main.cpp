@@ -11,17 +11,18 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_listener.h>
 #include <livox_ros_driver/CustomMsg.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include "utility/Header.h"
 #include "utility/Parameters.h"
 #include "system/System.hpp"
 
-
 int lidar_type;
 System slam;
 std::string map_frame;
-std::string body_frame;
+std::string lidar_frame;
+std::string baselink_frame;
 
 bool path_en = true, scan_pub_en = false, dense_pub_en = false;
 ros::Publisher pubLaserCloudFull;
@@ -36,7 +37,7 @@ void SigHandle(int sig)
     LOG_WARN("catch sig %d", sig);
 }
 
-void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, const double& lidar_end_time, const std::string& frame_id)
+void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, const double &lidar_end_time, const std::string &frame_id)
 {
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(*cloud, cloud_msg);
@@ -45,7 +46,7 @@ void publish_cloud(const ros::Publisher &pubCloud, PointCloudType::Ptr cloud, co
     pubCloud.publish(cloud_msg);
 }
 
-void publish_cloud_world(const ros::Publisher &pubLaserCloudFull, PointCloudType::Ptr laserCloud, const state_ikfom &state, const double& lidar_end_time)
+void publish_cloud_world(const ros::Publisher &pubLaserCloudFull, PointCloudType::Ptr laserCloud, const state_ikfom &state, const double &lidar_end_time)
 {
     PointCloudType::Ptr laserCloudWorld(new PointCloudType(laserCloud->size(), 1));
     pointcloudLidarToWorld(laserCloud, laserCloudWorld, state);
@@ -53,47 +54,93 @@ void publish_cloud_world(const ros::Publisher &pubLaserCloudFull, PointCloudType
 }
 
 template <typename T>
-void set_posestamp(T &out, const state_ikfom &state)
+void set_posestamp(T &out, const QD &rot, const V3D &pos)
 {
-    out.pose.position.x = state.pos(0);
-    out.pose.position.y = state.pos(1);
-    out.pose.position.z = state.pos(2);
-    out.pose.orientation.x = state.rot.coeffs()[0];
-    out.pose.orientation.y = state.rot.coeffs()[1];
-    out.pose.orientation.z = state.rot.coeffs()[2];
-    out.pose.orientation.w = state.rot.coeffs()[3];
+    out.pose.position.x = pos.x();
+    out.pose.position.y = pos.y();
+    out.pose.position.z = pos.z();
+    out.pose.orientation.x = rot.x();
+    out.pose.orientation.y = rot.y();
+    out.pose.orientation.z = rot.z();
+    out.pose.orientation.w = rot.w();
 }
 
-void publish_tf(const geometry_msgs::Pose &pose, const double& lidar_end_time)
+void publish_tf(const QD &rot, const V3D &pos, const double &lidar_end_time)
 {
     static tf::TransformBroadcaster br;
     tf::Transform transform;
     tf::Quaternion q;
-    transform.setOrigin(tf::Vector3(pose.position.x, pose.position.y, pose.position.z));
-    q.setW(pose.orientation.w);
-    q.setX(pose.orientation.x);
-    q.setY(pose.orientation.y);
-    q.setZ(pose.orientation.z);
+    transform.setOrigin(tf::Vector3(pos.x(), pos.y(), pos.z()));
+    q.setW(rot.w());
+    q.setX(rot.x());
+    q.setY(rot.y());
+    q.setZ(rot.z());
     transform.setRotation(q);
-    br.sendTransform(tf::StampedTransform(transform, ros::Time().fromSec(lidar_end_time), map_frame, body_frame));
+    br.sendTransform(tf::StampedTransform(transform, ros::Time().fromSec(lidar_end_time), map_frame, baselink_frame));
 }
 
 // 发布里程计
-void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom &state, const double& lidar_end_time)
+void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom &state, const double &lidar_end_time, QD &baselink_rot, V3D &baselink_pos)
 {
+    static bool first_time = true;
+    static Eigen::Quaterniond lidar2baselink_q;
+    static Eigen::Vector3d lidar2baselink_t;
+    if (first_time)
+    {
+        first_time = false;
+        tf::TransformListener tfListener;
+        tf::StampedTransform trans_lidar2baselink;
+
+        try
+        {
+            tfListener.waitForTransform(lidar_frame, baselink_frame, ros::Time(0), ros::Duration(3.0));
+            tfListener.lookupTransform(lidar_frame, baselink_frame, ros::Time(0), trans_lidar2baselink);
+        }
+        catch (tf::TransformException ex)
+        {
+            ROS_ERROR("%s", ex.what());
+        }
+
+        auto pos = trans_lidar2baselink.getOrigin();
+        auto quat = trans_lidar2baselink.getRotation();
+        lidar2baselink_q = Eigen::Quaterniond(quat.w(), quat.x(), quat.y(), quat.z());
+        lidar2baselink_t = Eigen::Vector3d(pos.x(), pos.y(), pos.z());
+    }
+
+    // extrinsic lidar to baselink
+    Eigen::Matrix4d lidar2baselink = Eigen::Matrix4d::Identity();
+    lidar2baselink.topLeftCorner(3, 3) = lidar2baselink_q.toRotationMatrix();
+    lidar2baselink.topRightCorner(3, 1) = lidar2baselink_t;
+
+    // extrinsic lidar to imu
+    Eigen::Matrix4d lidar2imu = Eigen::Matrix4d::Identity();
+    lidar2imu.topLeftCorner(3, 3) = state.offset_R_L_I.toRotationMatrix();
+    lidar2imu.topRightCorner(3, 1) = state.offset_T_L_I;
+
+    // imu pose
+    Eigen::Matrix4d pose_mat = Eigen::Matrix4d::Identity();
+    pose_mat.topLeftCorner(3, 3) = state.rot.toRotationMatrix();
+    pose_mat.topRightCorner(3, 1) = state.pos;
+
+    // baselink pose
+    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
+    pose_mat = pose_mat * baselink2imu.inverse();
+    baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
+    baselink_pos = pose_mat.topRightCorner(3, 1);
+
     nav_msgs::Odometry odomAftMapped;
     odomAftMapped.header.frame_id = map_frame;
-    odomAftMapped.child_frame_id = body_frame;
+    odomAftMapped.child_frame_id = baselink_frame;
     odomAftMapped.header.stamp = ros::Time().fromSec(lidar_end_time);
-    set_posestamp(odomAftMapped.pose, state);
+    set_posestamp(odomAftMapped.pose, baselink_rot, baselink_pos);
     pubOdomAftMapped.publish(odomAftMapped);
-    publish_tf(odomAftMapped.pose.pose, lidar_end_time);
+    publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
 
-void publish_imu_path(const ros::Publisher &pubPath, const state_ikfom &state, const double& lidar_end_time)
+void publish_imu_path(const ros::Publisher &pubPath, const QD &rot, const V3D &pos, const double &lidar_end_time)
 {
     static geometry_msgs::PoseStamped msg_body_pose;
-    set_posestamp(msg_body_pose, state);
+    set_posestamp(msg_body_pose, rot, pos);
     msg_body_pose.header.stamp = ros::Time().fromSec(lidar_end_time);
     msg_body_pose.header.frame_id = map_frame;
 
@@ -144,12 +191,14 @@ void sensor_data_process()
         LOG_INFO("location valid. feats_down = %d, cost time = %.1fms.", slam.frontend->loger.feats_down_size, slam.frontend->loger.total_time);
         slam.frontend->loger.print_pose(state, "cur_imu_pose");
 
+        QD baselink_rot;
+        V3D baselink_pos;
         /******* Publish odometry *******/
-        publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time);
+        publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time, baselink_rot, baselink_pos);
 
         /******* Publish points *******/
         if (path_en)
-            publish_imu_path(pubImuPath, state, slam.frontend->lidar_end_time);
+            publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->lidar_end_time);
         if (scan_pub_en)
             if (dense_pub_en)
                 publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.frontend->lidar_end_time);
@@ -263,7 +312,7 @@ int main(int argc, char **argv)
     string lidar_topic, imu_topic, config_file;
 
     ros::param::param("config_file", config_file, std::string(""));
-    load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, map_frame, body_frame);
+    load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, string(ROOT_DIR) + config_file, lidar_type);
 
     /*** ROS subscribe initialization ***/
