@@ -97,7 +97,6 @@ public:
 #ifdef DEDUB_MODE
                 frontend->reset_state(imu_pose);
 #endif
-                system_state_vaild = false;
             }
         }
         run_relocalization_thread = false;

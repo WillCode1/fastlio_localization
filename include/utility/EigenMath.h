@@ -9,60 +9,50 @@
 #include "Eigen/Dense"
 using namespace Eigen;
 
-class EigenMath
+namespace EigenMath
 {
-public:
     // 一、旋转向量
     // 1.1 旋转向量转旋转矩阵
-    static Eigen::Matrix3d AngleAxis2RotationMatrix(const Eigen::AngleAxisd &angle_axis)
+    template <typename T>
+    static Eigen::Matrix<T, 3, 3> AngleAxis2RotationMatrix(const Eigen::AngleAxis<T> &angle_axis)
     {
-        // 1.0 初始化旋转向量：旋转角为alpha，旋转轴为(x, y, z)
-        // Eigen::AngleAxisd rotation_vector(alpha, Vector3d(x, y, z))
-        return angle_axis.matrix();
+        return angle_axis.toRotationMatrix();
     }
 
     // 1.2 旋转向量转欧拉角(Z - Y - X，即RPY)
-    static Eigen::Vector3d AngleAxis2RPY(const Eigen::AngleAxisd &angle_axis)
+    template <typename T>
+    static Eigen::Matrix<T, 3, 1> AngleAxis2RPY(const Eigen::AngleAxis<T> &angle_axis)
     {
-        return RotationMatrix2RPY2(angle_axis.matrix());
+        return RotationMatrix2RPY(AngleAxis2RotationMatrix(angle_axis));
     }
 
     // 1.3 旋转向量转四元数
-    static Eigen::Quaterniond AngleAxis2Quaternion(const Eigen::AngleAxisd &angle_axis)
+    template <typename T>
+    static Eigen::Quaternion<T> AngleAxis2Quaternion(const Eigen::AngleAxis<T> &angle_axis)
     {
-        return Eigen::Quaterniond(angle_axis);
+        return Eigen::Quaternion<T>(angle_axis);
     }
 
     // 二、旋转矩阵
     // 2.1 旋转矩阵转旋转向量
-    static Eigen::AngleAxisd RotationMatrix2AngleAxis(const Eigen::Matrix3d &rotation_matrix)
+    template <typename T>
+    static Eigen::AngleAxis<T> RotationMatrix2AngleAxis(const Eigen::Matrix<T, 3, 3> &rotation_matrix)
     {
-        // 2.0 初始化旋转矩阵
-        // Eigen::Matrix3d rotation_matrix;
-        // rotation_matrix << x_00, x_01, x_02, x_10, x_11, x_12, x_20, x_21, x_22;
-        return Eigen::AngleAxisd().fromRotationMatrix(rotation_matrix);
+        return Eigen::AngleAxis<T>().fromRotationMatrix(rotation_matrix);
     }
 
     // 2.2 旋转矩阵转欧拉角(Z - Y - X，即RPY)
-    static Eigen::Vector3d RotationMatrix2RPY(const Eigen::Matrix3d &rotation_matrix)
+    template <typename T>
+    static Eigen::Matrix<T, 3, 1> RotationMatrix2RPY(const Eigen::Matrix<T, 3, 3> &rotation)
     {
-        return rotation_matrix.eulerAngles(0, 1, 2);
-    }
+        // return rotation_matrix.eulerAngles(0, 1, 2);
 
-    // 2.3 旋转矩阵转四元数
-    static Eigen::Quaterniond RotationMatrix2Quaternion(const Eigen::Matrix3d &rotation_matrix)
-    {
-        return Eigen::Quaterniond(rotation_matrix);
-    }
+        // fix eigen bug: https://blog.csdn.net/qq_36594547/article/details/119218807
+        const Eigen::Matrix<T, 3, 1> &n = rotation.col(0);
+        const Eigen::Matrix<T, 3, 1> &o = rotation.col(1);
+        const Eigen::Matrix<T, 3, 1> &a = rotation.col(2);
 
-    // 2.4 fix eigen bug: https://blog.csdn.net/qq_36594547/article/details/119218807
-    static Eigen::Vector3d RotationMatrix2RPY2(const Eigen::Matrix3d &rotation)
-    {
-        Eigen::Vector3d n = rotation.col(0);
-        Eigen::Vector3d o = rotation.col(1);
-        Eigen::Vector3d a = rotation.col(2);
-
-        Eigen::Vector3d rpy(3);
+        Eigen::Matrix<T, 3, 1> rpy(3);
         const double &y = atan2(n(1), n(0));
         const double &p = atan2(-n(2), n(0) * cos(y) + n(1) * sin(y));
         const double &r = atan2(a(0) * sin(y) - a(1) * cos(y), -o(0) * sin(y) + o(1) * cos(y));
@@ -72,45 +62,54 @@ public:
         return rpy;
     }
 
+    // 2.3 旋转矩阵转四元数
+    template <typename T>
+    static Eigen::Quaternion<T> RotationMatrix2Quaternion(const Eigen::Matrix<T, 3, 3> &rotation_matrix)
+    {
+        return Eigen::Quaternion<T>(rotation_matrix);
+    }
+
     // 三、欧拉角
     // 3.1 欧拉角转旋转向量
-    static Eigen::AngleAxisd RPY2AngleAxis(const Eigen::Vector3d &eulerAngles)
+    template <typename T>
+    static Eigen::AngleAxis<T> RPY2AngleAxis(const Eigen::Matrix<T, 3, 1> &eulerAngles)
     {
-        // 3.0 初始化欧拉角(Z - Y - X，即RPY)
-        // Eigen::Vector3d eulerAngle(yaw, pitch, roll);
-        Eigen::AngleAxisd rollAngle(AngleAxisd(eulerAngles(0), Vector3d::UnitX()));
-        Eigen::AngleAxisd pitchAngle(AngleAxisd(eulerAngles(1), Vector3d::UnitY()));
-        Eigen::AngleAxisd yawAngle(AngleAxisd(eulerAngles(2), Vector3d::UnitZ()));
-        Eigen::AngleAxisd angle_axis;
+        Eigen::AngleAxis<T> rollAngle(AngleAxis<T>(eulerAngles(0), Matrix<T, 3, 1>::UnitX()));
+        Eigen::AngleAxis<T> pitchAngle(AngleAxis<T>(eulerAngles(1), Matrix<T, 3, 1>::UnitY()));
+        Eigen::AngleAxis<T> yawAngle(AngleAxis<T>(eulerAngles(2), Matrix<T, 3, 1>::UnitZ()));
+        Eigen::AngleAxis<T> angle_axis;
         angle_axis = yawAngle * pitchAngle * rollAngle;
         return angle_axis;
     }
 
     // 3.2 欧拉角转旋转矩阵
-    static Eigen::Matrix3d RPY2RotationMatrix(const Eigen::Vector3d &eulerAngles)
+    template <typename T>
+    static Eigen::Matrix<T, 3, 3> RPY2RotationMatrix(const Eigen::Matrix<T, 3, 1> &eulerAngles)
     {
-        Eigen::AngleAxisd rollAngle(AngleAxisd(eulerAngles(0), Vector3d::UnitX()));
-        Eigen::AngleAxisd pitchAngle(AngleAxisd(eulerAngles(1), Vector3d::UnitY()));
-        Eigen::AngleAxisd yawAngle(AngleAxisd(eulerAngles(2), Vector3d::UnitZ()));
-        Eigen::Matrix3d rotation_matrix;
+        Eigen::AngleAxis<T> rollAngle(AngleAxis<T>(eulerAngles(0), Matrix<T, 3, 1>::UnitX()));
+        Eigen::AngleAxis<T> pitchAngle(AngleAxis<T>(eulerAngles(1), Matrix<T, 3, 1>::UnitY()));
+        Eigen::AngleAxis<T> yawAngle(AngleAxis<T>(eulerAngles(2), Matrix<T, 3, 1>::UnitZ()));
+        Eigen::Matrix<T, 3, 3> rotation_matrix;
         rotation_matrix = yawAngle * pitchAngle * rollAngle;
         return rotation_matrix;
     }
 
     // 3.3 欧拉角转四元数
-    static Eigen::Quaterniond RPY2Quaternion(const Eigen::Vector3d &eulerAngles)
+    template <typename T>
+    static Eigen::Quaternion<T> RPY2Quaternion(const Eigen::Matrix<T, 3, 1> &eulerAngles)
     {
-        Eigen::AngleAxisd rollAngle(AngleAxisd(eulerAngles(0), Vector3d::UnitX()));
-        Eigen::AngleAxisd pitchAngle(AngleAxisd(eulerAngles(1), Vector3d::UnitY()));
-        Eigen::AngleAxisd yawAngle(AngleAxisd(eulerAngles(2), Vector3d::UnitZ()));
-        Eigen::Quaterniond quaternion;
+        Eigen::AngleAxis<T> rollAngle(AngleAxis<T>(eulerAngles(0), Matrix<T, 3, 1>::UnitX()));
+        Eigen::AngleAxis<T> pitchAngle(AngleAxis<T>(eulerAngles(1), Matrix<T, 3, 1>::UnitY()));
+        Eigen::AngleAxis<T> yawAngle(AngleAxis<T>(eulerAngles(2), Matrix<T, 3, 1>::UnitZ()));
+        Eigen::Quaternion<T> quaternion;
         quaternion = yawAngle * pitchAngle * rollAngle;
         return quaternion;
     }
 
     // 3.4 欧拉角转四元数快速版
     // It's approximately equal if there's only one direction. Three times as fast.
-    static Eigen::Quaterniond RPY2QuaternionFast(const Eigen::Vector3d &rpy)
+    template <typename T>
+    static Eigen::Quaternion<T> RPY2QuaternionFast(const Eigen::Matrix<T, 3, 1> &rpy)
     {
         double scale = 0.5;
         double w = 1.;
@@ -121,53 +120,81 @@ public:
             scale = sin(norm / 2.) / norm;
             w = cos(norm / 2.);
         }
-        const Eigen::Vector3d quaternion_xyz = scale * rpy;
-        return Eigen::Quaterniond(w, quaternion_xyz.x(), quaternion_xyz.y(), quaternion_xyz.z());
+        const Eigen::Matrix<T, 3, 1> quaternion_xyz = scale * rpy;
+        return Eigen::Quaternion<T>(w, quaternion_xyz.x(), quaternion_xyz.y(), quaternion_xyz.z());
     }
 
     // 四、四元数
     // 4.1 四元数转旋转向量
-    static Eigen::AngleAxisd Quaternion2AngleAxis(const Eigen::Quaterniond &quaternion)
+    template <typename T>
+    static Eigen::AngleAxis<T> Quaternion2AngleAxis(const Eigen::Quaternion<T> &quaternion)
     {
-        return Eigen::AngleAxisd(quaternion);
+        return Eigen::AngleAxis<T>(quaternion);
     }
 
     // 4.2 四元数转旋转矩阵
-    static Eigen::Matrix3d Quaternion2RotationMatrix(const Eigen::Quaterniond &quaternion)
+    template <typename T>
+    static Eigen::Matrix<T, 3, 3> Quaternion2RotationMatrix(const Eigen::Quaternion<T> &q)
     {
-        return quaternion.matrix();
+        // return quaternion.normalized().toRotationMatrix();
+
+        // fix eigen bug: The quaternion is required to be normalized, otherwise the result is undefined.
+        Eigen::Matrix<T, 3, 3> res;
+        const T &nn = q.norm() * q.norm(); // there is fixed!
+        const T &tx = T(2) * q.x();
+        const T &ty = T(2) * q.y();
+        const T &tz = T(2) * q.z();
+        const T &twx = tx * q.w();
+        const T &twy = ty * q.w();
+        const T &twz = tz * q.w();
+        const T &txx = tx * q.x();
+        const T &txy = ty * q.x();
+        const T &txz = tz * q.x();
+        const T &tyy = ty * q.y();
+        const T &tyz = tz * q.y();
+        const T &tzz = tz * q.z();
+
+        res.block(0, 0, 1, 3) << nn - (tyy + tzz), txy - twz, txz + twy;
+        res.block(1, 0, 1, 3) << txy + twz, nn - (txx + tzz), tyz - twx;
+        res.block(2, 0, 1, 3) << txz - twy, tyz + twx, nn - (txx + tyy);
+        return res;
     }
 
     // 4.3 四元数转欧拉角(Z - Y - X，即RPY)
-    static Eigen::Vector3d Quaternion2RPY(const Eigen::Quaterniond &quaternion)
+    template <typename T>
+    static Eigen::Matrix<T, 3, 1> Quaternion2RPY(const Eigen::Quaternion<T> &quaternion)
     {
-        return RotationMatrix2RPY2(quaternion.matrix());
+        return RotationMatrix2RPY(Quaternion2RotationMatrix(quaternion));
     }
 
     // 5.1 pose -> matrix
-    static Eigen::Matrix4d CreateAffineMatrix(const Eigen::Vector3d &translation, const Eigen::Vector3d &eulerAngles)
+    template <typename T>
+    static Eigen::Matrix<T, 4, 4> CreateAffineMatrix(const Eigen::Matrix<T, 3, 1> &translation, const Eigen::Matrix<T, 3, 1> &eulerAngles)
     {
-        Eigen::Matrix4d transform = Eigen::Matrix4d::Identity();
-        transform.topLeftCorner(3, 3) = EigenMath::RPY2RotationMatrix(eulerAngles);
+        Eigen::Matrix<T, 4, 4> transform = Eigen::Matrix<T, 4, 4>::Identity();
+        transform.topLeftCorner(3, 3) = RPY2RotationMatrix(eulerAngles);
         transform.topRightCorner(3, 1) = translation;
         return transform;
     }
 
-    static Eigen::Matrix4d CreateAffineMatrix(const double &x, const double &y, const double &z, const double &roll, const double &pitch, const double &yaw)
+    template <typename T>
+    static Eigen::Matrix<T, 4, 4> CreateAffineMatrix(const double &x, const double &y, const double &z, const double &roll, const double &pitch, const double &yaw)
     {
-        return CreateAffineMatrix(Eigen::Vector3d(x, y, z), Eigen::Vector3d(roll, pitch, yaw));
+        return CreateAffineMatrix(Eigen::Matrix<T, 3, 1>(x, y, z), Eigen::Matrix<T, 3, 1>(roll, pitch, yaw));
     }
 
     // 5.2 matrix -> pose
-    static void DecomposeAffineMatrix(const Eigen::Matrix4d &affine_mat, Eigen::Vector3d &translation, Eigen::Vector3d &eulerAngles)
+    template <typename T>
+    static void DecomposeAffineMatrix(const Eigen::Matrix<T, 4, 4> &affine_mat, Eigen::Matrix<T, 3, 1> &translation, Eigen::Matrix<T, 3, 1> &eulerAngles)
     {
         translation = affine_mat.topRightCorner(3, 1);
-        eulerAngles = EigenMath::RotationMatrix2RPY2(Eigen::Matrix3d(affine_mat.topLeftCorner(3, 3)));
+        eulerAngles = RotationMatrix2RPY(Eigen::Matrix<T, 3, 3>(affine_mat.topLeftCorner(3, 3)));
     }
 
-    static void DecomposeAffineMatrix(const Eigen::Matrix4d &affine_mat, double &x, double &y, double &z, double &roll, double &pitch, double &yaw)
+    template <typename T>
+    static void DecomposeAffineMatrix(const Eigen::Matrix<T, 4, 4> &affine_mat, double &x, double &y, double &z, double &roll, double &pitch, double &yaw)
     {
-        Eigen::Vector3d eulerAngles, translation;
+        Eigen::Matrix<T, 3, 1> eulerAngles, translation;
         DecomposeAffineMatrix(affine_mat, translation, eulerAngles);
         x = translation.x();
         y = translation.y();
@@ -176,4 +203,4 @@ public:
         pitch = eulerAngles.y();
         yaw = eulerAngles.z();
     }
-};
+}
