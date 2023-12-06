@@ -201,10 +201,10 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
-    odom.enu_pos[0] = pose_mat(0, 3);
-    odom.enu_pos[1] = pose_mat(1, 3);
-    odom.enu_pos[2] = pose_mat(2, 3);
-    auto res = EigenMath::RotationMatrix2RPY(M3D(pose_mat.topLeftCorner(3, 3)));
+    odom.enu_pos[0] = baselink_pos.x();
+    odom.enu_pos[1] = baselink_pos.y();
+    odom.enu_pos[2] = baselink_pos.z();
+    auto res = EigenMath::Quaternion2RPY(baselink_rot);
     odom.roll = res(0);
     odom.pitch = res(1);
     odom.yaw = res(2);
