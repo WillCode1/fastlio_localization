@@ -199,7 +199,7 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     odom.enu_pos[0] = pose_mat(0, 3);
     odom.enu_pos[1] = pose_mat(1, 3);
     odom.enu_pos[2] = pose_mat(2, 3);
-    auto res = EigenMath::RotationMatrix2RPY2(pose_mat.topLeftCorner(3, 3));
+    auto res = EigenMath::RotationMatrix2RPY(M3D(pose_mat.topLeftCorner(3, 3)));
     odom.roll = res(0);
     odom.pitch = res(1);
     odom.yaw = res(2);
@@ -215,17 +215,18 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     odom.body_accel[1] = slam.frontend->linear_acceleration(1);
     odom.body_accel[2] = slam.frontend->linear_acceleration(2);
 
-    pubMsf.publish(odom);
+    if (std::abs(odom.enu_pos[0]) > 1e7 || std::abs(odom.enu_pos[1]) > 1e7 || std::abs(odom.enu_pos[2]) > 1e7 ||
+        std::abs(odom.enu_vel[0]) > 10 || std::abs(odom.enu_vel[1]) > 10 || std::abs(odom.enu_vel[2]) > 10 ||
+        std::abs(odom.angular_vel[0]) > 100 || std::abs(odom.angular_vel[1]) > 100 || std::abs(odom.angular_vel[2]) > 100 ||
+        std::abs(odom.body_accel[0]) > 100 || std::abs(odom.body_accel[1]) > 100 || std::abs(odom.body_accel[2]) > 100)
+    {
+        LOG_WARN("localization state maybe valid! (imu frame) pos(%f, %f, %f), vel(%f, %f, %f), ang_vel(%f, %f, %f), linear_acc(%f, %f, %f)",
+                 odom.enu_pos[0], odom.enu_pos[1], odom.enu_pos[2], odom.enu_vel[0], odom.enu_vel[1], odom.enu_vel[2],
+                 odom.angular_vel[0], odom.angular_vel[1], odom.angular_vel[2], odom.body_accel[0], odom.body_accel[1], odom.body_accel[2]);
+        odom.is_valid = false;
+    }
 
-    auto quat = EigenMath::RotationMatrix2Quaternion(pose_mat.topLeftCorner(3, 3));
-    geometry_msgs::Pose pose;
-    pose.position.x = odom.enu_pos[0];
-    pose.position.y = odom.enu_pos[1];
-    pose.position.z = odom.enu_pos[2];
-    pose.orientation.w = quat.w();
-    pose.orientation.x = quat.x();
-    pose.orientation.y = quat.y();
-    pose.orientation.z = quat.z();
+    pubMsf.publish(odom);
     publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
 #endif
