@@ -127,6 +127,11 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
+    if (std::abs(baselink_pos.x()) > 1e7 || std::abs(baselink_pos.y()) > 1e7 || std::abs(baselink_pos.z()) > 1e7)
+    {
+        LOG_WARN("localization state maybe valid! (imu frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
+    }
+
     nav_msgs::Odometry odomAftMapped;
     odomAftMapped.header.frame_id = map_frame;
     odomAftMapped.child_frame_id = baselink_frame;
