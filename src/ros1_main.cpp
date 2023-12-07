@@ -101,7 +101,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
             tfListener.waitForTransform(lidar_frame, baselink_frame, ros::Time(0), ros::Duration(3.0));
             tfListener.lookupTransform(lidar_frame, baselink_frame, ros::Time(0), trans_lidar2baselink);
         }
-        catch (tf::TransformException ex)
+        catch (tf::TransformException &ex)
         {
             ROS_ERROR("%s", ex.what());
         }
