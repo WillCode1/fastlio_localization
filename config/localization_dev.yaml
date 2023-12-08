@@ -67,7 +67,7 @@ bnb3d:
     linear_xy_window_size: 5   # meter
     linear_z_window_size: 0.5  # meter
     angular_search_window: 180  # degree 0~180
-    pc_resolutions: [0.2, 0.3, 0.5]
+    pc_resolutions: [0.3, 0.5, 0.8]
     bnb_depth: 3
     min_score: 0.3
     enough_score: 0.7
