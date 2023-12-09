@@ -125,8 +125,6 @@ public:
     virtual bool sync_sensor_data()
     {
         static bool lidar_pushed = false;
-        static double lidar_mean_scantime = 0.0;
-        static int scan_num = 0;
 
         std::lock_guard<std::mutex> lock(mtx_buffer);
         if (lidar_buffer.empty() || imu_buffer.empty())
@@ -146,21 +144,8 @@ public:
                 time_buffer.pop_front();
                 return false;
             }
-            auto last_point_timestamp = measures->lidar->points.back().curvature;
-            if (last_point_timestamp < 0.5 * lidar_mean_scantime)
-            {
-                lidar_end_time = measures->lidar_beg_time + lidar_mean_scantime / double(1000);
-            }
-            else
-            {
-                lidar_end_time = measures->lidar_beg_time + last_point_timestamp / double(1000);
-                if (scan_num < INT_MAX)
-                {
-                    scan_num++;
-                    lidar_mean_scantime += (last_point_timestamp - lidar_mean_scantime) / scan_num;
-                }
-            }
-
+            sort(measures->lidar->points.begin(), measures->lidar->points.end(), compare_timestamp);
+            lidar_end_time = measures->lidar_beg_time + measures->lidar->points.back().curvature / double(1000);
             measures->lidar_end_time = lidar_end_time;
             lidar_pushed = true;
         }

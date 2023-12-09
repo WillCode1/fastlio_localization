@@ -79,7 +79,6 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
 
   /*** sort point clouds by offset time ***/
   pcl_out = *(meas.lidar);
-  sort(pcl_out.points.begin(), pcl_out.points.end(), compare_timestamp);
 
   /*** Initialize IMU pose ***/
   state_ikfom imu_state = kf_state.get_x(); // 获取上一次KF估计的后验状态作为本次IMU预测的初始状态
@@ -88,9 +87,7 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
   imu_states.emplace_back(0.0, acc_s_last, angvel_last, imu_state.vel, imu_state.pos, imu_state.rot.toRotationMatrix());
 
   /*** forward propagation at each imu point ***/
-  V3D angvel_avr, acc_avr, acc_imu, vel_imu, pos_imu; // angvel_avr为平均角速度，acc_avr为平均加速度，acc_imu为imu加速度，vel_imu为imu速度，pos_imu为imu位置
-  M3D R_imu;                                          // imu旋转矩阵
-
+  V3D angvel_avr, acc_avr;
   double dt = 0;
 
   input_ikfom in;
@@ -153,11 +150,11 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
   {
     auto head = it_kp - 1;
     auto tail = it_kp;
-    R_imu = head->rot;
-    vel_imu = head->vel;
-    pos_imu = head->pos;
-    acc_imu = tail->acc;
-    angvel_avr = tail->gyr;
+    const M3D &R_imu = head->rot;
+    const V3D &vel_imu = head->vel;
+    const V3D &pos_imu = head->pos;
+    const V3D &acc_imu = tail->acc;
+    const V3D &gyr_imu = tail->gyr;
 
     // 点云时间需要迟于前一个IMU时刻，因为是在两个IMU时刻之间去畸变，此时默认雷达的时间戳在后一个IMU时刻之前
     for (; it_pcl->curvature / double(1000) > head->offset_time; it_pcl--)
@@ -172,7 +169,7 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
        * 注意: 补偿方向与帧的移动方向相反
        * 所以如果我们想补偿时间戳i到帧e的一个点
        * P_compensate = R_imu_e ^ T * (R_i * P_i + T_ei)  其中T_ei在全局框架中表示 */
-      M3D R_i(R_imu * Exp(angvel_avr, dt));                                       // 当前点时刻的imu在世界坐标系下姿态
+      M3D R_i(R_imu * Exp(gyr_imu, dt));                                       // 当前点时刻的imu在世界坐标系下姿态
       V3D P_i(it_pcl->x, it_pcl->y, it_pcl->z);                                   // 当前点位置(雷达坐标系下)
       V3D T_ei(pos_imu + vel_imu * dt + 0.5 * acc_imu * dt * dt - imu_state.pos); // 当前点的时刻imu在世界坐标系下位置 - end时刻IMU在世界坐标系下的位置
       // 原理: 对应fastlio公式(10)，通过世界坐标系过度，将当前时刻IMU坐标系下坐标转换到end时刻IMU坐标系下
