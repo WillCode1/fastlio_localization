@@ -221,7 +221,7 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     odom.body_accel[2] = slam.frontend->linear_acceleration(2);
 
     if (std::abs(odom.enu_pos[0]) > 1e7 || std::abs(odom.enu_pos[1]) > 1e7 || std::abs(odom.enu_pos[2]) > 1e7 ||
-        std::abs(odom.enu_vel[0]) > 10 || std::abs(odom.enu_vel[1]) > 10 || std::abs(odom.enu_vel[2]) > 10 ||
+        std::abs(odom.enu_vel[0]) > 20 || std::abs(odom.enu_vel[1]) > 20 || std::abs(odom.enu_vel[2]) > 20 ||
         std::abs(odom.angular_vel[0]) > 100 || std::abs(odom.angular_vel[1]) > 100 || std::abs(odom.angular_vel[2]) > 100 ||
         std::abs(odom.body_accel[0]) > 100 || std::abs(odom.body_accel[1]) > 100 || std::abs(odom.body_accel[2]) > 100)
     {
