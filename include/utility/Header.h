@@ -120,7 +120,7 @@ inline bool check_for_not_converged(const double &timestamp, int step)
     }
 
     bool flag = false;
-    if (timestamp - last_timestamp > 60) // check only 60s
+    if (timestamp - last_timestamp > 40) // check only 40s
         return flag;
 
     if (cnt % step == 0)
