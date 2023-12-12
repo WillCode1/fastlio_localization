@@ -148,7 +148,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
 }
 
 #ifdef WORK
-void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, const double& lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
+void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
 {
     ant_robot_msgs::PoseDynamicData odom;
     odom.header.frame_id = map_frame;
