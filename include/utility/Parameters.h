@@ -126,6 +126,7 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     slam.frontend->lidar->valid_ring.insert(valid_ring_index.begin(), valid_ring_index.end());
     slam.frontend->lidar->init(n_scans, scan_rate, time_unit, blind, detect_range);
     slam.frontend->imu->imu_rate = config["preprocess"]["imu_rate"].IsDefined() ? config["preprocess"]["imu_rate"].as<int>() : 200;
+    slam.frontend->imu->imu_meas_check = config["preprocess"]["imu_meas_check"].IsDefined() ? config["preprocess"]["imu_meas_check"].as<vector<double>>() : vector<double>(6, 20);
     slam.frontend->imu->set_imu_cov(process_noise_cov(gyr_cov, acc_cov, b_gyr_cov, b_acc_cov));
 
     slam.frontend->timedelay_lidar2imu = config["common"]["timedelay_lidar2imu"].IsDefined() ? config["common"]["timedelay_lidar2imu"].as<double>() : 0;

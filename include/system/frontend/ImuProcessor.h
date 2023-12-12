@@ -40,6 +40,7 @@ public:
   V3D mean_acc;
   V3D mean_gyr;
   int imu_rate = 200;
+  vector<double> imu_meas_check;
 
 private:
   void IMU_init(const MeasureCollection &meas, int &N);
