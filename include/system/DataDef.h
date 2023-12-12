@@ -31,19 +31,17 @@ struct ImuData
 {
     using Ptr = std::shared_ptr<ImuData>;
 
-    ImuData(const double &t = 0, const V3D &av = ZERO3D, const V3D &la = ZERO3D, const QD &ori = QD::Identity())
+    ImuData(const double &t = 0, const V3D &av = ZERO3D, const V3D &la = ZERO3D)
     {
         timestamp = t;
         angular_velocity = av;
         linear_acceleration = la;
-        orientation = ori;
     }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     double timestamp;
     V3D angular_velocity;
     V3D linear_acceleration;
-    QD orientation;
 };
 
 struct MeasureCollection

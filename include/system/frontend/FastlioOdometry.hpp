@@ -85,7 +85,7 @@ public:
         kf.change_x(state);
     }
 
-    virtual void cache_imu_data(double timestamp, const V3D &angular_velocity, const V3D &linear_acceleration, const QD &orientation)
+    virtual void cache_imu_data(double timestamp, const V3D &angular_velocity, const V3D &linear_acceleration)
     {
         timestamp = timestamp + timedelay_lidar2imu; // 时钟同步该采样同步td
         std::lock_guard<std::mutex> lock(mtx_buffer);
@@ -97,7 +97,7 @@ public:
         }
 
         latest_timestamp_imu = timestamp;
-        imu_buffer.push_back(make_shared<ImuData>(latest_timestamp_imu, angular_velocity, linear_acceleration, orientation));
+        imu_buffer.push_back(make_shared<ImuData>(latest_timestamp_imu, angular_velocity, linear_acceleration));
     }
 
     virtual void cache_pointcloud_data(const double &lidar_beg_time, const PointCloudType::Ptr &scan)
