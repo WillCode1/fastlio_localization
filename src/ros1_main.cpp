@@ -221,7 +221,7 @@ void sensor_data_process()
 void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
     static double last_time = 0;
-    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar");
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar_time_interval");
 
     Timer timer;
     pcl::PointCloud<ouster_ros::Point> pl_orig_oust;
@@ -253,7 +253,7 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
 {
     static double last_time = 0;
-    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar");
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar_time_interval");
 
     Timer timer;
     auto plsize = msg->point_num;
@@ -282,12 +282,15 @@ void livox_pcl_cbk(const livox_ros_driver::CustomMsg::ConstPtr &msg)
 
 void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
 {
-    static double last_time = 0;
-    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->imu->imu_rate, "imu");
+    const auto &angular_velocity = V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
+    const auto &linear_acceleration = V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
+    if (!check_imu_meas(angular_velocity, linear_acceleration, slam.frontend->imu->imu_meas_check, "imu_meas"))
+        return;
 
-    slam.frontend->cache_imu_data(msg->header.stamp.toSec(),
-                                  V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z),
-                                  V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z));
+    static double last_time = 0;
+    check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->imu->imu_rate, "imu_time_interval");
+
+    slam.frontend->cache_imu_data(msg->header.stamp.toSec(), angular_velocity, linear_acceleration);
     sensor_data_process();
 }
 
