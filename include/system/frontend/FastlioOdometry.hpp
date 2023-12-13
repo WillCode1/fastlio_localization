@@ -109,6 +109,12 @@ public:
             return;
         }
 
+        if (scan->points.size() <= 1)
+        {
+            LOG_WARN("Too few input point cloud! size = %ld, droped!", scan->points.size());
+            return;
+        }
+
         latest_lidar_beg_time = lidar_beg_time;
         double latest_lidar_end_time = latest_lidar_beg_time + scan->points.back().curvature / 1000;
 
@@ -137,13 +143,6 @@ public:
         {
             measures->lidar = lidar_buffer.front();
             measures->lidar_beg_time = time_buffer.front();
-            if (measures->lidar->points.size() <= 1)
-            {
-                LOG_WARN("Too few input point cloud!\n");
-                lidar_buffer.pop_front();
-                time_buffer.pop_front();
-                return false;
-            }
             sort(measures->lidar->points.begin(), measures->lidar->points.end(), compare_timestamp);
             lidar_end_time = measures->lidar_beg_time + measures->lidar->points.back().curvature / double(1000);
             measures->lidar_end_time = lidar_end_time;
