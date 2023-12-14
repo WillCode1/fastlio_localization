@@ -135,7 +135,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
 
     if (std::abs(baselink_pos.x()) > 1e7 || std::abs(baselink_pos.y()) > 1e7 || std::abs(baselink_pos.z()) > 1e7)
     {
-        LOG_WARN("localization state maybe valid! (baselink frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
+        LOG_WARN("localization state maybe abnormal! (baselink frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
     }
 
     nav_msgs::Odometry odomAftMapped;
