@@ -225,7 +225,7 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
         std::abs(odom.angular_vel[0]) > 100 || std::abs(odom.angular_vel[1]) > 100 || std::abs(odom.angular_vel[2]) > 100 ||
         std::abs(odom.body_accel[0]) > 100 || std::abs(odom.body_accel[1]) > 100 || std::abs(odom.body_accel[2]) > 100)
     {
-        LOG_WARN("localization state maybe valid! (imu frame) pos(%f, %f, %f), vel(%f, %f, %f), ang_vel(%f, %f, %f), linear_acc(%f, %f, %f)",
+        LOG_WARN("localization state maybe abnormal! (imu frame) pos(%f, %f, %f), vel(%f, %f, %f), ang_vel(%f, %f, %f), linear_acc(%f, %f, %f)",
                  odom.enu_pos[0], odom.enu_pos[1], odom.enu_pos[2], odom.enu_vel[0], odom.enu_vel[1], odom.enu_vel[2],
                  odom.angular_vel[0], odom.angular_vel[1], odom.angular_vel[2], odom.body_accel[0], odom.body_accel[1], odom.body_accel[2]);
         odom.is_valid = false;
