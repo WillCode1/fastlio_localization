@@ -7,10 +7,12 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include "ImuProcessor.h"
 #include "LidarProcessor.hpp"
 #include "utility/Header.h"
 
+#define USE_IKDTREE
 
 class FastlioOdometry
 {
@@ -218,7 +220,7 @@ public:
         loger.feats_down_size = feats_down_size;
         loger.downsample_time = loger.timer.elapsedLast();
 
-        loger.kdtree_size = ikdtree.size();
+        // loger.kdtree_size = ikdtree.size();
 
         if (feats_down_size < 5)
         {
@@ -253,6 +255,7 @@ public:
         loger.dump_state_to_log(loger.fout_update, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
 #endif
 
+#ifdef USE_IKDTREE
         if (false)
         {
             /*** map update ***/
@@ -262,8 +265,9 @@ public:
             loger.map_remove_time = loger.timer.elapsedLast();
             map_incremental();
             loger.map_incre_time = loger.timer.elapsedLast();
-            loger.kdtree_size_end = ikdtree.size();
+            // loger.kdtree_size_end = ikdtree.size();
         }
+#endif
         loger.print_fastlio_cost_time();
 #ifndef NO_LOGER
         loger.output_fastlio_log_to_csv(measures->lidar_beg_time);
@@ -274,6 +278,7 @@ public:
 public:
     void init_global_map(PointCloudType::Ptr &submap)
     {
+#ifdef USE_IKDTREE
         if (ikdtree.Root_Node != nullptr)
         {
             LOG_ERROR("Error, ikdtree not null when initializing the map!");
@@ -281,6 +286,14 @@ public:
         }
         ikdtree.set_downsample_param(ikdtree_resolution);
         ikdtree.Build(submap->points);
+#else
+        if (kdtree.getInputCloud() != nullptr)
+        {
+            LOG_ERROR("Error, kdtree not null when initializing the map!");
+            std::exit(100);
+        }
+        kdtree.setInputCloud(submap);
+#endif
     }
 
     virtual state_ikfom get_state()
@@ -314,8 +327,20 @@ private:
             {
                 /** Find the closest surfaces in the map **/
                 vector<float> pointSearchSqDis(NUM_MATCH_POINTS);
+#ifdef USE_IKDTREE
                 ikdtree.Nearest_Search(point_world, NUM_MATCH_POINTS, points_near, pointSearchSqDis, lidar_model_search_range);
                 point_matched_surface[i] = points_near.size() < NUM_MATCH_POINTS ? false : true;
+#else
+                vector<int> indices;
+                kdtree.nearestKSearch(point_world, NUM_MATCH_POINTS, indices, pointSearchSqDis);
+                point_matched_surface[i] = indices.size() < NUM_MATCH_POINTS ? false : pointSearchSqDis.back() > lidar_model_search_range ? false : true;
+                if (point_matched_surface[i])
+                {
+                    points_near.clear();
+                    for (auto index: indices)
+                        points_near.push_back(kdtree.getInputCloud()->points[index]);
+                }
+#endif
             }
 
             if (!point_matched_surface[i])
@@ -616,6 +641,7 @@ public:
     BoxPointType local_map_bbox;
     double ikdtree_resolution;
     KD_TREE<PointType> ikdtree;
+    pcl::KdTreeFLANN<PointType> kdtree;
 
 #ifdef RECORD_IMU_STATE
     V3D angular_velocity;
