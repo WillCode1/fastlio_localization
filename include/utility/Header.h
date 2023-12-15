@@ -151,17 +151,37 @@ inline void check_time_interval(double &last_time, const double &cur_time, const
     last_time = cur_time;
 }
 
-inline bool check_imu_meas(const V3D &angular_velocity, const V3D &linear_acceleration, const vector<double> &imu_meas_check, const std::string &what)
+inline bool check_imu_meas(const V3D &angular_velocity, const V3D &linear_acceleration, const vector<double> &imu_meas_check)
 {
     if (std::abs(angular_velocity.x()) > imu_meas_check[0] || std::abs(angular_velocity.y()) > imu_meas_check[1] || std::abs(angular_velocity.z()) > imu_meas_check[2] ||
         std::abs(linear_acceleration.x()) > imu_meas_check[3] || std::abs(linear_acceleration.y()) > imu_meas_check[4] || std::abs(linear_acceleration.z()) > imu_meas_check[5])
     {
-        LOG_WARN("imu_meas abnormal! ang_vel(%f, %f, %f), linear_acc(%f, %f, %f). Droped!",
-                 angular_velocity.x(), angular_velocity.y(), angular_velocity.z(),
-                 linear_acceleration.x(), linear_acceleration.y(), linear_acceleration.z());
+        LOG_ERROR("imu_meas abnormal! ang_vel(%f, %f, %f), linear_acc(%f, %f, %f). Droped!",
+                  angular_velocity.x(), angular_velocity.y(), angular_velocity.z(),
+                  linear_acceleration.x(), linear_acceleration.y(), linear_acceleration.z());
         return false;
     }
     return true;
+}
+
+template <typename ikfom_state>
+bool check_state_nan(const ikfom_state &state)
+{
+    if (state.pos.array().isNaN().any() || state.pos.array().isInf().any() ||
+        state.rot.coeffs().array().isNaN().any() || state.rot.coeffs().array().isInf().any() ||
+        state.vel.array().isNaN().any() || state.vel.array().isInf().any() ||
+        state.ba.array().isNaN().any() || state.ba.array().isInf().any() ||
+        state.bg.array().isNaN().any() || state.bg.array().isInf().any())
+    {
+        LOG_ERROR("state nan! pos(%f, %f, %f), rot(%f, %f, %f, %f), vel(%f, %f, %f), ba(%f, %f, %f), bg(%f, %f, %f). reset!",
+                  state.pos.x(), state.pos.y(), state.pos.z(),
+                  state.rot.x(), state.rot.y(), state.rot.z(), state.rot.w(),
+                  state.vel.x(), state.vel.y(), state.vel.z(),
+                  state.ba.x(), state.ba.y(), state.ba.z(),
+                  state.bg.x(), state.bg.y(), state.bg.z());
+        return true;
+    }
+    return false;
 }
 
 // #define DEDUB_MODE

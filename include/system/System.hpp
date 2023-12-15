@@ -77,6 +77,12 @@ public:
             return false;
         }
 
+        if (check_state_nan(frontend->get_state()))
+        {
+            system_state_vaild = false;
+            return system_state_vaild;
+        }
+
         system_state_vaild = true;
         return system_state_vaild;
     }
