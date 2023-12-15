@@ -379,7 +379,7 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
 {
     const auto &angular_velocity = V3D(msg->angular_velocity.x, msg->angular_velocity.y, msg->angular_velocity.z);
     const auto &linear_acceleration = V3D(msg->linear_acceleration.x, msg->linear_acceleration.y, msg->linear_acceleration.z);
-    if (!check_imu_meas(angular_velocity, linear_acceleration, slam.frontend->imu->imu_meas_check, "imu_meas"))
+    if (!check_imu_meas(angular_velocity, linear_acceleration, slam.frontend->imu->imu_meas_check))
         return;
 
     static double last_time = 0;
