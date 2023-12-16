@@ -72,7 +72,6 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
   /*** add the imu of the last frame-tail to the of current frame-head ***/
   auto v_imu = meas.imu;                                 // 拿到当前的imu数据
   v_imu.push_front(last_imu_);                           // 将上一帧最后尾部的imu添加到当前帧头部的imu
-  const double &imu_beg_time = v_imu.front()->timestamp; // 拿到当前帧头部的imu的时间（也就是上一帧尾部的imu时间戳）
   const double &imu_end_time = v_imu.back()->timestamp;  // 拿到当前帧尾部的imu的时间
   const double &pcl_beg_time = meas.lidar_beg_time;      // 当前帧pcl的开始时间
   const double &pcl_end_time = meas.lidar_end_time;      // 当前帧pcl的结束时间

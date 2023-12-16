@@ -276,7 +276,7 @@ namespace esekfom
 				for (std::vector<std::pair<int, int>>::iterator it = x_.SO3_state.begin(); it != x_.SO3_state.end(); it++)
 				{
 					int idx = (*it).first;
-					int dim = (*it).second;
+					// int dim = (*it).second;
 					for (int i = 0; i < 3; i++)
 					{
 						seg_SO3(i) = error_x(idx + i);
@@ -299,7 +299,7 @@ namespace esekfom
 				for (std::vector<std::pair<int, int>>::iterator it = x_.S2_state.begin(); it != x_.S2_state.end(); it++)
 				{
 					int idx = (*it).first;
-					int dim = (*it).second;
+					// int dim = (*it).second;
 					for (int i = 0; i < 2; i++)
 					{
 						seg_S2(i) = error_x(idx + i);
