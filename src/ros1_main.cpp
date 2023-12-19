@@ -21,6 +21,8 @@
 #define WORK
 #ifdef WORK
 #include "ant_robot_msgs/PoseDynamicData.h"
+#include "ant_robot_msgs/Level.h"
+#include "ant_robot_msgs/ModuleStatus.h"
 #endif
 
 int lidar_type;
@@ -35,6 +37,7 @@ ros::Publisher pubOdomAftMapped;
 ros::Publisher pubImuPath;
 ros::Publisher pubrelocalizationDebug;
 ros::Publisher pubMsf;
+ros::Publisher pubModulesStatus;
 
 bool flg_exit = false;
 void SigHandle(int sig)
@@ -233,6 +236,12 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
 
     pubMsf.publish(odom);
     publish_tf(baselink_rot, baselink_pos, lidar_end_time);
+
+    ant_robot_msgs::ModuleStatus status;
+    status.header.stamp = ros::Time().fromSec(lidar_end_time);
+    status.header.frame_id = "location";
+    status.level = ant_robot_msgs::Level::OK;
+    pubModulesStatus.publish(status);
 }
 #endif
 
@@ -427,6 +436,7 @@ int main(int argc, char **argv)
     pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 
     pubMsf = nh.advertise<ant_robot_msgs::PoseDynamicData>("/ant_robot/pose_dynamic_data", 1);
+    pubModulesStatus = nh.advertise<ant_robot_msgs::ModuleStatus>("/ant_robot/module_status", 1);
     //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
 
