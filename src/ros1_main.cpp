@@ -151,6 +151,15 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
 }
 
 #ifdef WORK
+void publish_module_status(const double &time)
+{
+    ant_robot_msgs::ModuleStatus status;
+    status.header.stamp = ros::Time().fromSec(time);
+    status.header.frame_id = "LOCATION";
+    status.level = ant_robot_msgs::Level::OK;
+    pubModulesStatus.publish(status);
+}
+
 void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
 {
     ant_robot_msgs::PoseDynamicData odom;
@@ -237,11 +246,7 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     pubMsf.publish(odom);
     publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 
-    ant_robot_msgs::ModuleStatus status;
-    status.header.stamp = ros::Time().fromSec(lidar_end_time);
-    status.header.frame_id = "LOCATION";
-    status.level = ant_robot_msgs::Level::OK;
-    pubModulesStatus.publish(status);
+    publish_module_status(lidar_end_time);
 }
 #endif
 
@@ -289,6 +294,7 @@ void sensor_data_process()
             *cur_scan = *slam.frontend->measures->lidar;
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
         }
+        publish_module_status(slam.frontend->measures->lidar_beg_time);
         return;
     }
 
