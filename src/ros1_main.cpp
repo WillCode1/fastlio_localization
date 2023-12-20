@@ -239,7 +239,7 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
 
     ant_robot_msgs::ModuleStatus status;
     status.header.stamp = ros::Time().fromSec(lidar_end_time);
-    status.header.frame_id = "location";
+    status.header.frame_id = "LOCATION";
     status.level = ant_robot_msgs::Level::OK;
     pubModulesStatus.publish(status);
 }
