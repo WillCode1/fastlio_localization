@@ -1,5 +1,5 @@
 #include <yaml-cpp/yaml.h>
-#include "system/System.hpp"
+#include "System.hpp"
 
 inline void load_ros_parameters(const std::string &config_path, bool &path_en, bool &scan_pub_en, bool &dense_pub_en,
                                 std::string &lidar_topic, std::string &imu_topic, std::string &map_frame, std::string &lidar_frame, std::string &baselink_frame)

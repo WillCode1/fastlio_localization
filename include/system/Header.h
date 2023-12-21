@@ -10,11 +10,11 @@
 #include <pcl/common/eigen.h>
 #include "ikd-Tree/ikd_Tree.h"
 
-#include "LogTool.h"
-#include "Timer.h"
-#include "FileOperation.h"
-#include "EigenMath.h"
-#include "MathTools.h"
+#include "utility/LogTool.h"
+#include "utility/Timer.h"
+#include "utility/FileOperation.h"
+#include "utility/EigenMath.h"
+#include "utility/MathTools.h"
 
 using namespace std;
 using namespace Eigen;
