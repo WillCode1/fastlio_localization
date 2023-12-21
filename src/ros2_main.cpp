@@ -10,8 +10,8 @@
 
 #include "livox_interfaces2/msg/custom_msg.hpp"
 // #include <livox_ros_driver/CustomMsg.h>
-#include "utility/Header.h"
-#include "utility/Parameters.h"
+#include "system/Header.h"
+#include "system/Parameters.h"
 #include "system/System.hpp"
 
 int lidar_type;
