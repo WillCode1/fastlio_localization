@@ -152,12 +152,16 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
 }
 
 #ifdef WORK
-void publish_module_status(const double &time)
+void publish_module_status(const double &time, int level)
 {
     ant_robot_msgs::ModuleStatus status;
     status.header.stamp = ros::Time().fromSec(time);
     status.header.frame_id = "LOCATION";
-    status.level = ant_robot_msgs::Level::OK;
+    status.level = level;
+    ant_robot_msgs::ModuleStatusItem item;
+    item.error_code = 4000101;
+    item.level = level;
+    status.items.emplace_back(item);
     pubModulesStatus.publish(status);
 }
 
@@ -247,7 +251,7 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     pubMsf.publish(odom);
     publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 
-    publish_module_status(lidar_end_time);
+    publish_module_status(lidar_end_time, ant_robot_msgs::Level::OK);
 }
 #endif
 
@@ -300,7 +304,7 @@ void sensor_data_process()
             *cur_scan = *slam.frontend->measures->lidar;
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
         }
-        publish_module_status(slam.frontend->measures->lidar_beg_time);
+        publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef MEASURES_BUFFER
         measures_buffer.emplace_back(std::make_shared<MeasureCollection>());
         *measures_buffer.back() = *slam.frontend->measures;
