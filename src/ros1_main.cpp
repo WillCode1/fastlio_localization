@@ -18,6 +18,7 @@
 #include "system/Parameters.h"
 #include "system/System.hpp"
 
+#define MEASURES_BUFFER
 #define WORK
 #ifdef WORK
 #include "ant_robot_msgs/PoseDynamicData.h"
@@ -283,6 +284,10 @@ void sensor_data_process()
     if (!slam.frontend->sync_sensor_data())
         return;
 
+#ifdef MEASURES_BUFFER
+    static std::deque<shared_ptr<MeasureCollection>> measures_buffer;
+#endif
+
     if (!slam.system_state_vaild)
     {
         if (!slam.run_relocalization_thread)
@@ -295,8 +300,59 @@ void sensor_data_process()
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
         }
         publish_module_status(slam.frontend->measures->lidar_beg_time);
+#ifdef MEASURES_BUFFER
+        measures_buffer.emplace_back(std::make_shared<MeasureCollection>());
+        *measures_buffer.back() = *slam.frontend->measures;
+#endif
         return;
     }
+
+#ifdef MEASURES_BUFFER
+    if (!measures_buffer.empty())
+    {
+        measures_buffer.emplace_back(std::make_shared<MeasureCollection>());
+        *measures_buffer.back() = *slam.frontend->measures;
+
+        while (!measures_buffer.empty())
+        {
+            slam.frontend->measures = measures_buffer.front();
+
+            QD baselink_rot;
+            V3D baselink_pos;
+            if (slam.run())
+            {
+                const auto &state = slam.frontend->get_state();
+                LOG_INFO("location valid. feats_down = %d, cost time = %.1fms.", slam.frontend->loger.feats_down_size, slam.frontend->loger.total_time);
+                slam.frontend->loger.print_pose(state, "cur_imu_pose");
+
+                /******* Publish odometry *******/
+                // publish_odometry(pubOdomAftMapped, state, slam.frontend->measures->lidar_end_time, baselink_rot, baselink_pos);
+                publish_odometry2(pubMsf, state, slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
+
+                if (path_en)
+                    publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->measures->lidar_end_time);
+
+                /******* Publish points *******/
+                if (scan_pub_en)
+                    if (dense_pub_en)
+                        publish_cloud_world(pubLaserCloudFull, slam.feats_undistort, state, slam.frontend->measures->lidar_end_time);
+                    else
+                        publish_cloud(pubLaserCloudFull, slam.frontend->feats_down_world, slam.frontend->measures->lidar_end_time, map_frame);
+            }
+            else
+            {
+                LOG_ERROR("location invalid!");
+                publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
+#ifdef DEDUB_MODE
+                publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->measures->lidar_end_time);
+#endif
+            }
+
+            measures_buffer.pop_front();
+        }
+        return;
+    }
+#endif
 
     QD baselink_rot;
     V3D baselink_pos;
@@ -325,7 +381,7 @@ void sensor_data_process()
         LOG_ERROR("location invalid!");
         publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
 #ifdef DEDUB_MODE
-        publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.lidar_end_time);
+        publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->lidar_end_time);
 #endif
     }
 }
