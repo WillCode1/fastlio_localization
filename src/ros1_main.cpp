@@ -285,6 +285,7 @@ void sensor_data_process()
         return;
 
 #ifdef MEASURES_BUFFER
+    // for relocalization data cache
     static std::deque<shared_ptr<MeasureCollection>> measures_buffer;
 #endif
 
