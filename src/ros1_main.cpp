@@ -370,6 +370,7 @@ void sensor_data_process()
         /******* Publish odometry *******/
         // publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time, baselink_rot, baselink_pos);
         publish_odometry2(pubMsf, state, slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
+        publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::OK);
 
         if (path_en)
             publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->lidar_end_time);
@@ -385,6 +386,7 @@ void sensor_data_process()
     {
         LOG_ERROR("location invalid!");
         publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
+        publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef DEDUB_MODE
         publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->lidar_end_time);
 #endif
