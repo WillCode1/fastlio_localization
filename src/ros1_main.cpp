@@ -288,7 +288,7 @@ void sensor_data_process()
 
 #ifdef MEASURES_BUFFER
     // for relocalization data cache
-    static std::deque<shared_ptr<MeasureCollection>> measures_buffer;
+    static std::deque<shared_ptr<MeasureCollection>> measures_cache;
 #endif
 
     if (!slam.system_state_vaild)
@@ -304,21 +304,21 @@ void sensor_data_process()
         }
         publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef MEASURES_BUFFER
-        measures_buffer.emplace_back(std::make_shared<MeasureCollection>());
-        *measures_buffer.back() = *slam.frontend->measures;
+        measures_cache.emplace_back(std::make_shared<MeasureCollection>());
+        *measures_cache.back() = *slam.frontend->measures;
 #endif
         return;
     }
 
 #ifdef MEASURES_BUFFER
-    if (!measures_buffer.empty())
+    if (!measures_cache.empty())
     {
-        measures_buffer.emplace_back(std::make_shared<MeasureCollection>());
-        *measures_buffer.back() = *slam.frontend->measures;
+        measures_cache.emplace_back(std::make_shared<MeasureCollection>());
+        *measures_cache.back() = *slam.frontend->measures;
 
-        while (!measures_buffer.empty())
+        while (!measures_cache.empty())
         {
-            slam.frontend->measures = measures_buffer.front();
+            slam.frontend->measures = measures_cache.front();
 
             QD baselink_rot;
             V3D baselink_pos;
@@ -353,7 +353,7 @@ void sensor_data_process()
 #endif
             }
 
-            measures_buffer.pop_front();
+            measures_cache.pop_front();
         }
         return;
     }
