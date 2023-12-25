@@ -13,7 +13,7 @@ inline void load_ros_parameters(const std::string &config_path, bool &path_en, b
     imu_topic = config["common"]["imu_topic"].IsDefined() ? config["common"]["imu_topic"].as<string>() : std::string("/livox/imu");
     map_frame = config["common"]["map_frame"].IsDefined() ? config["common"]["map_frame"].as<string>() : std::string("camera_init");
     lidar_frame = config["common"]["lidar_frame"].IsDefined() ? config["common"]["lidar_frame"].as<string>() : std::string("lidar");
-    baselink_frame = config["common"]["baselink_frame"].IsDefined() ? config["common"]["baselink_frame"].as<string>() : std::string("baselink");
+    baselink_frame = config["common"]["baselink_frame"].IsDefined() ? config["common"]["baselink_frame"].as<string>() : std::string("base_link");
 }
 
 inline void load_parameters(System &slam, const std::string &config_path, int &lidar_type)
