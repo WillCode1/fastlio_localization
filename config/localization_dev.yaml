@@ -3,7 +3,7 @@ common:
     imu_topic:  "/drivers/imu_data"
     map_frame:  "map"
     lidar_frame:  "top_lidar"
-    baselink_frame:  "body"
+    baselink_frame:  "baselink"
     timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
 
 preprocess:
