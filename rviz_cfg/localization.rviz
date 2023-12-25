@@ -205,7 +205,7 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        body:
+        base_link:
           Value: true
         map:
           Value: true
@@ -219,7 +219,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         map:
-          body:
+          base_link:
             top_lidar:
               {}
       Update Interval: 0
@@ -262,7 +262,7 @@ Visualization Manager:
       Name: Current View
       Near Clip Distance: 0.009999999776482582
       Scale: 30
-      Target Frame: body
+      Target Frame: base_link
       X: 0
       Y: 0
     Saved: ~
