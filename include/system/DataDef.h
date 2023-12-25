@@ -1,8 +1,6 @@
 #pragma once
 #include <deque>
 #include <iomanip>
-#include <gtsam/geometry/Pose3.h>
-#include <gtsam/linear/NoiseModel.h>
 #include "system/Header.h"
 #include "frontend/use-ikfom.hpp"
 
@@ -57,21 +55,6 @@ struct MeasureCollection
     double lidar_end_time;
     PointCloudType::Ptr lidar;
     deque<ImuData::Ptr> imu;
-};
-
-struct LoopConstraint
-{
-    void clear()
-    {
-        loop_indexs.clear();
-        loop_pose_correct.clear();
-        loop_noise.clear();
-    }
-
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    vector<pair<int, int>> loop_indexs;
-    vector<gtsam::Pose3> loop_pose_correct;
-    vector<gtsam::noiseModel::Diagonal::shared_ptr> loop_noise;
 };
 
 template <typename ikfom_state>
