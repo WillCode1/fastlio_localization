@@ -296,7 +296,11 @@ void sensor_data_process()
         if (!slam.run_relocalization_thread)
         {
             if (slam.relocalization_thread.joinable())
+            {
                 slam.relocalization_thread.join();
+                measures_cache.clear();
+                LOG_WARN("measures cache clear!");
+            }
 
             PointCloudType::Ptr cur_scan(new PointCloudType);
             *cur_scan = *slam.frontend->measures->lidar;
@@ -355,6 +359,7 @@ void sensor_data_process()
 
             measures_cache.pop_front();
         }
+        LOG_WARN("measures cache have all been processed!");
         return;
     }
 #endif
