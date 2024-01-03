@@ -14,7 +14,7 @@ preprocess:
     timestamp_unit: 0            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
     blind: 2
     det_range: 200.0
-    imu_meas_check: [1.7, 1.7, 1.7, 10, 10, 20] # rad/s, m/s^2
+    imu_meas_check: [1.7, 1.7, 1.7, 20, 20, 50] # rad/s, m/s^2
 
 mapping:
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
@@ -46,6 +46,9 @@ publish:
     path_en:  true
     scan_publish_en:  true       # false: close all the point cloud output
     dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+
+official:
+    # save_path: "/ant_robot/data/map/"
 
 # ============relocalization_cfg============
 relocalization_cfg:
