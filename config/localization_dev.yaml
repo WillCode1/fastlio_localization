@@ -50,7 +50,7 @@ publish:
     dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
 
 official:
-    # save_path: "/ant_robot/data/map/"
+    save_path: "/ant_robot/data/map/"
 
 # ============relocalization_cfg============
 relocalization_cfg:
