@@ -40,7 +40,7 @@ enum LogLevel
 // #define LOG_LEVEL (debug)
 #define LOG_LEVEL (info)
 
-#define ENABLE_LOG (0)
+// #define ENABLE_LOG (0)
 #define ENABLE_LOG (1)
 const std::string location_log_file = "/home/ant/location.log";
 
