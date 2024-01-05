@@ -38,12 +38,12 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     n_scans = config["preprocess"]["scan_line"].IsDefined() ? config["preprocess"]["scan_line"].as<int>() : 16;
     time_unit = config["preprocess"]["timestamp_unit"].IsDefined() ? config["preprocess"]["timestamp_unit"].as<int>() : US;
     scan_rate = config["preprocess"]["scan_rate"].IsDefined() ? config["preprocess"]["scan_rate"].as<int>() : 10;
-    slam.save_path = config["official"]["save_path"].IsDefined() ? config["official"]["save_path"].as<string>() : std::string("");
-    if (slam.save_path.compare("") != 0)
+    slam.map_path = config["official"]["map_path"].IsDefined() ? config["official"]["map_path"].as<string>() : std::string("");
+    if (slam.map_path.compare("") != 0)
     {
-        slam.globalmap_path = slam.save_path + "/globalmap.pcd";
-        slam.trajectory_path = slam.save_path + "/trajectory.pcd";
-        slam.scd_path = slam.save_path + "/scancontext/";
+        slam.globalmap_path = slam.map_path + "/globalmap.pcd";
+        slam.trajectory_path = slam.map_path + "/trajectory.pcd";
+        slam.scd_path = slam.map_path + "/scancontext/";
     }
 
     slam.relocalization->sc_manager->LIDAR_HEIGHT = config["scan_context"]["lidar_height"].IsDefined() ? config["scan_context"]["lidar_height"].as<double>() : 2.0;
