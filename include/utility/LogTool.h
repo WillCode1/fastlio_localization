@@ -42,7 +42,7 @@ enum LogLevel
 
 // #define ENABLE_LOG (0)
 #define ENABLE_LOG (1)
-const std::string location_log_file = "/home/will/location.log";
+const std::string location_log_file = "/home/ant/location.log";
 
 #define LOG_PRINT(level, color, ...)                                  \
     do                                                                \
