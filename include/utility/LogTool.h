@@ -40,6 +40,10 @@ enum LogLevel
 // #define LOG_LEVEL (debug)
 #define LOG_LEVEL (info)
 
+// #define ENABLE_LOG (0)
+#define ENABLE_LOG (1)
+const std::string location_log_file = "/home/will/location.log";
+
 #define LOG_PRINT(level, color, ...)                                  \
     do                                                                \
     {                                                                 \
@@ -52,6 +56,17 @@ enum LogLevel
                         printf("(%s, %d), ", fs::path(__FILE__).filename().string().c_str(), __LINE__); \
                 printf(__VA_ARGS__);                                  \
                 printf("\033[0m\n");                                  \
+                if (ENABLE_LOG)                                         \
+                {                                                       \
+                        FILE *location_log = fopen(location_log_file.c_str(), "a");      \
+                        fprintf(location_log, "[%s]", #level);                               \
+                        fprintf(location_log, "%s", TimeStamp::GetLocalTimeStamp());         \
+                        if (level >= error)                                   \
+                                fprintf(location_log, "(%s, %d), ", fs::path(__FILE__).filename().string().c_str(), __LINE__); \
+                        fprintf(location_log, __VA_ARGS__);                                  \
+                        fprintf(location_log, "\n");                                  \
+                        fclose(location_log);                           \
+                }                                                       \
         }                                                             \
     } while (0)
 

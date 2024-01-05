@@ -122,7 +122,7 @@ public:
     PointCloudType::Ptr feats_undistort;
 
     /*** global map maintain ***/
-    string save_path;
+    string map_path;
     string globalmap_path = PCD_FILE_DIR("globalmap.pcd");
     string trajectory_path = PCD_FILE_DIR("trajectory.pcd");
     string scd_path = PCD_FILE_DIR("scancontext/");
