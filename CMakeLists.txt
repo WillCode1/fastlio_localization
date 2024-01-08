@@ -9,6 +9,10 @@ set(CMAKE_CXX_FLAGS "-std=c++17 -O3")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fexceptions")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -fexceptions -Wno-unused-local-typedefs -Wno-format-truncation")
 
+# SET(CMAKE_BUILD_TYPE "Debug")
+# SET(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g -ggdb")
+# SET(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+
 add_definitions(-DROOT_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/\")
 
 message("Current CPU archtecture: ${CMAKE_SYSTEM_PROCESSOR}")
