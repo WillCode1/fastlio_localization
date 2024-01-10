@@ -158,3 +158,10 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
 
     slam.init_system_mode();
 }
+
+inline void load_log_parameters(const std::string &config_path, bool &location_log_enable, std::string &location_log_save_path)
+{
+    YAML::Node config = YAML::LoadFile(config_path);
+    location_log_enable = config["official"]["location_log_enable"].IsDefined() ? config["official"]["location_log_enable"].as<bool>() : false;
+    location_log_save_path = config["official"]["location_log_save_path"].IsDefined() ? config["official"]["location_log_save_path"].as<string>() : std::string("");
+}

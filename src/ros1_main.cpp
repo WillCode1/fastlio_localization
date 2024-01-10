@@ -31,6 +31,7 @@ System slam;
 std::string map_frame;
 std::string lidar_frame;
 std::string baselink_frame;
+FILE *location_log = nullptr;
 
 bool path_en = true, scan_pub_en = false, dense_pub_en = false;
 ros::Publisher pubLaserCloudFull;
@@ -494,8 +495,22 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "SLAM");
     ros::NodeHandle nh;
     string lidar_topic, imu_topic, config_file;
+    bool location_log_enable = true;
+    std::string location_log_save_path;
 
     ros::param::param("config_file", config_file, std::string(""));
+    load_log_parameters(string(ROOT_DIR) + config_file, location_log_enable, location_log_save_path);
+    if (location_log_enable)
+    {
+        if (location_log_save_path.compare("") != 0)
+            location_log = fopen(location_log_save_path.c_str(), "a");
+        else
+            location_log = fopen(DEBUG_FILE_DIR("location.log").c_str(), "a");
+        if (location_log)
+            LOG_WARN("open file %s successfully!", location_log_save_path.c_str());
+        else
+            LOG_ERROR("open file %s failed!", location_log_save_path.c_str());
+    }
     load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, string(ROOT_DIR) + config_file, lidar_type);
 
@@ -515,6 +530,8 @@ int main(int argc, char **argv)
     signal(SIGINT, SigHandle);
 
     ros::spin();
+    if (location_log_enable && location_log)
+        fclose(location_log);
 
     return 0;
 }

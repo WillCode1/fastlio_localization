@@ -4,6 +4,34 @@
 
 #define SKEW_SYM_MATRX(v) 0.0, -v[2], v[1], v[2], 0.0, -v[0], -v[1], v[0], 0.0
 
+/**
+ * @brief transform frame_a to frame_b
+ * @param extR rot from frame_b to frame_a
+ * @param extP pos from frame_b to frame_a
+ */
+template <typename T>
+void poseTransformFrame(const Eigen::Quaternion<T> &rot_from, const Eigen::Matrix<T, 3, 1> &pos_from,
+                        const Eigen::Quaternion<T> &extR, const Eigen::Matrix<T, 3, 1> &extP,
+                        Eigen::Quaternion<T> &rot_to, Eigen::Matrix<T, 3, 1> &pos_to)
+{
+    rot_to = rot_from * extR;
+    pos_to = rot_from * extP + pos_from;
+}
+
+/**
+ * @brief transform frame_a to frame_b
+ * @param extR rot from frame_a to frame_b
+ * @param extP pos from frame_a to frame_b
+ */
+template <typename T>
+void poseTransformFrame2(const Eigen::Quaternion<T> &rot_from, const Eigen::Matrix<T, 3, 1> &pos_from,
+                         const Eigen::Quaternion<T> &extR, const Eigen::Matrix<T, 3, 1> &extP,
+                         Eigen::Quaternion<T> &rot_to, Eigen::Matrix<T, 3, 1> &pos_to)
+{
+    rot_to = rot_from * extR.conjugate();
+    pos_to = pos_from - rot_to * extP;
+}
+
 // https://blog.csdn.net/wsl_longwudi/article/details/127345908
 /****** SO3 math ******/
 // Hat (skew) operator
@@ -129,7 +157,7 @@ static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qright(const Eigen::Quatern
 
 // 另一种顺序: x,y,z,w
 template <typename Derived>
-static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qleft2(const Eigen::QuaternionBase<Derived> &q)
+static Eigen::Matrix<typename Derived::Scalar, 4, 4> QleftEigen(const Eigen::QuaternionBase<Derived> &q)
 {
     Eigen::Matrix<typename Derived::Scalar, 4, 4> ans;
     ans.template block<3, 3>(0, 0) = q.w() * Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity() + hat(q.vec());
@@ -140,7 +168,7 @@ static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qleft2(const Eigen::Quatern
 }
 
 template <typename Derived>
-static Eigen::Matrix<typename Derived::Scalar, 4, 4> Qright2(const Eigen::QuaternionBase<Derived> &q)
+static Eigen::Matrix<typename Derived::Scalar, 4, 4> QrightEigen(const Eigen::QuaternionBase<Derived> &q)
 {
     Eigen::Matrix<typename Derived::Scalar, 4, 4> ans;
     ans.template block<3, 3>(0, 0) = q.w() * Eigen::Matrix<typename Derived::Scalar, 3, 3>::Identity() - hat(q.vec());
@@ -228,6 +256,7 @@ Eigen::Quaternion<typename Derived::Scalar> deltaQ(const Eigen::MatrixBase<Deriv
     dq.x() = half_theta.x();
     dq.y() = half_theta.y();
     dq.z() = half_theta.z();
+    dq.normalize();
     return dq;
 }
 /****** Quaternion math ******/
