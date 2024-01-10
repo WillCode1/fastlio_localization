@@ -12,6 +12,7 @@
 #include "utility/ProgressBar.h"
 #include "system/Parameters.h"
 using namespace std;
+FILE *location_log = nullptr;
 
 const std::string root_path = std::string(ROOT_DIR);
 std::string config_filename;

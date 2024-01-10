@@ -49,6 +49,8 @@ publish:
 
 official:
     # map_path: "/ant_robot/data/map/"
+    location_log_enable: false
+    # location_log_save_path: "/home/will/location.log"
 
 # ============relocalization_cfg============
 relocalization_cfg:
