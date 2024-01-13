@@ -132,7 +132,7 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
   }
 
   GnssPose utm_pose = gnss_raw;
-  utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.north);
+  utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
   gnss_buffer.push_back(utm_pose);
   if (need_record_gnss)
     LogAnalysis::save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.gnss_rpy, gnss_raw.timestamp);
