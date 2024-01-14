@@ -287,6 +287,7 @@ void sensor_data_process()
     if (!slam.frontend->sync_sensor_data())
         return;
 
+    LOG_DEBUG("sync_sensor_data");
 #ifdef MEASURES_BUFFER
     // for relocalization data cache
     static std::deque<shared_ptr<MeasureCollection>> measures_cache;
@@ -365,6 +366,7 @@ void sensor_data_process()
     }
 #endif
 
+    LOG_DEBUG("run fastlio");
     QD baselink_rot;
     V3D baselink_pos;
     if (slam.run())
@@ -403,6 +405,7 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
 {
     static double last_time = 0;
     check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->lidar->scan_rate, "lidar_time_interval");
+    LOG_DEBUG("lidar_handler");
 
     Timer timer;
     pcl::PointCloud<ouster_ros::Point> pl_orig_oust;
@@ -426,7 +429,9 @@ void standard_pcl_cbk(const sensor_msgs::PointCloud2::ConstPtr &msg)
         break;
     }
 
+    LOG_DEBUG("lidar_cache");
     slam.frontend->cache_pointcloud_data(msg->header.stamp.toSec(), scan);
+    LOG_DEBUG("lidar_process");
     sensor_data_process();
 }
 
@@ -469,7 +474,9 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
     static double last_time = 0;
     check_time_interval(last_time, msg->header.stamp.toSec(), 1.0 / slam.frontend->imu->imu_rate, "imu_time_interval");
 
+    LOG_DEBUG("imu_cache");
     slam.frontend->cache_imu_data(msg->header.stamp.toSec(), angular_velocity, linear_acceleration);
+    LOG_DEBUG("imu_process");
     sensor_data_process();
 }
 

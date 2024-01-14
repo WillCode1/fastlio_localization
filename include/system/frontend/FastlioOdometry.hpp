@@ -186,6 +186,7 @@ public:
             loger.inited_first_lidar_beg_time = true;
         }
 #endif
+        LOG_DEBUG("run fastlio 1");
         loger.resetTimer();
         feats_down_lidar->clear();
         for (int i = 0; i < measures->lidar->points.size(); i++)
@@ -194,7 +195,9 @@ public:
                 feats_down_lidar->points.push_back(measures->lidar->points[i]);
             }
         measures->lidar = feats_down_lidar;
+        LOG_DEBUG("run fastlio 2");
         imu->Process(*measures, kf, feats_undistort);
+        LOG_DEBUG("run fastlio 3");
 
         if (feats_undistort->empty() || (feats_undistort == NULL))
         {
@@ -209,6 +212,7 @@ public:
         loger.imu_process_time = loger.timer.elapsedLast();
         loger.feats_undistort_size = feats_undistort->points.size();
 
+        LOG_DEBUG("run fastlio 4");
         /*** interval sample and downsample the feature points in a scan ***/
         if (space_down_sample)
         {
@@ -232,6 +236,7 @@ public:
         loger.dump_state_to_log(loger.fout_predict, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
 #endif
 
+        LOG_DEBUG("run fastlio 5");
         /*** iterated state estimation ***/
         feats_down_world->resize(feats_down_size);
         point_matched_surface.resize(feats_down_size);
@@ -272,6 +277,7 @@ public:
 #ifndef NO_LOGER
         loger.output_fastlio_log_to_csv(measures->lidar_beg_time);
 #endif
+        LOG_DEBUG("run fastlio 6");
         return true;
     }
 
