@@ -274,10 +274,19 @@ void publish_imu_path(const ros::Publisher &pubPath, const QD &rot, const V3D &p
     }
 }
 
+#ifdef gnss_with_direction
+void gnss_cbk(const nav_msgs::OdometryConstPtr &msg)
+{
+    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(),
+                                              V3D(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z),
+                                              QD(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z));
+}
+#else
 void gnss_cbk(const sensor_msgs::NavSatFix::ConstPtr &msg)
 {
     slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), V3D(msg->latitude, msg->longitude, msg->altitude));
 }
+#endif
 
 void sensor_data_process()
 {
@@ -306,7 +315,7 @@ void sensor_data_process()
 
             PointCloudType::Ptr cur_scan(new PointCloudType);
             *cur_scan = *slam.frontend->measures->lidar;
-            slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan);
+            slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan, slam.frontend->measures->lidar_beg_time);
         }
         publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef MEASURES_BUFFER
@@ -501,7 +510,7 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "SLAM");
     ros::NodeHandle nh;
-    string lidar_topic, imu_topic, config_file;
+    string lidar_topic, imu_topic, gnss_topic, config_file;
     bool location_log_enable = true;
     std::string location_log_save_path;
 
@@ -518,12 +527,13 @@ int main(int argc, char **argv)
         else
             LOG_ERROR("open file %s failed!", location_log_save_path.c_str());
     }
-    load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, map_frame, lidar_frame, baselink_frame);
+    load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, string(ROOT_DIR) + config_file, lidar_type);
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
+    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
     pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
     pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);

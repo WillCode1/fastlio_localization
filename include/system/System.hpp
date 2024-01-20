@@ -2,7 +2,6 @@
 #include <omp.h>
 #include <math.h>
 #include <thread>
-#include <pcl/io/pcd_io.h>
 #include "ikd-Tree/ikd_Tree.h"
 #include "frontend/FastlioOdometry.hpp"
 #include "frontend/PointlioOdometry.hpp"
@@ -87,13 +86,13 @@ public:
         return system_state_vaild;
     }
 
-    bool run_relocalization(PointCloudType::Ptr scan)
+    bool run_relocalization(PointCloudType::Ptr scan, const double &lidar_beg_time)
     {
         run_relocalization_thread = true;
         if (!system_state_vaild)
         {
             Eigen::Matrix4d imu_pose;
-            if (relocalization->run(scan, imu_pose))
+            if (relocalization->run(scan, imu_pose, lidar_beg_time))
             {
                 frontend->reset_state(imu_pose);
                 system_state_vaild = true;

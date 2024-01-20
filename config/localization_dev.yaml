@@ -1,6 +1,7 @@
 common:
     lidar_topic:  "/drivers/top_lidar_origin"
     imu_topic:  "/drivers/imu_data"
+    gnss_topic:  "/gps/fix"
     map_frame:  "map"
     lidar_frame:  "top_lidar"
     baselink_frame:  "base_link"
@@ -14,7 +15,7 @@ preprocess:
     timestamp_unit: 0            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
     blind: 2
     det_range: 200.0
-    imu_meas_check: [1.7, 1.7, 1.7, 20, 20, 50] # rad/s, m/s^2
+    imu_meas_check: [3, 3, 3, 20, 20, 50] # rad/s, m/s^2
 
 mapping:
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
@@ -43,6 +44,11 @@ mapping:
     extrinsic_R: [ 1, 0, 0, 
                    0, -1, 0, 
                    0, 0, -1 ]
+    # imu -> gnss
+    extrinsicT_imu2gnss: [ 0, 0, 0 ]
+    extrinsicR_imu2gnss: [ 1, 0, 0, 
+                           0, 1, 0, 
+                           0, 0, 1 ]
 
 publish:
     path_en:  true
@@ -66,6 +72,12 @@ relocalization_cfg:
     lidar_ext/roll: 180
     lidar_ext/pitch: 0
     lidar_ext/yaw: 0
+
+utm_origin:
+    zone: "51N"
+    east: 536808.26993
+    north: 4501498.61740
+    up: 44.21500
 
 scan_context:
     lidar_height: 2.183
