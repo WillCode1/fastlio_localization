@@ -2,7 +2,7 @@
 #include "system/System.hpp"
 
 inline void load_ros_parameters(const std::string &config_path, bool &path_en, bool &scan_pub_en, bool &dense_pub_en,
-                                std::string &lidar_topic, std::string &imu_topic, std::string &map_frame, std::string &lidar_frame, std::string &baselink_frame)
+                                std::string &lidar_topic, std::string &imu_topic, std::string &gnss_topic, std::string &map_frame, std::string &lidar_frame, std::string &baselink_frame)
 {
     YAML::Node config = YAML::LoadFile(config_path);
     path_en = config["publish"]["path_en"].IsDefined() ? config["publish"]["path_en"].as<bool>() : false;
@@ -11,6 +11,7 @@ inline void load_ros_parameters(const std::string &config_path, bool &path_en, b
 
     lidar_topic = config["common"]["lidar_topic"].IsDefined() ? config["common"]["lidar_topic"].as<string>() : std::string("/livox/lidar");
     imu_topic = config["common"]["imu_topic"].IsDefined() ? config["common"]["imu_topic"].as<string>() : std::string("/livox/imu");
+    gnss_topic = config["common"]["gnss_topic"].IsDefined() ? config["common"]["gnss_topic"].as<string>() : std::string("/gps/fix");
     map_frame = config["common"]["map_frame"].IsDefined() ? config["common"]["map_frame"].as<string>() : std::string("camera_init");
     lidar_frame = config["common"]["lidar_frame"].IsDefined() ? config["common"]["lidar_frame"].as<string>() : std::string("lidar");
     baselink_frame = config["common"]["baselink_frame"].IsDefined() ? config["common"]["baselink_frame"].as<string>() : std::string("base_link");
@@ -51,6 +52,17 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
 
     if (true)
     {
+        slam.relocalization->utm_origin.zone = config["utm_origin"]["zone"].IsDefined() ? config["utm_origin"]["zone"].as<string>() : std::string("51N");
+        slam.relocalization->utm_origin.east = config["utm_origin"]["east"].IsDefined() ? config["utm_origin"]["east"].as<double>() : 0;
+        slam.relocalization->utm_origin.north = config["utm_origin"]["north"].IsDefined() ? config["utm_origin"]["north"].as<double>() : 0;
+        slam.relocalization->utm_origin.up = config["utm_origin"]["up"].IsDefined() ? config["utm_origin"]["up"].as<double>() : 0;
+
+        extrinT = config["mapping"]["extrinsicT_imu2gnss"].IsDefined() ? config["mapping"]["extrinsicT_imu2gnss"].as<vector<double>>() : vector<double>();
+        extrinR = config["mapping"]["extrinsicR_imu2gnss"].IsDefined() ? config["mapping"]["extrinsicR_imu2gnss"].as<vector<double>>() : vector<double>();
+        extrinT_eigen << VEC_FROM_ARRAY(extrinT);
+        extrinR_eigen << MAT_FROM_ARRAY(extrinR);
+        slam.relocalization->set_extrinsic(extrinT_eigen, extrinR_eigen);
+
         slam.relocalization->algorithm_type = config["relocalization_cfg"]["algorithm_type"].IsDefined() ? config["relocalization_cfg"]["algorithm_type"].as<string>() : std::string("UNKONW");
 
         BnbOptions match_option;

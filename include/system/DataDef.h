@@ -75,10 +75,10 @@ void pointLidarToWorld(PointType const &pi, PointType &po, const ikfom_state &st
     po.intensity = pi.intensity;
 }
 
-inline void pointLidarToWorld(PointType const &pi, PointType &po, const M3D &lidar_rot, const V3D &lidar_pos)
+inline void pointLidarToWorld(PointType const &pi, PointType &po, const QD &lidar_rot, const V3D &lidar_pos)
 {
     V3D p_lidar(pi.x, pi.y, pi.z);
-    V3D p_global(lidar_rot * p_lidar + lidar_pos);
+    V3D p_global(lidar_rot.normalized() * p_lidar + lidar_pos);
 
     po.x = p_global(0);
     po.y = p_global(1);
@@ -93,7 +93,7 @@ void pointcloudLidarToWorld(const PointCloudType::Ptr cloud_in, PointCloudType::
     cloud_out->resize(cloud_num);
 
     // imu pose -> lidar pose
-    M3D lidar_rot = state.rot.toRotationMatrix() * state.offset_R_L_I;
+    QD lidar_rot = state.rot * state.offset_R_L_I;
     V3D lidar_pos = state.rot * state.offset_T_L_I + state.pos;
 
 #pragma omp parallel for num_threads(MP_PROC_NUM)
@@ -109,14 +109,14 @@ inline PointCloudType::Ptr pointcloudKeyframeToWorld(const PointCloudType::Ptr &
     PointCloudType::Ptr cloud_out(new PointCloudType(cloudSize, 1));
     cloud_out->resize(cloudSize);
 
-    const M3D &state_rot = EigenMath::RPY2RotationMatrix(V3D(pose.roll, pose.pitch, pose.yaw));
+    const QD &state_rot = EigenMath::RPY2Quaternion(V3D(pose.roll, pose.pitch, pose.yaw));
     const V3D &state_pos = V3D(pose.x, pose.y, pose.z);
 
 #pragma omp parallel for num_threads(MP_PROC_NUM)
     for (int i = 0; i < cloudSize; ++i)
     {
         V3D p_lidar(cloud_in->points[i].x, cloud_in->points[i].y, cloud_in->points[i].z);
-        V3D p_global(state_rot * p_lidar + state_pos);
+        V3D p_global(state_rot.normalized() * p_lidar + state_pos);
         cloud_out->points[i].x = p_global(0);
         cloud_out->points[i].y = p_global(1);
         cloud_out->points[i].z = p_global(2);
@@ -312,11 +312,6 @@ public:
                preprocess_time, imu_process_time, downsample_time, kdtree_search_time, match_time,
                meas_update_time, map_incre_time, map_remove_time, total_time);
 #endif
-    }
-
-    static void save_gps_pose(FILE *fp, const V3D &pos, const V3D &eular, const double &time)
-    {
-        fprintf(fp, "%0.4lf %0.4f %0.4f %0.4f %0.4f %0.4f %0.4f\n", time, pos.x(), pos.y(), pos.z(), eular.x(), eular.y(), eular.z());
     }
 
     // 0 : not, 1 : TUM

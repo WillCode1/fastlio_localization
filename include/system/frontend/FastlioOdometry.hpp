@@ -68,7 +68,7 @@ public:
     virtual void init_state(shared_ptr<ImuProcessor> &imu)
     {
         state.grav.vec << VEC_FROM_ARRAY(gravity_init);
-        state.bg = imu->mean_gyr; // 静止初始化, 使用角速度测量作为陀螺仪偏差
+        state.bg = imu->mean_gyr;
         kf.change_x(state);
     }
 
@@ -113,7 +113,7 @@ public:
 
         if (scan->points.size() <= 1)
         {
-            LOG_WARN("Too few input point cloud! size = %ld, droped!", scan->points.size());
+            LOG_WARN("Too few input point cloud! size = %ld, scan droped!", scan->points.size());
             return;
         }
 
@@ -157,13 +157,13 @@ public:
         }
 
         /*** push imu data, and pop from imu buffer ***/
-        double imu_time = imu_buffer.front()->timestamp;
         measures->imu.clear();
-        while ((!imu_buffer.empty()) && (imu_time <= lidar_end_time))
+        while (!imu_buffer.empty())
         {
+            if (imu_buffer.front()->timestamp > lidar_end_time)
+                break;
             measures->imu.push_back(imu_buffer.front());
             imu_buffer.pop_front();
-            imu_time = imu_buffer.front()->timestamp;
         }
 
         lidar_buffer.pop_front();
@@ -196,7 +196,7 @@ public:
         }
 
         // if (!imu->gravity_align_)
-        // init_state(imu);
+            // init_state(imu);
 
         state = kf.get_x();
         loger.imu_process_time = loger.timer.elapsedLast();
@@ -298,7 +298,7 @@ private:
         effect_features.clear();
 
         double search_start = omp_get_wtime();
-        M3D lidar_rot = state.rot.toRotationMatrix() * state.offset_R_L_I;
+        QD lidar_rot = state.rot * state.offset_R_L_I;
         V3D lidar_pos = state.rot * state.offset_T_L_I + state.pos;
         /** closest surface search and residual computation **/
 #ifdef MP_EN
@@ -496,7 +496,7 @@ protected:
         PointToAdd.reserve(feats_down_size);
         PointNoNeedDownsample.reserve(feats_down_size);
 
-        M3D lidar_rot = state.rot.toRotationMatrix() * state.offset_R_L_I;
+        QD lidar_rot = state.rot * state.offset_R_L_I;
         V3D lidar_pos = state.rot * state.offset_T_L_I + state.pos;
         for (int i = 0; i < feats_down_size; i++)
         {

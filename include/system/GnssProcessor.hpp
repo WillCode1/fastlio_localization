@@ -3,16 +3,18 @@
 #include "global_localization/UtmCoordinate.h"
 #include "DataDef.h"
 #include "system/Header.h"
+// #define UrbanLoco
+// #define liosam
 
 struct GnssPose
 {
-  GnssPose(const double &time = 0, const V3D &pos = ZERO3D, const V3D &rpy = ZERO3D, const V3D &cov = ZERO3D)
-      : timestamp(time), gnss_position(pos), gnss_rpy(rpy), covariance(cov) {}
+  GnssPose(const double &time = 0, const V3D &pos = ZERO3D, const QD &rot = EYEQD, const V3D &cov = ZERO3D)
+      : timestamp(time), gnss_position(pos), gnss_quat(rot.normalized()), covariance(cov) {}
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   double timestamp;
   V3D gnss_position;
-  V3D gnss_rpy;
+  QD gnss_quat;
   V3D covariance;
 
   float current_gnss_interval;
@@ -42,11 +44,15 @@ public:
   void gnss_handler(const GnssPose &gnss_raw);
   bool get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z);
 
+#ifdef UrbanLoco
+  void UrbanLoco_handler(const GnssPose &gnss_raw);
+#endif
+
   float gnssValidInterval = 0.2;
   float gpsCovThreshold = 2;
-  bool useGpsElevation = false; // 是否使用gps高程优化
+  bool useGpsElevation = false;
+  bool gnss_factor_enable = false;
   deque<GnssPose> gnss_buffer;
-  bool need_record_gnss = false;
 
 private:
   bool check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold);
@@ -58,10 +64,9 @@ private:
 
 void GnssProcessor::set_extrinsic(const V3D &transl, const M3D &rot)
 {
-  Eigen::Matrix4d extrinsic = Eigen::Matrix4d::Identity();
-  extrinsic.topLeftCorner(3, 3) = rot;
-  extrinsic.topRightCorner(3, 1) = transl;
-  extrinsic_lidar2gnss = extrinsic;
+  extrinsic_lidar2gnss.setIdentity();
+  extrinsic_lidar2gnss.topLeftCorner(3, 3) = rot;
+  extrinsic_lidar2gnss.topRightCorner(3, 1) = transl;
 }
 
 bool GnssProcessor::check_mean_and_variance(const std::vector<V3D> &start_point, utm_coordinate::utm_point &utm_origin, const double &variance_thold)
@@ -97,6 +102,7 @@ bool GnssProcessor::check_mean_and_variance(const std::vector<V3D> &start_point,
 
 void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
 {
+  gnss_factor_enable = true;
   static int count = 0;
   static utm_coordinate::utm_point utm_origin;
   static std::vector<V3D> start_point;
@@ -111,11 +117,20 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
 
   if (count <= 10)
   {
+#if !defined(liosam)
     utm_origin = utm;
     printf("--utm_origin: east: %.5f, north: %.5f, up: %.5f, zone: %s\n", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
     start_point.emplace_back(V3D(utm_origin.east, utm_origin.north, utm_origin.up));
+#else
+    if (count == 1)
+    {
+      utm_origin = utm;
+      printf("--utm_origin: east: %.5f, north: %.5f, up: %.5f, zone: %s\n", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
+    }
+#endif
     return;
   }
+#if !defined(liosam)
   else if (count == 11)
   {
     if (check_mean_and_variance(start_point, utm_origin, 0.05))
@@ -130,17 +145,17 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
       return;
     }
   }
+#endif
 
   GnssPose utm_pose = gnss_raw;
   utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
   gnss_buffer.push_back(utm_pose);
-  if (need_record_gnss)
-    LogAnalysis::save_gps_pose(file_pose_gnss, utm_pose.gnss_position, gnss_raw.gnss_rpy, gnss_raw.timestamp);
+  // LogAnalysis::save_trajectory(file_pose_gnss, utm_pose.gnss_position, utm_pose.gnss_quat, utm_pose.timestamp);
 }
 
 bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z)
 {
-  static PointType lastGPSPoint;
+  // static PointType lastGPSPoint;
   while (!gnss_buffer.empty())
   {
     if (gnss_buffer.front().timestamp < lidar_end_time - gnssValidInterval)
@@ -153,7 +168,7 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
     }
     else
     {
-      // 找到时间间隔最小的
+      // find the one with the smallest time interval.
       thisGPS.current_gnss_interval = gnssValidInterval;
       while (!gnss_buffer.empty())
       {
@@ -168,12 +183,15 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
           break;
       }
 
-      // GPS噪声协方差太大，不能用
       float noise_x = thisGPS.covariance(0);
       float noise_y = thisGPS.covariance(1);
       if (noise_x > gpsCovThreshold || noise_y > gpsCovThreshold)
+      {
+        LOG_WARN("GPS noise covariance is too large (%f, %f), threshold = %f, ignored!", noise_x, noise_y, gpsCovThreshold);
         continue;
+      }
 
+#if 0
       float gps_x = thisGPS.gnss_position(0);
       float gps_y = thisGPS.gnss_position(1);
       float gps_z = thisGPS.gnss_position(2);
@@ -183,9 +201,12 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
         thisGPS.covariance(2) = 0.01;
       }
 
-      // (0,0,0)无效数据
-      if (abs(gps_x) < 1e-6 && abs(gps_y) < 1e-6)
+      // 起始位置靠闭环
+      if (std::hypot(gps_x, gps_y) < 1e-6)
+      {
+        LOG_WARN("GPS is too close to the origin position (%f, %f), threshold = %f, ignored!", gps_x, gps_y, 1e-6);
         continue;
+      }
 
       PointType curGPSPoint;
       curGPSPoint.x = gps_x;
@@ -196,12 +217,39 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
         continue;
       else
         lastGPSPoint = curGPSPoint;
+#endif
 
-      Eigen::Matrix4d gnss_pose = EigenMath::CreateAffineMatrix(thisGPS.gnss_position, thisGPS.gnss_rpy);
+      Eigen::Matrix4d gnss_pose = Eigen::Matrix4d::Identity();
+      gnss_pose.topLeftCorner(3, 3) = thisGPS.gnss_quat.toRotationMatrix();
+      gnss_pose.topRightCorner(3, 1) = thisGPS.gnss_position;
       gnss_pose *= extrinsic_lidar2gnss;
       thisGPS.lidar_pos_fix = gnss_pose.topRightCorner(3, 1);
+
+      if (!useGpsElevation)
+      {
+        thisGPS.lidar_pos_fix(2) = odom_z;
+        thisGPS.covariance(2) = 0.01;
+      }
       return true;
     }
   }
   return false;
 }
+
+#ifdef UrbanLoco
+void GnssProcessor::UrbanLoco_handler(const GnssPose &gnss_raw)
+{
+  static utm_coordinate::utm_point utm_origin;
+  if (!gnss_factor_enable)
+  {
+    utm_origin.east = gnss_raw.gnss_position(0);
+    utm_origin.north = gnss_raw.gnss_position(1);
+    utm_origin.up = gnss_raw.gnss_position(2);
+  }
+  gnss_factor_enable = true;
+  auto tmp = gnss_raw;
+  tmp.gnss_position = gnss_raw.gnss_position - V3D(utm_origin.east, utm_origin.north, utm_origin.up);
+  gnss_buffer.push_back(tmp);
+  // LogAnalysis::save_trajectory(file_pose_gnss, gnss_raw.gnss_position, gnss_raw.gnss_quat, gnss_raw.timestamp);
+}
+#endif

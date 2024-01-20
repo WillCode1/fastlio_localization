@@ -8,6 +8,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/common/distances.h>
 #include <pcl/common/eigen.h>
+#include <pcl/octree/octree_pointcloud_voxelcentroid.h>
+#include <pcl/io/pcd_io.h>
 #include "ikd-Tree/ikd_Tree.h"
 
 #include "utility/LogTool.h"
@@ -103,6 +105,35 @@ template <typename PointType>
 float pointDistance(const PointType &p1, const PointType &p2)
 {
     return sqrt(pointDistanceSquare(p1, p2));
+}
+
+inline Eigen::Affine3f pclPointToAffine3f(const PointXYZIRPYT &thisPoint)
+{
+    return pcl::getTransformation(thisPoint.x, thisPoint.y, thisPoint.z, thisPoint.roll, thisPoint.pitch, thisPoint.yaw);
+}
+
+inline void octreeDownsampling(const PointCloudType::Ptr &src, PointCloudType::Ptr &map_ds, const double &save_resolution)
+{
+    pcl::octree::OctreePointCloudVoxelCentroid<PointType> octree(save_resolution);
+    octree.setInputCloud(src);
+    octree.defineBoundingBox();
+    octree.addPointsFromInputCloud();
+    pcl::octree::OctreePointCloudVoxelCentroid<PointType>::AlignedPointTVector centroids;
+    octree.getVoxelCentroids(centroids);
+
+    map_ds->points.assign(centroids.begin(), centroids.end());
+    map_ds->width = 1;
+    map_ds->height = map_ds->points.size();
+}
+
+inline void savePCDFile(const std::string &save_path, const PointCloudType &src)
+{
+    pcl::PointCloud<pcl::PointXYZI>::Ptr save_pc(new pcl::PointCloud<pcl::PointXYZI>(src.points.size(), 1));
+    for (auto i = 0; i < src.points.size(); ++i)
+    {
+        pcl::copyPoint(src.points[i], save_pc->points[i]);
+    }
+    pcl::io::savePCDFileBinary(save_path, *save_pc);
 }
 
 inline const bool compare_timestamp(PointType &x, PointType &y) { return (x.curvature < y.curvature); };

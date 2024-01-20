@@ -14,15 +14,17 @@
 #include "GnssProcessor.hpp"
 #include "global_localization/bnb3d.h"
 #include "global_localization/scancontext/Scancontext.h"
+// #define gnss_with_direction
 
 class Relocalization
 {
 public:
     Relocalization();
     ~Relocalization();
+    void set_extrinsic(const V3D &transl, const M3D &rot);
     bool load_prior_map(const PointCloudType::Ptr &global_map);
     bool load_keyframe_descriptor(const std::string &path);
-    bool run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &result);
+    bool run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &result, const double &lidar_beg_time);
 
     void set_init_pose(const Pose &_manual_pose);
     void set_bnb3d_param(const BnbOptions &match_option, const Pose &lidar_pose);
@@ -39,12 +41,12 @@ public:
     std::shared_ptr<ScanContext::SCManager> sc_manager; // scan context
 
     GnssPose gnss_pose;
-    utm_coordinate::utm_point utm_origin; // TODO
-    Eigen::Matrix4d extrinsic_imu2gnss;   // TODO
+    utm_coordinate::utm_point utm_origin;
+    Eigen::Matrix4d extrinsic_imu2gnss;
 
 private:
     bool fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const Eigen::Matrix4d &lidar_ext, const double &score);
-    bool run_gnss_relocalization(Eigen::Matrix4d &result);
+    bool run_gnss_relocalization(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const double &lidar_beg_time, const Eigen::Matrix4d &lidar_ext, double &score);
     bool run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
     bool run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
 
@@ -79,12 +81,19 @@ Relocalization::~Relocalization()
 {
 }
 
-bool Relocalization::run_gnss_relocalization(Eigen::Matrix4d &result)
+void Relocalization::set_extrinsic(const V3D &transl, const M3D &rot)
 {
-    auto now = std::chrono::system_clock::now();
-    auto timestamp = std::chrono::duration_cast<std::chrono::seconds>(now.time_since_epoch()).count();
-    if (timestamp - gnss_pose.timestamp > 0.5)
+  extrinsic_imu2gnss.setIdentity();
+  extrinsic_imu2gnss.topLeftCorner(3, 3) = rot;
+  extrinsic_imu2gnss.topRightCorner(3, 1) = transl;
+}
+
+bool Relocalization::run_gnss_relocalization(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const double &lidar_beg_time, const Eigen::Matrix4d &lidar_ext, double &score)
+{
+    Timer timer;
+    if (std::abs(lidar_beg_time - gnss_pose.timestamp) > 0.5)
     {
+        LOG_WARN("gnss relocalization failed! time interval = %f.", lidar_beg_time - gnss_pose.timestamp);
         return false;
     }
 
@@ -95,14 +104,48 @@ bool Relocalization::run_gnss_relocalization(Eigen::Matrix4d &result)
     lla.altitude = gnss_pose.gnss_position(2);
     utm_coordinate::LLAtoUTM(lla, utm);
 
-    if (utm.zone.compare(utm_origin.zone) != 0) // TODO
+    if (utm.zone.compare(utm_origin.zone) != 0)
     {
+        LOG_ERROR("utm zone inconsistency!");
         return false;
     }
 
-    gnss_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.north);
-    result = EigenMath::CreateAffineMatrix(gnss_pose.gnss_position, gnss_pose.gnss_rpy);
-    result *= extrinsic_imu2gnss;
+    gnss_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
+    rough_mat = Eigen::Matrix4d::Identity();
+    rough_mat.topLeftCorner(3, 3) = gnss_pose.gnss_quat.toRotationMatrix();
+    rough_mat.topRightCorner(3, 1) = gnss_pose.gnss_position;
+    rough_mat *= extrinsic_imu2gnss;
+
+    EigenMath::DecomposeAffineMatrix(rough_mat, rough_pose.x, rough_pose.y, rough_pose.z, rough_pose.roll, rough_pose.pitch, rough_pose.yaw);
+    LOG_WARN("gnss relocalization success! pose = (%.2lf,%.2lf,%.2lf,%.2lf,%.2lf,%.2lf)!",
+             rough_pose.x, rough_pose.y, rough_pose.z, RAD2DEG(rough_pose.roll), RAD2DEG(rough_pose.pitch), RAD2DEG(rough_pose.yaw));
+
+    bool bnb_success = true;
+    auto bnb_opt_tmp = bnb_option;
+    bnb_opt_tmp.min_score = 0.1;
+    bnb_opt_tmp.linear_xy_window_size = 2;
+    bnb_opt_tmp.linear_z_window_size = 0.5;
+    bnb_opt_tmp.min_xy_resolution = 0.2;
+    bnb_opt_tmp.min_z_resolution = 0.1;
+#ifdef gnss_with_direction
+    bnb_opt_tmp.angular_search_window = DEG2RAD(6);
+    bnb_opt_tmp.min_angular_resolution = DEG2RAD(1);
+#else
+    bnb_opt_tmp.angular_search_window = DEG2RAD(180);
+    bnb_opt_tmp.min_angular_resolution = DEG2RAD(5);
+#endif
+    if (!bnb3d->MatchWithMatchOptions(rough_pose, rough_pose, scan, bnb_opt_tmp, lidar_ext, score))
+    {
+        bnb_success = false;
+        LOG_ERROR("bnb_failed, when bnb min_score = %.2f!", bnb_opt_tmp.min_score);
+    }
+    if (bnb_success)
+    {
+        LOG_INFO("bnb_success!");
+        LOG_WARN("bnb_pose = (%.2lf,%.2lf,%.2lf,%.2lf,%.2lf,%.2lf), score_cnt = %d, time = %.2lf ms",
+                 rough_pose.x, rough_pose.y, rough_pose.z, RAD2DEG(rough_pose.roll), RAD2DEG(rough_pose.pitch), RAD2DEG(rough_pose.yaw),
+                 bnb3d->sort_cnt, timer.elapsedLast());
+    }
     return true;
 }
 
@@ -196,13 +239,13 @@ bool Relocalization::run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d 
     return true;
 }
 
-bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &result)
+bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &result, const double &lidar_beg_time)
 {
     Eigen::Matrix4d lidar_ext = lidar_extrinsic.toMatrix4d();
     bool success_flag = true;
     double score = 0;
 
-    if (run_gnss_relocalization(result))
+    if (run_gnss_relocalization(scan, result, lidar_beg_time, lidar_ext, score) && fine_tune_pose(scan, result, lidar_ext, score))
     {
         LOG_WARN("relocalization successfully!!!!!!");
         return true;

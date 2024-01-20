@@ -14,8 +14,8 @@ void poseTransformFrame(const Eigen::Quaternion<T> &rot_from, const Eigen::Matri
                         const Eigen::Quaternion<T> &extR, const Eigen::Matrix<T, 3, 1> &extP,
                         Eigen::Quaternion<T> &rot_to, Eigen::Matrix<T, 3, 1> &pos_to)
 {
-    rot_to = rot_from * extR;
-    pos_to = rot_from * extP + pos_from;
+    rot_to = (rot_from * extR).normalized();
+    pos_to = rot_from.normalized() * extP + pos_from;
 }
 
 /**
@@ -28,7 +28,7 @@ void poseTransformFrame2(const Eigen::Quaternion<T> &rot_from, const Eigen::Matr
                          const Eigen::Quaternion<T> &extR, const Eigen::Matrix<T, 3, 1> &extP,
                          Eigen::Quaternion<T> &rot_to, Eigen::Matrix<T, 3, 1> &pos_to)
 {
-    rot_to = rot_from * extR.conjugate();
+    rot_to = (rot_from * extR.conjugate()).normalized();
     pos_to = pos_from - rot_to * extP;
 }
 

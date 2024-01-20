@@ -106,7 +106,7 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
         if (slam.system_state_vaild)
         {
             Eigen::Matrix4d imu_pose;
-            bool flag = slam.relocalization->run(slam.frontend->measures->lidar, imu_pose);
+            bool flag = slam.relocalization->run(slam.frontend->measures->lidar, imu_pose, slam.frontend->measures->lidar_beg_time);
             const auto &imu_state = slam.frontend->get_state();
             LogAnalysis::save_trajectory(fp, imu_state.pos, imu_state.rot, time_stamp);
             if (flag)

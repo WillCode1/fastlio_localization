@@ -20,13 +20,12 @@ enum TIME_UNIT
   NS = 3
 };
 
+namespace velodyne_ros
+{
 // #define VEL_TIMESTAMP_TYPE float
 #define VEL_TIMESTAMP_TYPE double
 // #define VEL_TIMESTAMP_FIELD time
 #define VEL_TIMESTAMP_FIELD timestamp
-
-namespace velodyne_ros
-{
   struct EIGEN_ALIGN16 Point
   {
     PCL_ADD_POINT4D;
