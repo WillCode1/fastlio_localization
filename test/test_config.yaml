@@ -1,10 +1,12 @@
+%YAML:1.0
 dataset_paths: [
                 "/home/will/data/testbag",
+                "/home/will/data/work_testbags",
+                # "/home/will/Downloads/liosam", 
+                # "/home/will/Downloads/daniilidis/indoor_flying/",
                 "/home/will/Downloads/UrbanLoco/HK",
                 "/home/will/Downloads/UrbanLoco/CA",
-                "/home/will/Downloads/nclt", 
-                # "/home/will/Downloads/liosam", 
-                # "/home/will/Downloads/daniilidis/indoor_flying/"
+                "/home/will/Downloads/nclt"
                ]
 read_topics: [
               "/drivers/top_lidar_origin",
@@ -18,5 +20,5 @@ read_topics: [
               "/imu/data"
              ]
 
-exec_evo: false
-update_baseline: false
+exec_evo: 0
+update_baseline: 0
