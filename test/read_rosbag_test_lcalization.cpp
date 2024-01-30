@@ -7,6 +7,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/Imu.h>
 #include <pcl_conversions/pcl_conversions.h>
+#include <opencv2/core.hpp>
 #include "livox_ros_driver/CustomMsg.h"
 #include "system/System.hpp"
 #include "utility/ProgressBar.h"
@@ -122,7 +123,7 @@ void test_rosbag(const std::string &bagfile, const std::string &config_path, con
     }
 
     rosbag::View view(bag, rosbag::TopicQuery(topics));
-    load_parameters(slam, config_path, lidar_type);
+    load_parameters(slam, lidar_type);
 
     ros::Time start_time = view.getBeginTime();
     ros::Time end_time = view.getEndTime();
@@ -242,19 +243,22 @@ void traverse_for_config(const std::string &directoryPath)
 
 int main(int argc, char** argv)
 {
-    YAML::Node test_config = YAML::LoadFile(root_path + "/test/test_config.yaml");
+    cv::FileStorage test_config(root_path + "/test/test_config.yaml", cv::FileStorage::READ);
 
     signal(SIGINT, SigHandle);
 
     config_filename = "localization_dev.yaml";
 
-    topics = test_config["read_topics"].IsDefined() ? test_config["read_topics"].as<vector<std::string>>() : vector<std::string>();
+    std::vector<std::string> dataset_paths;
+    ros::param::param("config_file", topics, vector<std::string>());
+    if (!test_config["read_topics"].empty())
+        test_config["read_topics"] >> topics;
+    if (!test_config["dataset_paths"].empty())
+        test_config["dataset_paths"] >> dataset_paths;
 
     max_test_localization_times = 10000;
 
     Timer timer;
-    auto dataset_paths = test_config["dataset_paths"].IsDefined() ? test_config["dataset_paths"].as<vector<std::string>>() : vector<std::string>();
-
     for (test_localization_times = 0; test_localization_times < max_test_localization_times; ++test_localization_times)
     {
         for (const auto &path : dataset_paths)

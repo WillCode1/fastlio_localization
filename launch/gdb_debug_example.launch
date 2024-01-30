@@ -2,7 +2,7 @@
 
   	<arg name="rviz" default="true" />
 
-	<param name="config_file" type="string" value="/config/localization_dev.yaml" />
+    <rosparam file="$(find fastlio_localization)/config/localization_dev.yaml" command="load" />
 
   	<node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" required="true" launch-prefix="gdb -ex run --args" />
 

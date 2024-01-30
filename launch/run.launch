@@ -3,11 +3,11 @@
 
 	<arg name="rviz" default="true" />
 
-	<!-- <param name="config_file" type="string" value="/config/avia.yaml" /> -->
-	<!-- <param name="config_file" type="string" value="/config/horizon.yaml" /> -->
-	<!-- <param name="config_file" type="string" value="/config/velodyne.yaml" /> -->
-	<!-- <param name="config_file" type="string" value="/config/ouster64.yaml" /> -->
-	<param name="config_file" type="string" value="/config/localization_dev.yaml" />
+    <!-- <rosparam file="$(find fastlio_localization)/config/avia.yaml" command="load" /> -->
+    <!-- <rosparam file="$(find fastlio_localization)/config/horizon.yaml" command="load" /> -->
+    <!-- <rosparam file="$(find fastlio_localization)/config/velodyne.yaml" command="load" /> -->
+    <!-- <rosparam file="$(find fastlio_localization)/config/ouster64.yaml" command="load" /> -->
+    <rosparam file="$(find fastlio_localization)/config/localization_dev.yaml" command="load" />
 
     <node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" respawn="true"/> 
 

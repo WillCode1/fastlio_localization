@@ -510,12 +510,11 @@ int main(int argc, char **argv)
 {
     ros::init(argc, argv, "SLAM");
     ros::NodeHandle nh;
-    string lidar_topic, imu_topic, gnss_topic, config_file;
+    string lidar_topic, imu_topic, gnss_topic;
     bool location_log_enable = true;
     std::string location_log_save_path;
 
-    ros::param::param("config_file", config_file, std::string(""));
-    load_log_parameters(string(ROOT_DIR) + config_file, location_log_enable, location_log_save_path);
+    load_log_parameters(location_log_enable, location_log_save_path);
     if (location_log_enable)
     {
         if (location_log_save_path.compare("") != 0)
@@ -527,8 +526,8 @@ int main(int argc, char **argv)
         else
             LOG_ERROR("open file %s failed!", location_log_save_path.c_str());
     }
-    load_ros_parameters(string(ROOT_DIR) + config_file, path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
-    load_parameters(slam, string(ROOT_DIR) + config_file, lidar_type);
+    load_ros_parameters(path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
+    load_parameters(slam, lidar_type);
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);
