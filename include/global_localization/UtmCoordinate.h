@@ -14,8 +14,6 @@
      from (Euclidean) UTM coordinates.
 
      @author Chuck Gantz- chuck.gantz@globalstar.com
-
-     @paper https://arxiv.org/pdf/1002.1417v3.pdf
  */
 
 #pragma once
