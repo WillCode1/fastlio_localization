@@ -21,9 +21,9 @@
 #define MEASURES_BUFFER
 #define WORK
 #ifdef WORK
-#include "ant_robot_msgs/PoseDynamicData.h"
-#include "ant_robot_msgs/Level.h"
-#include "ant_robot_msgs/ModuleStatus.h"
+#include "localization_msg/vehicle_pose.h"
+// #include "ant_robot_msgs/Level.h"
+// #include "ant_robot_msgs/ModuleStatus.h"
 #endif
 
 int lidar_type;
@@ -155,20 +155,20 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
 #ifdef WORK
 void publish_module_status(const double &time, int level)
 {
-    ant_robot_msgs::ModuleStatus status;
-    status.header.stamp = ros::Time().fromSec(time);
-    status.header.frame_id = "LOCATION";
-    status.level = level;
-    ant_robot_msgs::ModuleStatusItem item;
-    item.error_code = 4000101;
-    item.level = level;
-    status.items.emplace_back(item);
-    pubModulesStatus.publish(status);
+    // ant_robot_msgs::ModuleStatus status;
+    // status.header.stamp = ros::Time().fromSec(time);
+    // status.header.frame_id = "LOCATION";
+    // status.level = level;
+    // ant_robot_msgs::ModuleStatusItem item;
+    // item.error_code = 4000101;
+    // item.level = level;
+    // status.items.emplace_back(item);
+    // pubModulesStatus.publish(status);
 }
 
 void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
 {
-    ant_robot_msgs::PoseDynamicData odom;
+    localization_msg::vehicle_pose odom;
     odom.header.frame_id = map_frame;
     odom.header.stamp = ros::Time().fromSec(lidar_end_time);
     odom.is_valid = vaild;
@@ -219,18 +219,17 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
-    odom.enu_pos[0] = baselink_pos.x();
-    odom.enu_pos[1] = baselink_pos.y();
-    odom.enu_pos[2] = baselink_pos.z();
+    odom.east = baselink_pos.x();
+    odom.north = baselink_pos.y();
+    odom.up = baselink_pos.z();
     auto res = EigenMath::Quaternion2RPY(baselink_rot);
     odom.roll = res(0);
     odom.pitch = res(1);
     odom.yaw = res(2);
 
-    odom.ahead_speed = std::hypot(state.vel(0), state.vel(1));
-    odom.enu_vel[0] = state.vel(0);
-    odom.enu_vel[1] = state.vel(1);
-    odom.enu_vel[2] = state.vel(2);
+    odom.east_vel = state.vel(0);
+    odom.north_vel = state.vel(1);
+    odom.up_vel = state.vel(2);
     odom.angular_vel[0] = slam.frontend->angular_velocity(0);
     odom.angular_vel[1] = slam.frontend->angular_velocity(1);
     odom.angular_vel[2] = slam.frontend->angular_velocity(2);
@@ -238,13 +237,13 @@ void publish_odometry2(const ros::Publisher &pubMsf, const state_ikfom &state, c
     odom.body_accel[1] = slam.frontend->linear_acceleration(1);
     odom.body_accel[2] = slam.frontend->linear_acceleration(2);
 
-    if (std::abs(odom.enu_pos[0]) > 1e7 || std::abs(odom.enu_pos[1]) > 1e7 || std::abs(odom.enu_pos[2]) > 1e7 ||
-        std::abs(odom.enu_vel[0]) > 20 || std::abs(odom.enu_vel[1]) > 20 || std::abs(odom.enu_vel[2]) > 20 ||
+    if (std::abs(odom.east) > 1e7 || std::abs(odom.north) > 1e7 || std::abs(odom.up) > 1e7 ||
+        std::abs(odom.east_vel) > 20 || std::abs(odom.north_vel) > 20 || std::abs(odom.up_vel) > 20 ||
         std::abs(odom.angular_vel[0]) > 100 || std::abs(odom.angular_vel[1]) > 100 || std::abs(odom.angular_vel[2]) > 100 ||
         std::abs(odom.body_accel[0]) > 100 || std::abs(odom.body_accel[1]) > 100 || std::abs(odom.body_accel[2]) > 100)
     {
         LOG_WARN("localization state maybe abnormal! (imu frame) pos(%f, %f, %f), vel(%f, %f, %f), ang_vel(%f, %f, %f), linear_acc(%f, %f, %f)",
-                 odom.enu_pos[0], odom.enu_pos[1], odom.enu_pos[2], odom.enu_vel[0], odom.enu_vel[1], odom.enu_vel[2],
+                 odom.east, odom.north, odom.up, odom.east_vel, odom.north_vel, odom.up_vel,
                  odom.angular_vel[0], odom.angular_vel[1], odom.angular_vel[2], odom.body_accel[0], odom.body_accel[1], odom.body_accel[2]);
         odom.is_valid = false;
     }
@@ -317,7 +316,7 @@ void sensor_data_process()
             *cur_scan = *slam.frontend->measures->lidar;
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan, slam.frontend->measures->lidar_beg_time);
         }
-        publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
+        // publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef MEASURES_BUFFER
         measures_cache.emplace_back(std::make_shared<MeasureCollection>());
         *measures_cache.back() = *slam.frontend->measures;
@@ -346,7 +345,7 @@ void sensor_data_process()
                 /******* Publish odometry *******/
                 // publish_odometry(pubOdomAftMapped, state, slam.frontend->measures->lidar_end_time, baselink_rot, baselink_pos);
                 publish_odometry2(pubMsf, state, slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-                publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::OK);
+                // publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::OK);
 
                 if (path_en)
                     publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->measures->lidar_end_time);
@@ -362,7 +361,7 @@ void sensor_data_process()
             {
                 LOG_ERROR("location invalid!");
                 publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-                publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
+                // publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef DEDUB_MODE
                 publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->measures->lidar_end_time);
 #endif
@@ -387,7 +386,7 @@ void sensor_data_process()
         /******* Publish odometry *******/
         // publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time, baselink_rot, baselink_pos);
         publish_odometry2(pubMsf, state, slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-        publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::OK);
+        // publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::OK);
 
         if (path_en)
             publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->lidar_end_time);
@@ -403,7 +402,7 @@ void sensor_data_process()
     {
         LOG_ERROR("location invalid!");
         publish_odometry2(pubMsf, slam.frontend->get_state(), slam.frontend->measures->lidar_beg_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-        publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
+        // publish_module_status(slam.frontend->measures->lidar_beg_time, ant_robot_msgs::Level::WARN);
 #ifdef DEDUB_MODE
         publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->lidar_end_time);
 #endif
@@ -540,8 +539,8 @@ int main(int argc, char **argv)
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
     pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 
-    pubMsf = nh.advertise<ant_robot_msgs::PoseDynamicData>("/ant_robot/pose_dynamic_data", 1);
-    pubModulesStatus = nh.advertise<ant_robot_msgs::ModuleStatus>("/ant_robot/module_status", 1);
+    pubMsf = nh.advertise<localization_msg::vehicle_pose>("/ant_robot/pose_dynamic_data", 1);
+    // pubModulesStatus = nh.advertise<ant_robot_msgs::ModuleStatus>("/ant_robot/module_status", 1);
     //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
 
