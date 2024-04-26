@@ -562,7 +562,7 @@ int main(int argc, char **argv)
     std::string last_pose_record_path;
     std::string location_log_save_path;
 
-    load_log_parameters(location_log_enable, location_log_save_path);
+    load_log_parameters(location_log_enable, last_pose_record_path, location_log_save_path);
 
     // 1.record last pose
     if (last_pose_record_path.compare("") != 0)
