@@ -532,6 +532,7 @@ void Relocalization::get_pose_score(const Eigen::Matrix4d &imu_pose, const Point
     pcl::transformPointCloud(*scan, *trans_pc, lidar_pose);
     bnb_score = bnb3d->calculateOccupancyScore(0, trans_pc);
 
+    // getFitnessScore
     ndt.setInputSource(trans_pc);
     if (!ndt.initCompute())
         return;
