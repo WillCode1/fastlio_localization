@@ -288,12 +288,13 @@ void gnss_cbk(const sensor_msgs::NavSatFix::ConstPtr &msg)
 }
 #endif
 
-bool load_last_pose()
+bool load_last_pose(const PointCloudType::Ptr &scan)
 {
     static bool use_last_pose = true;
     if (!use_last_pose)
         return false;
     use_last_pose = false;
+    LOG_WARN("relocate try to use last pose!");
 
     std::string str;
     last_pose_record.seekg(ios::beg);
@@ -316,9 +317,24 @@ bool load_last_pose()
     if (str.find("end!") == -1)
     {
         LOG_ERROR("can't find last pose! parse error!");
+        return false;
+    }
+    double bnb_score = 0, ndt_score = 0;
+    Timer timer;
+    slam.relocalization->get_pose_score(imu_pose, scan, bnb_score, ndt_score);
+    if (bnb_score < 0.8)
+    {
+        LOG_ERROR("bnb_score too small = %f, should be greater than = %f!", bnb_score, 0.8);
+        return false;
+    }
+    else if (ndt_score > 0.1)
+    {
+        LOG_ERROR("ndt_score too high = %f, should be less than = %f!", ndt_score, 0.1);
+        return false;
     }
     else
     {
+        LOG_WARN("relocate use last pose successfully! bnb_score = %f, ndt_score = %f. cost time = %.2lf ms.", bnb_score, ndt_score, timer.elapsedLast());
         slam.system_state_vaild = true;
     }
 
@@ -341,10 +357,9 @@ void sensor_data_process()
 
     if (!slam.system_state_vaild)
     {
-        if (load_last_pose())
+        if (load_last_pose(slam.frontend->measures->lidar))
         {
             // only for restart!
-            LOG_WARN("relocate use last pose!");
         }
         else if (!slam.run_relocalization_thread)
         {

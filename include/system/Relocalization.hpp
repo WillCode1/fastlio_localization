@@ -31,6 +31,7 @@ public:
     void set_ndt_param(const double &_step_size, const double &_resolution);
     void set_gicp_param(bool _use_gicp, const double &filter_range, const double &gicp_ds, const double &search_radi, const double &tep, const double &fep, const double &fit_score);
     void add_keyframe_descriptor(const PointCloudType::Ptr thiskeyframe, const std::string &path);
+    void get_pose_score(const Eigen::Matrix4d &imu_pose, const PointCloudType::Ptr &scan, double &bnb_score, double &ndt_score);
 
     std::string algorithm_type = "UNKNOW";
     BnbOptions bnb_option;
@@ -522,4 +523,41 @@ void Relocalization::add_keyframe_descriptor(const PointCloudType::Ptr thiskeyfr
 
     if (path.compare("") != 0)
         sc_manager->saveCurrentSCD(path);
+}
+
+void Relocalization::get_pose_score(const Eigen::Matrix4d &imu_pose, const PointCloudType::Ptr &scan, double &bnb_score, double &ndt_score)
+{
+    PointCloudType::Ptr trans_pc(new PointCloudType(scan->points.size(), 1));
+    const Eigen::Matrix4d &lidar_pose = imu_pose * lidar_extrinsic.toMatrix4d();
+    pcl::transformPointCloud(*scan, *trans_pc, lidar_pose);
+    bnb_score = bnb3d->calculateOccupancyScore(0, trans_pc);
+
+    // getFitnessScore
+    ndt.setInputSource(trans_pc);
+    if (!ndt.initCompute())
+        return;
+
+    std::vector<int> nn_indices(1);
+    std::vector<float> nn_dists(1);
+
+    // For each point in the source dataset
+    int nr = 0;
+    for (std::size_t i = 0; i < trans_pc->points.size(); ++i)
+    {
+        // Find its nearest neighbor in the target
+        ndt.getSearchMethodTarget()->nearestKSearch(trans_pc->points[i], 1, nn_indices, nn_dists);
+
+        // Deal with occlusions (incomplete targets)
+        if (nn_dists[0] <= std::numeric_limits<double>::max())
+        {
+            // Add to the fitness score
+            ndt_score += nn_dists[0];
+            nr++;
+        }
+    }
+
+    if (nr > 0)
+        ndt_score = ndt_score / nr;
+    else
+        ndt_score = std::numeric_limits<double>::max();
 }
