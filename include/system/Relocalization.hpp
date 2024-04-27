@@ -327,7 +327,7 @@ bool Relocalization::fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &r
     result = EigenMath::CreateAffineMatrix(V3D(rough_pose.x, rough_pose.y, rough_pose.z), V3D(rough_pose.roll, rough_pose.pitch, rough_pose.yaw));
     if (score >= bnb_option.enough_score)
     {
-        LOG_WARN("bnb score enough!");
+        LOG_WARN("bnb score greater than %.2f, enough!", bnb_option.enough_score);
         return true;
     }
 

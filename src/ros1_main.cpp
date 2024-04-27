@@ -215,17 +215,17 @@ bool load_last_pose(const PointCloudType::Ptr &scan)
     slam.relocalization->get_pose_score(imu_pose, scan, bnb_score, ndt_score);
     if (bnb_score < 0.8)
     {
-        LOG_ERROR("bnb_score too small = %f, should be greater than = %f!", bnb_score, 0.8);
+        LOG_ERROR("bnb_score too small = %.3f, should be greater than = %.3f!", bnb_score, 0.8);
         return false;
     }
     else if (ndt_score > 0.1)
     {
-        LOG_ERROR("ndt_score too high = %f, should be less than = %f!", ndt_score, 0.1);
+        LOG_ERROR("ndt_score too high = %.3f, should be less than = %.3f!", ndt_score, 0.1);
         return false;
     }
     else
     {
-        LOG_WARN("relocate use last pose successfully! bnb_score = %f, ndt_score = %f. cost time = %.2lf ms.", bnb_score, ndt_score, timer.elapsedLast());
+        LOG_WARN("relocate use last pose successfully! bnb_score = %.3f, ndt_score = %.3f. cost time = %.2lf ms.", bnb_score, ndt_score, timer.elapsedLast());
         slam.system_state_vaild = true;
     }
 
