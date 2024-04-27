@@ -15,7 +15,8 @@
 
 	<group if="$(arg rviz)">
 		<!-- glbal map-->
-		<arg name="map" default="/ant_robot/data/map/globalmap.pcd" />
+		<!-- <arg name="map" default="/ant_robot/data/map/globalmap.pcd" /> -->
+		<arg name="map" default="$(find fastlio_localization)/PCD/globalmap.pcd" />
     	<node pkg="pcl_ros" type="pcd_to_pointcloud" name="map_publisher" args="$(arg map) 2 _frame_id:=map cloud_pcd:=map" output="screen"/>
 
 		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fastlio_localization)/rviz_cfg/localization.rviz" />

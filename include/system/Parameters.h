@@ -140,7 +140,7 @@ inline void load_parameters(System &slam, int &lidar_type)
     }
 
     vector<int> valid_ring_index;
-    valid_ring_index = config["mapping"]["valid_ring"].IsDefined() ? config["mapping"]["valid_ring"].as<vector<int>>() : vector<int>();
+    ros::param::param("mapping/valid_ring", valid_ring_index, vector<int>());
     slam.frontend->lidar->valid_ring.insert(valid_ring_index.begin(), valid_ring_index.end());
     slam.frontend->lidar->init(n_scans, scan_rate, time_unit, blind, detect_range);
     ros::param::param("preprocess/imu_rate", slam.frontend->imu->imu_rate, 200);
