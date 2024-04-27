@@ -1,26 +1,23 @@
-#include <yaml-cpp/yaml.h>
-#include "System.hpp"
+#include "system/System.hpp"
+#include <ros/ros.h>
 
-inline void load_ros_parameters(const std::string &config_path, bool &path_en, bool &scan_pub_en, bool &dense_pub_en,
+inline void load_ros_parameters(bool &path_en, bool &scan_pub_en, bool &dense_pub_en,
                                 std::string &lidar_topic, std::string &imu_topic, std::string &gnss_topic, std::string &map_frame, std::string &lidar_frame, std::string &baselink_frame)
 {
-    YAML::Node config = YAML::LoadFile(config_path);
-    path_en = config["publish"]["path_en"].IsDefined() ? config["publish"]["path_en"].as<bool>() : false;
-    scan_pub_en = config["publish"]["scan_publish_en"].IsDefined() ? config["publish"]["scan_publish_en"].as<bool>() : false;
-    dense_pub_en = config["publish"]["dense_publish_en"].IsDefined() ? config["publish"]["dense_publish_en"].as<bool>() : false;
+    ros::param::param("publish/path_en", path_en, false);
+    ros::param::param("publish/scan_publish_en", scan_pub_en, false);
+    ros::param::param("publish/dense_publish_en", dense_pub_en, false);
 
-    lidar_topic = config["common"]["lidar_topic"].IsDefined() ? config["common"]["lidar_topic"].as<string>() : std::string("/livox/lidar");
-    imu_topic = config["common"]["imu_topic"].IsDefined() ? config["common"]["imu_topic"].as<string>() : std::string("/livox/imu");
-    gnss_topic = config["common"]["gnss_topic"].IsDefined() ? config["common"]["gnss_topic"].as<string>() : std::string("/gps/fix");
-    map_frame = config["common"]["map_frame"].IsDefined() ? config["common"]["map_frame"].as<string>() : std::string("camera_init");
-    lidar_frame = config["common"]["lidar_frame"].IsDefined() ? config["common"]["lidar_frame"].as<string>() : std::string("lidar");
-    baselink_frame = config["common"]["baselink_frame"].IsDefined() ? config["common"]["baselink_frame"].as<string>() : std::string("base_link");
+    ros::param::param("common/lidar_topic", lidar_topic, std::string("/livox/lidar"));
+    ros::param::param("common/imu_topic", imu_topic, std::string("/livox/imu"));
+    ros::param::param("common/gnss_topic", gnss_topic, std::string("/gps/fix"));
+    ros::param::param("common/map_frame", map_frame, std::string("camera_init"));
+    ros::param::param("common/lidar_frame", lidar_frame, std::string("lidar"));
+    ros::param::param("common/baselink_frame", baselink_frame, std::string("base_link"));
 }
 
-inline void load_parameters(System &slam, const std::string &config_path, int &lidar_type)
+inline void load_parameters(System &slam, int &lidar_type)
 {
-    YAML::Node config = YAML::LoadFile(config_path);
-
     double blind, detect_range;
     int n_scans, scan_rate, time_unit;
     vector<double> extrinT;
@@ -29,17 +26,17 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     M3D extrinR_eigen;
     double gyr_cov, acc_cov, b_gyr_cov, b_acc_cov;
 
-    gyr_cov = config["mapping"]["gyr_cov"].IsDefined() ? config["mapping"]["gyr_cov"].as<double>() : 0.1;
-    acc_cov = config["mapping"]["acc_cov"].IsDefined() ? config["mapping"]["acc_cov"].as<double>() : 0.1;
-    b_gyr_cov = config["mapping"]["b_gyr_cov"].IsDefined() ? config["mapping"]["b_gyr_cov"].as<double>() : 0.0001;
-    b_acc_cov = config["mapping"]["b_acc_cov"].IsDefined() ? config["mapping"]["b_acc_cov"].as<double>() : 0.0001;
-    blind = config["preprocess"]["blind"].IsDefined() ? config["preprocess"]["blind"].as<double>() : 0.01;
-    detect_range = config["preprocess"]["det_range"].IsDefined() ? config["preprocess"]["det_range"].as<double>() : 300.f;
-    lidar_type = config["preprocess"]["lidar_type"].IsDefined() ? config["preprocess"]["lidar_type"].as<int>() : AVIA;
-    n_scans = config["preprocess"]["scan_line"].IsDefined() ? config["preprocess"]["scan_line"].as<int>() : 16;
-    time_unit = config["preprocess"]["timestamp_unit"].IsDefined() ? config["preprocess"]["timestamp_unit"].as<int>() : US;
-    scan_rate = config["preprocess"]["scan_rate"].IsDefined() ? config["preprocess"]["scan_rate"].as<int>() : 10;
-    slam.map_path = config["official"]["map_path"].IsDefined() ? config["official"]["map_path"].as<string>() : std::string("");
+    ros::param::param("mapping/gyr_cov", gyr_cov, 0.1);
+    ros::param::param("mapping/acc_cov", acc_cov, 0.1);
+    ros::param::param("mapping/b_gyr_cov", b_gyr_cov, 0.0001);
+    ros::param::param("mapping/b_acc_cov", b_acc_cov, 0.0001);
+    ros::param::param("preprocess/blind", blind, 0.01);
+    ros::param::param("preprocess/det_range", detect_range, 300.);
+    ros::param::param("preprocess/lidar_type", lidar_type, (int)AVIA);
+    ros::param::param("preprocess/scan_line", n_scans, 16);
+    ros::param::param("preprocess/timestamp_unit", time_unit, (int)US);
+    ros::param::param("preprocess/scan_rate", scan_rate, 10);
+    ros::param::param("official/map_path", slam.map_path, std::string(""));
     if (slam.map_path.compare("") != 0)
     {
         slam.globalmap_path = slam.map_path + "/globalmap.pcd";
@@ -47,66 +44,67 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
         slam.scd_path = slam.map_path + "/scancontext/";
     }
 
-    slam.relocalization->sc_manager->LIDAR_HEIGHT = config["scan_context"]["lidar_height"].IsDefined() ? config["scan_context"]["lidar_height"].as<double>() : 2.0;
-    slam.relocalization->sc_manager->SC_DIST_THRES = config["scan_context"]["sc_dist_thres"].IsDefined() ? config["scan_context"]["sc_dist_thres"].as<double>() : 0.5;
+    ros::param::param("scan_context/lidar_height", slam.relocalization->sc_manager->LIDAR_HEIGHT, 2.0);
+    ros::param::param("scan_context/sc_dist_thres", slam.relocalization->sc_manager->SC_DIST_THRES, 0.5);
 
     if (true)
     {
-        slam.relocalization->utm_origin.zone = config["utm_origin"]["zone"].IsDefined() ? config["utm_origin"]["zone"].as<string>() : std::string("51N");
-        slam.relocalization->utm_origin.east = config["utm_origin"]["east"].IsDefined() ? config["utm_origin"]["east"].as<double>() : 0;
-        slam.relocalization->utm_origin.north = config["utm_origin"]["north"].IsDefined() ? config["utm_origin"]["north"].as<double>() : 0;
-        slam.relocalization->utm_origin.up = config["utm_origin"]["up"].IsDefined() ? config["utm_origin"]["up"].as<double>() : 0;
+        ros::param::param("utm_origin/zone", slam.relocalization->utm_origin.zone, std::string("51N"));
+        ros::param::param("utm_origin/east", slam.relocalization->utm_origin.east, 0.);
+        ros::param::param("utm_origin/north", slam.relocalization->utm_origin.north, 0.);
+        ros::param::param("utm_origin/up", slam.relocalization->utm_origin.up, 0.);
 
-        extrinT = config["mapping"]["extrinsicT_imu2gnss"].IsDefined() ? config["mapping"]["extrinsicT_imu2gnss"].as<vector<double>>() : vector<double>();
-        extrinR = config["mapping"]["extrinsicR_imu2gnss"].IsDefined() ? config["mapping"]["extrinsicR_imu2gnss"].as<vector<double>>() : vector<double>();
+        ros::param::param("mapping/extrinsicT_imu2gnss", extrinT, vector<double>());
+        ros::param::param("mapping/extrinsicR_imu2gnss", extrinR, vector<double>());
         extrinT_eigen << VEC_FROM_ARRAY(extrinT);
         extrinR_eigen << MAT_FROM_ARRAY(extrinR);
         slam.relocalization->set_extrinsic(extrinT_eigen, extrinR_eigen);
 
-        slam.relocalization->algorithm_type = config["relocalization_cfg"]["algorithm_type"].IsDefined() ? config["relocalization_cfg"]["algorithm_type"].as<string>() : std::string("UNKONW");
+        ros::param::param("relocalization_cfg/algorithm_type", slam.relocalization->algorithm_type, std::string("UNKONW"));
 
         BnbOptions match_option;
-        match_option.linear_xy_window_size = config["bnb3d"]["linear_xy_window_size"].IsDefined() ? config["bnb3d"]["linear_xy_window_size"].as<double>() : 10;
-        match_option.linear_z_window_size = config["bnb3d"]["linear_z_window_size"].IsDefined() ? config["bnb3d"]["linear_z_window_size"].as<double>() : 1.;
-        match_option.angular_search_window = config["bnb3d"]["angular_search_window"].IsDefined() ? config["bnb3d"]["angular_search_window"].as<double>() : 30;
-        match_option.pc_resolutions = config["bnb3d"]["pc_resolutions"].IsDefined() ? config["bnb3d"]["pc_resolutions"].as<vector<double>>() : vector<double>();
-        match_option.bnb_depth = config["bnb3d"]["bnb_depth"].IsDefined() ? config["bnb3d"]["bnb_depth"].as<int>() : 5;
-        match_option.min_score = config["bnb3d"]["min_score"].IsDefined() ? config["bnb3d"]["min_score"].as<double>() : 0.1;
-        match_option.enough_score = config["bnb3d"]["enough_score"].IsDefined() ? config["bnb3d"]["enough_score"].as<double>() : 0.8;
-        match_option.min_xy_resolution = config["bnb3d"]["min_xy_resolution"].IsDefined() ? config["bnb3d"]["min_xy_resolution"].as<double>() : 0.2;
-        match_option.min_z_resolution = config["bnb3d"]["min_z_resolution"].IsDefined() ? config["bnb3d"]["min_z_resolution"].as<double>() : 0.1;
-        match_option.min_angular_resolution = config["bnb3d"]["min_angular_resolution"].IsDefined() ? config["bnb3d"]["min_angular_resolution"].as<double>() : 0.1;
-        match_option.thread_num = config["bnb3d"]["thread_num"].IsDefined() ? config["bnb3d"]["thread_num"].as<int>() : 4;
-        match_option.filter_size_scan = config["bnb3d"]["filter_size_scan"].IsDefined() ? config["bnb3d"]["filter_size_scan"].as<double>() : 0.1;
-        match_option.debug_mode = config["bnb3d"]["debug_mode"].IsDefined() ? config["bnb3d"]["debug_mode"].as<bool>() : false;
+        ros::param::param("bnb3d/linear_xy_window_size", match_option.linear_xy_window_size, 10.);
+        ros::param::param("bnb3d/linear_z_window_size", match_option.linear_z_window_size, 1.);
+        ros::param::param("bnb3d/angular_search_window", match_option.angular_search_window, 30.);
+        ros::param::param("bnb3d/pc_resolutions", match_option.pc_resolutions, vector<double>());
+        ros::param::param("bnb3d/bnb_depth", match_option.bnb_depth, 5);
+        ros::param::param("bnb3d/min_score", match_option.min_score, 0.1);
+        ros::param::param("bnb3d/enough_score", match_option.enough_score, 0.8);
+        ros::param::param("bnb3d/min_xy_resolution", match_option.min_xy_resolution, 0.2);
+        ros::param::param("bnb3d/min_z_resolution", match_option.min_z_resolution, 0.1);
+        ros::param::param("bnb3d/min_angular_resolution", match_option.min_angular_resolution, 0.1);
+        ros::param::param("bnb3d/thread_num", match_option.thread_num, 4);
+        ros::param::param("bnb3d/filter_size_scan", match_option.filter_size_scan, 0.1);
+        ros::param::param("bnb3d/debug_mode", match_option.debug_mode, false);
 
         Pose lidar_extrinsic;
-        lidar_extrinsic.x = config["relocalization_cfg"]["lidar_ext/x"].IsDefined() ? config["relocalization_cfg"]["lidar_ext/x"].as<double>() : 0.;
-        lidar_extrinsic.y = config["relocalization_cfg"]["lidar_ext/y"].IsDefined() ? config["relocalization_cfg"]["lidar_ext/y"].as<double>() : 0.;
-        lidar_extrinsic.z = config["relocalization_cfg"]["lidar_ext/z"].IsDefined() ? config["relocalization_cfg"]["lidar_ext/z"].as<double>() : 0.;
-        lidar_extrinsic.roll = config["relocalization_cfg"]["lidar_ext/roll"].IsDefined() ? config["relocalization_cfg"]["lidar_ext/roll"].as<double>() : 0.;
-        lidar_extrinsic.pitch = config["relocalization_cfg"]["lidar_ext/pitch"].IsDefined() ? config["relocalization_cfg"]["lidar_ext/pitch"].as<double>() : 0.;
-        lidar_extrinsic.yaw = config["relocalization_cfg"]["lidar_ext/yaw"].IsDefined() ? config["relocalization_cfg"]["lidar_ext/yaw"].as<double>() : 0.;
+        ros::param::param("relocalization_cfg/lidar_ext/x", lidar_extrinsic.x, 0.);
+        ros::param::param("relocalization_cfg/lidar_ext/y", lidar_extrinsic.y, 0.);
+        ros::param::param("relocalization_cfg/lidar_ext/z", lidar_extrinsic.z, 0.);
+        ros::param::param("relocalization_cfg/lidar_ext/roll", lidar_extrinsic.roll, 0.);
+        ros::param::param("relocalization_cfg/lidar_ext/pitch", lidar_extrinsic.pitch, 0.);
+        ros::param::param("relocalization_cfg/lidar_ext/yaw", lidar_extrinsic.yaw, 0.);
         slam.relocalization->set_bnb3d_param(match_option, lidar_extrinsic);
 
         double step_size, resolution;
-        step_size = config["ndt"]["step_size"].IsDefined() ? config["ndt"]["step_size"].as<double>() : 0.1;
-        resolution = config["ndt"]["resolution"].IsDefined() ? config["ndt"]["resolution"].as<double>() : 1;
+        ros::param::param("ndt/step_size", step_size, 0.1);
+        ros::param::param("ndt/resolution", resolution, 1.);
         slam.relocalization->set_ndt_param(step_size, resolution);
 
         bool use_gicp;
         double gicp_downsample, filter_range, search_radius, teps, feps, fitness_score;
-        use_gicp = config["gicp"]["use_gicp"].IsDefined() ? config["gicp"]["use_gicp"].as<bool>() : true;
-        filter_range = config["gicp"]["filter_range"].IsDefined() ? config["gicp"]["filter_range"].as<double>() : 80;
-        gicp_downsample = config["gicp"]["gicp_downsample"].IsDefined() ? config["gicp"]["gicp_downsample"].as<double>() : 0.2;
-        search_radius = config["gicp"]["search_radius"].IsDefined() ? config["gicp"]["search_radius"].as<double>() : 0.5;
-        teps = config["gicp"]["teps"].IsDefined() ? config["gicp"]["teps"].as<double>() : 1e-3;
-        feps = config["gicp"]["feps"].IsDefined() ? config["gicp"]["feps"].as<double>() : 1e-3;
-        fitness_score = config["gicp"]["fitness_score"].IsDefined() ? config["gicp"]["fitness_score"].as<double>() : 0.3;
+        ros::param::param("gicp/use_gicp", use_gicp, true);
+        ros::param::param("gicp/filter_range", filter_range, 80.);
+        ros::param::param("gicp/gicp_downsample", gicp_downsample, 0.2);
+        ros::param::param("gicp/search_radius", search_radius, 0.5);
+        ros::param::param("gicp/teps", teps, 1e-3);
+        ros::param::param("gicp/feps", feps, 1e-3);
+        ros::param::param("gicp/fitness_score", fitness_score, 0.3);
         slam.relocalization->set_gicp_param(use_gicp, filter_range, gicp_downsample, search_radius, teps, feps, fitness_score);
     }
 
-    auto frontend_type = config["mapping"]["frontend_type"].IsDefined() ? config["mapping"]["frontend_type"].as<int>() : 0;
+    int frontend_type;
+    ros::param::param("mapping/frontend_type", frontend_type, 0);
     if (frontend_type == Fastlio)
     {
         slam.frontend = make_shared<FastlioOdometry>();
@@ -114,24 +112,25 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     }
     else if (frontend_type == Pointlio)
     {
+        double acc_cov_output, gyr_cov_output, gyr_cov_input, acc_cov_input, vel_cov, imu_meas_acc_cov, imu_meas_omg_cov;
         slam.frontend = make_shared<PointlioOdometry>();
         LOG_WARN("frontend use pointlio!");
         auto pointlio = dynamic_cast<PointlioOdometry *>(slam.frontend.get());
-        pointlio->imu_en = config["mapping"]["imu_en"].IsDefined() ? config["mapping"]["imu_en"].as<bool>() : true;
-        pointlio->use_imu_as_input = config["mapping"]["use_imu_as_input"].IsDefined() ? config["mapping"]["use_imu_as_input"].as<bool>() : true;
-        pointlio->prop_at_freq_of_imu = config["mapping"]["prop_at_freq_of_imu"].IsDefined() ? config["mapping"]["prop_at_freq_of_imu"].as<bool>() : true;
-        pointlio->check_saturation = config["mapping"]["check_saturation"].IsDefined() ? config["mapping"]["check_saturation"].as<bool>() : true;
-        pointlio->saturation_acc = config["mapping"]["saturation_acc"].IsDefined() ? config["mapping"]["saturation_acc"].as<double>() : 3.0;
-        pointlio->saturation_gyro = config["mapping"]["saturation_gyro"].IsDefined() ? config["mapping"]["saturation_gyro"].as<double>() : 35.0;
-        double acc_cov_output = config["mapping"]["acc_cov_output"].IsDefined() ? config["mapping"]["acc_cov_output"].as<double>() : 500;
-        double gyr_cov_output = config["mapping"]["gyr_cov_output"].IsDefined() ? config["mapping"]["gyr_cov_output"].as<double>() : 1000;
-        double gyr_cov_input = config["mapping"]["gyr_cov_input"].IsDefined() ? config["mapping"]["gyr_cov_input"].as<double>() : 0.01;
-        double acc_cov_input = config["mapping"]["acc_cov_input"].IsDefined() ? config["mapping"]["acc_cov_input"].as<double>() : 0.1;
-        double vel_cov = config["mapping"]["vel_cov"].IsDefined() ? config["mapping"]["vel_cov"].as<double>() : 20;
+        ros::param::param("mapping/imu_en", pointlio->imu_en, true);
+        ros::param::param("mapping/use_imu_as_input", pointlio->use_imu_as_input, true);
+        ros::param::param("mapping/prop_at_freq_of_imu", pointlio->prop_at_freq_of_imu, true);
+        ros::param::param("mapping/check_saturation", pointlio->check_saturation, true);
+        ros::param::param("mapping/saturation_acc", pointlio->saturation_acc, 3.0);
+        ros::param::param("mapping/saturation_gyro", pointlio->saturation_gyro, 35.0);
+        ros::param::param("mapping/acc_cov_output", acc_cov_output, 500.);
+        ros::param::param("mapping/gyr_cov_output", gyr_cov_output, 1000.);
+        ros::param::param("mapping/gyr_cov_input", gyr_cov_input, 0.01);
+        ros::param::param("mapping/acc_cov_input", acc_cov_input, 0.1);
+        ros::param::param("mapping/vel_cov", vel_cov, 20.);
         pointlio->Q_input = process_noise_cov_input(gyr_cov_input, acc_cov_input, b_gyr_cov, b_acc_cov);
         pointlio->Q_output = process_noise_cov_output(vel_cov, gyr_cov_output, acc_cov_output, b_gyr_cov, b_acc_cov);
-        double imu_meas_acc_cov = config["mapping"]["imu_meas_acc_cov"].IsDefined() ? config["mapping"]["imu_meas_acc_cov"].as<double>() : 0.1;
-        double imu_meas_omg_cov = config["mapping"]["imu_meas_omg_cov"].IsDefined() ? config["mapping"]["imu_meas_omg_cov"].as<double>() : 0.1;
+        ros::param::param("mapping/imu_meas_acc_cov", imu_meas_acc_cov, 0.1);
+        ros::param::param("mapping/imu_meas_omg_cov", imu_meas_omg_cov, 0.1);
         pointlio->R_imu << imu_meas_omg_cov, imu_meas_omg_cov, imu_meas_omg_cov, imu_meas_acc_cov, imu_meas_acc_cov, imu_meas_acc_cov;
     }
     else
@@ -144,26 +143,26 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     valid_ring_index = config["mapping"]["valid_ring"].IsDefined() ? config["mapping"]["valid_ring"].as<vector<int>>() : vector<int>();
     slam.frontend->lidar->valid_ring.insert(valid_ring_index.begin(), valid_ring_index.end());
     slam.frontend->lidar->init(n_scans, scan_rate, time_unit, blind, detect_range);
-    slam.frontend->imu->imu_rate = config["preprocess"]["imu_rate"].IsDefined() ? config["preprocess"]["imu_rate"].as<int>() : 200;
-    slam.frontend->imu->imu_meas_check = config["preprocess"]["imu_meas_check"].IsDefined() ? config["preprocess"]["imu_meas_check"].as<vector<double>>() : vector<double>(6, 20);
+    ros::param::param("preprocess/imu_rate", slam.frontend->imu->imu_rate, 200);
+    ros::param::param("preprocess/imu_meas_check", slam.frontend->imu->imu_meas_check, vector<double>(6, 20));
     slam.frontend->imu->set_imu_cov(process_noise_cov(gyr_cov, acc_cov, b_gyr_cov, b_acc_cov));
 
-    slam.frontend->timedelay_lidar2imu = config["common"]["timedelay_lidar2imu"].IsDefined() ? config["common"]["timedelay_lidar2imu"].as<double>() : 0;
-    slam.frontend->gravity_init = config["mapping"]["gravity_init"].IsDefined() ? config["mapping"]["gravity_init"].as<vector<double>>() : vector<double>();
+    ros::param::param("common/timedelay_lidar2imu", slam.frontend->timedelay_lidar2imu, 0.);
+    ros::param::param("mapping/gravity_init", slam.frontend->gravity_init, vector<double>());
 
-    slam.frontend->num_max_iterations = config["mapping"]["max_iteration"].IsDefined() ? config["mapping"]["max_iteration"].as<int>() : 4;
-    slam.frontend->surf_frame_ds_res = config["mapping"]["surf_frame_ds_res"].IsDefined() ? config["mapping"]["surf_frame_ds_res"].as<double>() : 0.5;
-    slam.frontend->point_skip_num = config["mapping"]["point_skip_num"].IsDefined() ? config["mapping"]["point_skip_num"].as<int>() : 2;
-    slam.frontend->space_down_sample = config["mapping"]["space_down_sample"].IsDefined() ? config["mapping"]["space_down_sample"].as<bool>() : true;
-    slam.frontend->ikdtree_resolution = config["mapping"]["ikdtree_resolution"].IsDefined() ? config["mapping"]["ikdtree_resolution"].as<double>() : 0.5;
-    slam.frontend->lidar_model_search_range = config["mapping"]["lidar_model_search_range"].IsDefined() ? config["mapping"]["lidar_model_search_range"].as<double>() : 5;
-    slam.frontend->lidar_meas_cov = config["mapping"]["lidar_meas_cov"].IsDefined() ? config["mapping"]["lidar_meas_cov"].as<double>() : 0.001;
-    slam.frontend->cube_len = config["mapping"]["cube_side_length"].IsDefined() ? config["mapping"]["cube_side_length"].as<double>() : 200;
-    slam.frontend->extrinsic_est_en = config["mapping"]["extrinsic_est_en"].IsDefined() ? config["mapping"]["extrinsic_est_en"].as<bool>() : true;
-    slam.frontend->loger.runtime_log = config["mapping"]["runtime_log_enable"].IsDefined() ? config["mapping"]["runtime_log_enable"].as<int>() : 0;
+    ros::param::param("mapping/max_iteration", slam.frontend->num_max_iterations, 4);
+    ros::param::param("mapping/surf_frame_ds_res", slam.frontend->surf_frame_ds_res, 0.5);
+    ros::param::param("mapping/point_skip_num", slam.frontend->point_skip_num, 2);
+    ros::param::param("mapping/space_down_sample", slam.frontend->space_down_sample, true);
+    ros::param::param("mapping/ikdtree_resolution", slam.frontend->ikdtree_resolution, 0.5);
+    ros::param::param("mapping/lidar_model_search_range", slam.frontend->lidar_model_search_range, 5.);
+    ros::param::param("mapping/lidar_meas_cov", slam.frontend->lidar_meas_cov, 0.001);
+    ros::param::param("mapping/cube_len", slam.frontend->cube_len, 200.);
+    ros::param::param("mapping/extrinsic_est_en", slam.frontend->extrinsic_est_en, true);
+    ros::param::param("mapping/runtime_log_enable", slam.frontend->loger.runtime_log, 0);
 
-    extrinT = config["mapping"]["extrinsic_T"].IsDefined() ? config["mapping"]["extrinsic_T"].as<vector<double>>() : vector<double>();
-    extrinR = config["mapping"]["extrinsic_R"].IsDefined() ? config["mapping"]["extrinsic_R"].as<vector<double>>() : vector<double>();
+    ros::param::param("mapping/extrinsic_T", extrinT, vector<double>());
+    ros::param::param("mapping/extrinsic_R", extrinR, vector<double>());
     extrinT_eigen << VEC_FROM_ARRAY(extrinT);
     extrinR_eigen << MAT_FROM_ARRAY(extrinR);
     slam.frontend->set_extrinsic(extrinT_eigen, extrinR_eigen);
@@ -171,9 +170,10 @@ inline void load_parameters(System &slam, const std::string &config_path, int &l
     slam.init_system_mode();
 }
 
-inline void load_log_parameters(const std::string &config_path, bool &location_log_enable, std::string &location_log_save_path)
+inline void load_log_parameters(bool &relocate_use_last_pose, std::string &last_pose_record_path, bool &location_log_enable, std::string &location_log_save_path)
 {
-    YAML::Node config = YAML::LoadFile(config_path);
-    location_log_enable = config["official"]["location_log_enable"].IsDefined() ? config["official"]["location_log_enable"].as<bool>() : false;
-    location_log_save_path = config["official"]["location_log_save_path"].IsDefined() ? config["official"]["location_log_save_path"].as<string>() : std::string("");
+	ros::param::param("official/relocate_use_last_pose", relocate_use_last_pose, true);
+	ros::param::param("official/last_pose_record_path", last_pose_record_path, std::string(""));
+    ros::param::param("official/location_log_enable", location_log_enable, false);
+    ros::param::param("official/location_log_save_path", location_log_save_path, std::string(""));
 }
