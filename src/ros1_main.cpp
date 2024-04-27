@@ -247,7 +247,7 @@ void sensor_data_process()
 
     if (!slam.system_state_vaild)
     {
-        if (load_last_pose(slam.frontend->measures->lidar))
+        if (last_pose_record.is_open() && load_last_pose(slam.frontend->measures->lidar))
         {
             // only for restart!
         }
@@ -325,10 +325,13 @@ void sensor_data_process()
         LOG_INFO("location valid. feats_down = %d, cost time = %.1fms.", slam.frontend->loger.feats_down_size, slam.frontend->loger.total_time);
         slam.frontend->loger.print_pose(state, "cur_imu_pose");
 
-        // record last pose
-        last_pose_record.seekg(ios::beg);
-        last_pose_record << "last_pose(xyz,rpy):( " << state.pos.x() << ' ' << state.pos.y() << ' ' << state.pos.z() << ' '
-                         << state.rot.w() << ' ' << state.rot.x() << ' ' << state.rot.y() << ' ' << state.rot.z() << " )end!" << endl;
+		if (last_pose_record.is_open())
+		{
+			// record last pose
+			last_pose_record.seekg(ios::beg);
+			last_pose_record << "last_pose(xyz,rpy):( " << state.pos.x() << ' ' << state.pos.y() << ' ' << state.pos.z() << ' '
+							 << state.rot.w() << ' ' << state.rot.x() << ' ' << state.rot.y() << ' ' << state.rot.z() << " )end!" << endl;
+		}
 
         /******* Publish odometry *******/
         publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time, baselink_rot, baselink_pos);
@@ -450,18 +453,21 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "SLAM");
     ros::NodeHandle nh;
     string lidar_topic, imu_topic, gnss_topic;
-    bool location_log_enable = true;
+    bool relocate_use_last_pose = true, location_log_enable = true;
     std::string last_pose_record_path;
     std::string location_log_save_path;
 
-    load_log_parameters(location_log_enable, last_pose_record_path, location_log_save_path);
+    load_log_parameters(relocate_use_last_pose, last_pose_record_path, location_log_enable, location_log_save_path);
 
     // 1.record last pose
-    if (last_pose_record_path.compare("") != 0)
-        last_pose_record.open(last_pose_record_path.c_str(), ios::in | ios::out | ios::ate);
-    else
-        last_pose_record.open(DEBUG_FILE_DIR("last_pose_record.txt").c_str(), ios::in | ios::out | ios::ate);
-    last_pose_record << std::fixed << std::setprecision(5);
+	if (relocate_use_last_pose)
+	{
+		if (last_pose_record_path.compare("") != 0)
+			last_pose_record.open(last_pose_record_path.c_str(), ios::in | ios::out | ios::ate);
+		else
+			last_pose_record.open(DEBUG_FILE_DIR("last_pose_record.txt").c_str(), ios::in | ios::out | ios::ate);
+		last_pose_record << std::fixed << std::setprecision(5);
+	}
     // 2.record log
     if (location_log_enable)
     {

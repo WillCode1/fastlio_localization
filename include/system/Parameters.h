@@ -167,9 +167,10 @@ inline void load_parameters(System &slam, int &lidar_type)
     slam.init_system_mode();
 }
 
-inline void load_log_parameters(bool &location_log_enable, std::string &last_pose_record_path, std::string &location_log_save_path)
+inline void load_log_parameters(bool &relocate_use_last_pose, std::string &last_pose_record_path, bool &location_log_enable, std::string &location_log_save_path)
 {
+	ros::param::param("official/relocate_use_last_pose", relocate_use_last_pose, true);
+	ros::param::param("official/last_pose_record_path", last_pose_record_path, std::string(""));
     ros::param::param("official/location_log_enable", location_log_enable, false);
-    ros::param::param("official/last_pose_record_path", last_pose_record_path, std::string(""));
     ros::param::param("official/location_log_save_path", location_log_save_path, std::string(""));
 }
