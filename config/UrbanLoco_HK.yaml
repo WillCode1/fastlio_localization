@@ -1,0 +1,117 @@
+common:
+    lidar_topic:  "/velodyne_points_0"
+    imu_topic:  "/imu/data"
+    # gnss_topic:  "/gps_pose"
+    gnss_topic:  "/navsat/odom"
+    map_frame:  "map"
+    lidar_frame:  "top_lidar"
+    baselink_frame:  "base_link"
+    timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
+
+preprocess:
+    lidar_type: 2                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
+    scan_line: 32
+    scan_rate: 10                # only need to be set for velodyne, unit: Hz,
+    imu_rate: 100                # only need to be set for imu, unit: Hz,
+    timestamp_unit: 2            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+    blind: 2
+    det_range: 100.0
+    imu_meas_check: [3, 3, 3, 20, 20, 50] # rad/s, m/s^2
+
+mapping:
+    gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+    frontend_type: 0                    # frontend type
+
+    # fastlio
+    point_skip_num: 4            # for mapping, Increase accuracy 4 -> 1
+    space_down_sample: true
+    surf_frame_ds_res: 0.5       # In unstructured scenarios, smaller is more likely to degenerate
+    max_iteration: 3
+    ikdtree_resolution: 0.5      # In unstructured scenarios, smaller is more likely to degenerate
+    lidar_model_search_range: 5
+    lidar_meas_cov: 0.001
+    cube_side_length: 10000
+    runtime_log_enable: 0
+    valid_ring: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+    # valid_ring: [5, 12, 15, 17, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+
+    acc_cov: 0.1
+    gyr_cov: 0.1
+    b_acc_cov: 0.0001
+    b_gyr_cov: 0.0001
+    extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
+    # lidar -> imu
+    extrinsic_T: [ 0, 0, 0.28 ]
+    extrinsic_R: [ 0, 1, 0, 
+                   -1, 0, 0, 
+                   0, 0, 1 ]
+    # imu -> gnss
+    extrinsicT_imu2gnss: [ 0, 0, 0.36 ]
+    extrinsicR_imu2gnss: [ 0, -1, 0, 
+                           1, 0, 0, 
+                           0, 0, 1 ]
+
+publish:
+    path_en:  true
+    scan_publish_en:  true       # false: close all the point cloud output
+    dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+
+official:
+    # map_path: "/ant_robot/data/map/"
+    relocate_use_last_pose: true
+    # last_pose_record_path: "/home/will/last_pose_record.txt"
+    location_log_enable: false
+    # location_log_save_path: "/home/will/location.log"
+
+# ============relocalization_cfg============
+relocalization_cfg:
+    algorithm_type: "scan_context"
+    # algorithm_type: "manually_set"
+
+    # lidar extrinsic to imu
+    lidar_ext/x: -0.00665
+    lidar_ext/y: 0
+    lidar_ext/z: -1.51277
+    lidar_ext/roll: 180
+    lidar_ext/pitch: 0
+    lidar_ext/yaw: 0
+
+utm_origin:
+    zone: "51N"
+    east: 536808.26993
+    north: 4501498.61740
+    up: 44.21500
+
+scan_context:
+    lidar_height: 2.183
+    sc_dist_thres: 0.7
+
+bnb3d:
+    linear_xy_window_size: 5   # meter
+    linear_z_window_size: 0.5  # meter
+    angular_search_window: 180  # degree 0~180
+    pc_resolutions: [0.3, 0.5, 0.8]
+    bnb_depth: 3
+    min_score: 0.3
+    enough_score: 0.7
+
+    min_xy_resolution: 0.2
+    min_z_resolution: 0.1
+    min_angular_resolution: 5   # degree
+
+    thread_num: 6
+    filter_size_scan: 0.2
+    debug_mode: false
+
+ndt:
+    step_size: 0.1
+    resolution: 1
+
+gicp:
+    use_gicp: false
+    filter_range: 80.0
+    gicp_downsample: 0.1
+    search_radius: 0.5
+    teps: 1.0e-4
+    feps: 0.001
+    fitness_score: 0.3

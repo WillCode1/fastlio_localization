@@ -8,6 +8,7 @@
     <!-- <rosparam file="$(find fastlio_localization)/config/velodyne.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/ouster64.yaml" command="load" /> -->
     <rosparam file="$(find fastlio_localization)/config/localization_dev.yaml" command="load" />
+    <!-- <rosparam file="$(find fastlio_localization)/config/UrbanLoco_HK.yaml" command="load" /> -->
 
     <node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" respawn="true"/> 
 
