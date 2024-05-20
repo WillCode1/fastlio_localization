@@ -2,7 +2,7 @@ common:
     lidar_topic:  "/velodyne_points_0"
     imu_topic:  "/imu/data"
     # gnss_topic:  "/gps_pose"
-    gnss_topic:  "/navsat/odom"
+    gnss_topic:  "/navsat/fix"
     map_frame:  "map"
     lidar_frame:  "top_lidar"
     baselink_frame:  "base_link"
