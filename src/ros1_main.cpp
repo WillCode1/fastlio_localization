@@ -150,7 +150,7 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
     odomAftMapped.header.stamp = ros::Time().fromSec(lidar_end_time);
     set_posestamp(odomAftMapped.pose, baselink_rot, baselink_pos);
     pubOdomAftMapped.publish(odomAftMapped);
-    publish_tf(baselink_rot, baselink_pos, lidar_end_time);
+    // publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
 
 #ifdef WORK
@@ -250,7 +250,7 @@ void publish_odometry2(const ros::Publisher &pubOdomDev, const state_ikfom &stat
     }
 
     pubOdomDev.publish(odom);
-    publish_tf(baselink_rot, baselink_pos, lidar_end_time);
+    // publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
 #endif
 
