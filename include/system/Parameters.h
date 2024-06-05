@@ -1,12 +1,13 @@
 #include "system/System.hpp"
 #include <ros/ros.h>
 
-inline void load_ros_parameters(bool &path_en, bool &scan_pub_en, bool &dense_pub_en,
+inline void load_ros_parameters(bool &path_en, bool &scan_pub_en, bool &dense_pub_en, bool &tf_broadcast,
                                 std::string &lidar_topic, std::string &imu_topic, std::string &gnss_topic, std::string &map_frame, std::string &lidar_frame, std::string &baselink_frame)
 {
     ros::param::param("publish/path_en", path_en, false);
     ros::param::param("publish/scan_publish_en", scan_pub_en, false);
     ros::param::param("publish/dense_publish_en", dense_pub_en, false);
+    ros::param::param("publish/tf_broadcast", tf_broadcast, false);
 
     ros::param::param("common/lidar_topic", lidar_topic, std::string("/livox/lidar"));
     ros::param::param("common/imu_topic", imu_topic, std::string("/livox/imu"));

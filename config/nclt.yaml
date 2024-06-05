@@ -1,17 +1,17 @@
 common:
-    lidar_topic:  "/drivers/top_lidar_origin"
-    imu_topic:  "/drivers/imu_data"
+    lidar_topic:  "/points_raw"
+    imu_topic:  "/imu_raw"
     gnss_topic:  "/gps/fix"
     map_frame:  "map"
     lidar_frame:  "lidar"
     baselink_frame:  "base_link"
-    timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
+    timedelay_lidar2imu: 106872.343938 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
 
 preprocess:
     lidar_type: 2                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
-    scan_line: 16
+    scan_line: 32
     scan_rate: 10                # only need to be set for velodyne, unit: Hz,
-    imu_rate: 100                # only need to be set for imu, unit: Hz,
+    imu_rate: 50                 # only need to be set for imu, unit: Hz,
     timestamp_unit: 0            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
     blind: 2
     det_range: 200.0
@@ -34,16 +34,16 @@ mapping:
     valid_ring: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
     # valid_ring: [5, 12, 15, 17, 19, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
 
-    acc_cov: 0.1
-    gyr_cov: 0.1
-    b_acc_cov: 0.0001
-    b_gyr_cov: 0.0001
+    acc_cov: 0.02
+    gyr_cov: 0.01
+    b_acc_cov: 1.e-6
+    b_gyr_cov: 1.e-5
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
     # lidar -> imu
-    extrinsic_T: [ -0.00665, 0, -1.51277]
-    extrinsic_R: [ 1, 0, 0, 
-                   0, -1, 0, 
-                   0, 0, -1 ]
+    extrinsic_T: [ 0.112, 0.176, -0.247]
+    extrinsic_R: [ -0.01226931,  0.99982505, -0.01411883, 
+                   -0.99992053, -0.01230894, -0.00272393, 
+                   -0.00289724,  0.01408428,  0.99989661 ]
     # imu -> gnss
     extrinsicT_imu2gnss: [ 0, 0, 0 ]
     extrinsicR_imu2gnss: [ 1, 0, 0, 
@@ -54,11 +54,10 @@ publish:
     path_en:  true
     scan_publish_en:  true       # false: close all the point cloud output
     dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
-    tf_broadcast: false
 
 official:
     # map_path: "/ant_robot/data/map/"
-    relocate_use_last_pose: true
+    relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
     location_log_enable: false
     # location_log_save_path: "/home/will/location.log"
@@ -69,12 +68,12 @@ relocalization_cfg:
     # algorithm_type: "manually_set"
 
     # lidar extrinsic to imu
-    lidar_ext/x: -0.00665
-    lidar_ext/y: 0
-    lidar_ext/z: -1.51277
-    lidar_ext/roll: 180
-    lidar_ext/pitch: 0
-    lidar_ext/yaw: 0
+    lidar_ext/x: 0.112
+    lidar_ext/y: 0.176
+    lidar_ext/z: -0.247
+    lidar_ext/roll: 0.8070001
+    lidar_ext/pitch: 0.1659997
+    lidar_ext/yaw: -90.7030017
 
 utm_origin:
     zone: "51N"
