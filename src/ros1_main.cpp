@@ -34,7 +34,7 @@ std::string baselink_frame;
 FILE *location_log = nullptr;
 std::fstream last_pose_record;
 
-bool path_en = true, scan_pub_en = false, dense_pub_en = false;
+bool path_en = true, scan_pub_en = false, dense_pub_en = false, tf_broadcast = false;
 ros::Publisher pubLaserCloudFull;
 ros::Publisher pubOdomAftMapped;
 ros::Publisher pubImuPath;
@@ -150,7 +150,8 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
     odomAftMapped.header.stamp = ros::Time().fromSec(lidar_end_time);
     set_posestamp(odomAftMapped.pose, baselink_rot, baselink_pos);
     pubOdomAftMapped.publish(odomAftMapped);
-    // publish_tf(baselink_rot, baselink_pos, lidar_end_time);
+    if (tf_broadcast)
+        publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
 
 #ifdef WORK
@@ -250,7 +251,8 @@ void publish_odometry2(const ros::Publisher &pubOdomDev, const state_ikfom &stat
     }
 
     pubOdomDev.publish(odom);
-    // publish_tf(baselink_rot, baselink_pos, lidar_end_time);
+    if (tf_broadcast)
+        publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
 #endif
 
@@ -603,7 +605,7 @@ int main(int argc, char **argv)
         else
             LOG_ERROR("open file %s failed!", location_log_save_path.c_str());
     }
-    load_ros_parameters(path_en, scan_pub_en, dense_pub_en, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
+    load_ros_parameters(path_en, scan_pub_en, dense_pub_en, tf_broadcast, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, lidar_type);
 
     /*** ROS subscribe initialization ***/
