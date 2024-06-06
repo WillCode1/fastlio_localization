@@ -5,14 +5,14 @@ common:
     map_frame:  "map"
     lidar_frame:  "lidar"
     baselink_frame:  "base_link"
-    timedelay_lidar2imu: 106872.343938 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
+    timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
 
 preprocess:
     lidar_type: 2                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
     scan_line: 32
     scan_rate: 10                # only need to be set for velodyne, unit: Hz,
     imu_rate: 50                 # only need to be set for imu, unit: Hz,
-    timestamp_unit: 0            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+    timestamp_unit: 2            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
     blind: 2
     det_range: 200.0
     imu_meas_check: [3, 3, 3, 20, 20, 50] # rad/s, m/s^2
