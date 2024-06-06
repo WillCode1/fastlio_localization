@@ -6,6 +6,15 @@ namespace fs = std::experimental::filesystem;
 class FileOperation
 {
 public:
+    static void createFileWhenNotExist(const std::string &path)
+    {
+        if (!fs::exists(path))
+        {
+            std::ofstream file(path);
+            file.close();
+        }
+    }
+
     static bool createDirectoryOrRecreate(const std::string &directory_path, bool exist_remove = true)
     {
         if (fs::exists(directory_path))
