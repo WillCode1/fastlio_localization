@@ -32,7 +32,7 @@ std::string map_frame;
 std::string lidar_frame;
 std::string baselink_frame;
 FILE *location_log = nullptr;
-std::fstream last_pose_record;
+FILE *last_pose_record = nullptr;
 
 bool path_en = true, scan_pub_en = false, dense_pub_en = false, tf_broadcast = false;
 ros::Publisher pubLaserCloudFull;
@@ -298,25 +298,17 @@ bool load_last_pose(const PointCloudType::Ptr &scan)
     use_last_pose = false;
     LOG_WARN("relocate try to use last pose!");
 
-    std::string str;
-    last_pose_record.seekg(ios::beg);
-    last_pose_record >> str;
+    fseek(last_pose_record, 0, SEEK_SET);
     Eigen::Quaterniond quat;
     Eigen::Vector3d pos;
-    last_pose_record >> pos.x();
-    last_pose_record >> pos.y();
-    last_pose_record >> pos.z();
-    last_pose_record >> quat.w();
-    last_pose_record >> quat.x();
-    last_pose_record >> quat.y();
-    last_pose_record >> quat.z();
+    auto res = fscanf(last_pose_record, "last_pose(xyz,rpy):( %lf %lf %lf %lf %lf %lf %lf )end!\n",
+                      &pos.x(), &pos.y(), &pos.z(), &quat.w(), &quat.x(), &quat.y(), &quat.z());
     Eigen::Matrix4d imu_pose = Eigen::Matrix4d::Identity();
     imu_pose.topLeftCorner(3, 3) = quat.normalized().toRotationMatrix();
     imu_pose.topRightCorner(3, 1) = pos;
     slam.frontend->reset_state(imu_pose);
-    last_pose_record >> str;
 
-    if (str.find("end!") == -1)
+    if (res == -1)
     {
         LOG_ERROR("can't find last pose! parse error!");
         return false;
@@ -324,12 +316,12 @@ bool load_last_pose(const PointCloudType::Ptr &scan)
     double bnb_score = 0, ndt_score = 0;
     Timer timer;
     slam.relocalization->get_pose_score(imu_pose, scan, bnb_score, ndt_score);
-    if (bnb_score < 0.8)
+    if (bnb_score < 0.4)
     {
         LOG_ERROR("bnb_score too small = %.3f, should be greater than = %.3f!", bnb_score, 0.8);
         return false;
     }
-    else if (ndt_score > 0.1)
+    else if (ndt_score > 0.2)
     {
         LOG_ERROR("ndt_score too high = %.3f, should be less than = %.3f!", ndt_score, 0.1);
         return false;
@@ -359,7 +351,7 @@ void sensor_data_process()
 
     if (!slam.system_state_vaild)
     {
-        if (last_pose_record.is_open() && load_last_pose(slam.frontend->measures->lidar))
+        if (last_pose_record && load_last_pose(slam.frontend->measures->lidar))
         {
             // only for restart!
         }
@@ -443,12 +435,12 @@ void sensor_data_process()
         LOG_INFO("location valid. feats_down = %d, cost time = %.1fms.", slam.frontend->loger.feats_down_size, slam.frontend->loger.total_time);
         slam.frontend->loger.print_pose(state, "cur_imu_pose");
 
-		if (last_pose_record.is_open())
+		if (last_pose_record)
 		{
 			// record last pose
-			last_pose_record.seekg(ios::beg);
-			last_pose_record << "last_pose(xyz,rpy):( " << state.pos.x() << ' ' << state.pos.y() << ' ' << state.pos.z() << ' '
-							 << state.rot.w() << ' ' << state.rot.x() << ' ' << state.rot.y() << ' ' << state.rot.z() << " )end!" << endl;
+            fseek(last_pose_record, 0, SEEK_SET);
+            fprintf(last_pose_record, "last_pose(xyz,rpy):( %.5lf %.5lf %.5lf %.5lf %.5lf %.5lf %.5lf )end!\n",
+                    state.pos.x(), state.pos.y(), state.pos.z(), state.rot.w(), state.rot.x(), state.rot.y(), state.rot.z());
 		}
 
         /******* Publish odometry *******/
@@ -587,12 +579,17 @@ int main(int argc, char **argv)
     // 1.record last pose
 	if (relocate_use_last_pose)
 	{
-		if (last_pose_record_path.compare("") != 0)
-			last_pose_record.open(last_pose_record_path.c_str(), ios::in | ios::out | ios::ate);
+        if (last_pose_record_path.compare("") != 0)
+        {
+            FileOperation::createFileWhenNotExist(last_pose_record_path);
+            last_pose_record = fopen(last_pose_record_path.c_str(), "r+");
+        }
 		else
-			last_pose_record.open(DEBUG_FILE_DIR("last_pose_record.txt").c_str(), ios::in | ios::out | ios::ate);
-		last_pose_record << std::fixed << std::setprecision(5);
-	}
+        {
+            FileOperation::createFileWhenNotExist(DEBUG_FILE_DIR("last_pose_record.txt"));
+            last_pose_record = fopen(DEBUG_FILE_DIR("last_pose_record.txt").c_str(), "r+");
+        }
+    }
     // 2.record log
     if (location_log_enable)
     {
@@ -613,7 +610,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
     ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
-    pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/Odometry", 100000);
+    pubOdomAftMapped = nh.advertise<nav_msgs::Odometry>("/lidar_localization", 100000);
     pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
 
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
@@ -626,7 +623,7 @@ int main(int argc, char **argv)
 
     ros::spin();
 
-    last_pose_record.close();
+    fclose(last_pose_record);
     if (location_log_enable && location_log)
         fclose(location_log);
 
