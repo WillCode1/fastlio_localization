@@ -57,7 +57,7 @@ publish:
     dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
 
 official:
-    # map_path: "/ant_robot/data/map/"
+    # map_path: "/robot/data/map/"
     relocate_use_last_pose: true
     # last_pose_record_path: "/home/will/last_pose_record.txt"
     location_log_enable: false
