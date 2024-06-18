@@ -22,8 +22,8 @@
 #define WORK
 #ifdef WORK
 #include "localization_msg/vehicle_pose.h"
-// #include "ant_robot_msgs/Level.h"
-// #include "ant_robot_msgs/ModuleStatus.h"
+// #include "robot_msgs/Level.h"
+// #include "robot_msgs/ModuleStatus.h"
 #endif
 
 int lidar_type;
@@ -157,11 +157,11 @@ void publish_odometry(const ros::Publisher &pubOdomAftMapped, const state_ikfom 
 #ifdef WORK
 void publish_module_status(const double &time, int level)
 {
-    // ant_robot_msgs::ModuleStatus status;
+    // robot_msgs::ModuleStatus status;
     // status.header.stamp = ros::Time().fromSec(time);
     // status.header.frame_id = "LOCATION";
     // status.level = level;
-    // ant_robot_msgs::ModuleStatusItem item;
+    // robot_msgs::ModuleStatusItem item;
     // item.error_code = 4000101;
     // item.level = level;
     // status.items.emplace_back(item);
@@ -368,7 +368,7 @@ void sensor_data_process()
             *cur_scan = *slam.frontend->measures->lidar;
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan, slam.frontend->measures->lidar_beg_time);
         }
-        // publish_module_status(slam.frontend->measures->lidar_end_time, ant_robot_msgs::Level::WARN);
+        // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::WARN);
 #ifdef MEASURES_BUFFER
         measures_cache.emplace_back(std::make_shared<MeasureCollection>());
         *measures_cache.back() = *slam.frontend->measures;
@@ -397,7 +397,7 @@ void sensor_data_process()
                 /******* Publish odometry *******/
                 // publish_odometry(pubOdomAftMapped, state, slam.frontend->measures->lidar_end_time, baselink_rot, baselink_pos);
                 publish_odometry2(pubOdomDev, state, slam.frontend->measures->lidar_end_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-                // publish_module_status(slam.frontend->measures->lidar_end_time, ant_robot_msgs::Level::OK);
+                // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::OK);
 
                 if (path_en)
                     publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->measures->lidar_end_time);
@@ -413,7 +413,7 @@ void sensor_data_process()
             {
                 LOG_ERROR("location invalid!");
                 publish_odometry2(pubOdomDev, slam.frontend->get_state(), slam.frontend->measures->lidar_end_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-                // publish_module_status(slam.frontend->measures->lidar_end_time, ant_robot_msgs::Level::WARN);
+                // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::WARN);
 #ifdef DEDUB_MODE
                 publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->measures->lidar_end_time);
 #endif
@@ -446,7 +446,7 @@ void sensor_data_process()
         /******* Publish odometry *******/
         // publish_odometry(pubOdomAftMapped, state, slam.frontend->lidar_end_time, baselink_rot, baselink_pos);
         publish_odometry2(pubOdomDev, state, slam.frontend->measures->lidar_end_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-        // publish_module_status(slam.frontend->measures->lidar_end_time, ant_robot_msgs::Level::OK);
+        // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::OK);
 
         if (path_en)
             publish_imu_path(pubImuPath, baselink_rot, baselink_pos, slam.frontend->lidar_end_time);
@@ -462,7 +462,7 @@ void sensor_data_process()
     {
         LOG_ERROR("location invalid!");
         publish_odometry2(pubOdomDev, slam.frontend->get_state(), slam.frontend->measures->lidar_end_time, slam.system_state_vaild, baselink_rot, baselink_pos);
-        // publish_module_status(slam.frontend->measures->lidar_end_time, ant_robot_msgs::Level::WARN);
+        // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::WARN);
 #ifdef DEDUB_MODE
         publish_cloud_world(pubrelocalizationDebug, slam.frontend->measures->lidar, slam.frontend->get_state(), slam.frontend->lidar_end_time);
 #endif
@@ -617,7 +617,7 @@ int main(int argc, char **argv)
     pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 
     pubOdomDev = nh.advertise<localization_msg::vehicle_pose>("/robot/pose_dynamic_data", 1);
-    // pubModulesStatus = nh.advertise<ant_robot_msgs::ModuleStatus>("/robot/module_status", 1);
+    // pubModulesStatus = nh.advertise<robot_msgs::ModuleStatus>("/robot/module_status", 1);
     //------------------------------------------------------------------------------------------------------
     signal(SIGINT, SigHandle);
 
