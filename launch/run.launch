@@ -7,6 +7,7 @@
     <!-- <rosparam file="$(find fastlio_localization)/config/horizon.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/velodyne.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/ouster64.yaml" command="load" /> -->
+    <!-- <rosparam file="$(find fastlio_localization)/config/mid360.yaml" command="load" /> -->
     <rosparam file="$(find fastlio_localization)/config/localization_dev.yaml" command="load" />
     <!-- <rosparam file="$(find fastlio_localization)/config/nclt.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/UrbanLoco_HK.yaml" command="load" /> -->
