@@ -40,9 +40,11 @@ mapping:
                   0, 1, 0,
                   0, 0, 1]
 
-scan_context:
-    lidar_height: 2
-    sc_dist_thres: 0.5
+    # imu -> gnss
+    extrinsicT_imu2gnss: [ 0, 0, 0 ]
+    extrinsicR_imu2gnss: [ 1, 0, 0, 
+                           0, 1, 0, 
+                           0, 0, 1 ]
 
 publish:
     path_en:  true
