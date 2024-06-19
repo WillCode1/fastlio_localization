@@ -1,8 +1,9 @@
 common:
     lidar_topic:  "/livox/lidar"
     imu_topic:  "/livox/imu"
-    map_frame:  "camera_init"
-    body_frame:  "body"
+    map_frame:  "map"
+    lidar_frame:  "lidar"
+    baselink_frame:  "base_link"
     timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
 
 preprocess:
@@ -12,10 +13,7 @@ preprocess:
     det_range: 450.0
 
 mapping:
-    start_in_aggressive_motion: false   # if true, a preknown gravity should be provided in following gravity_init
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
-    preset_gravity: [0, 0, -9.81]       # [0.0, 9.810, 0.0] # the direction of gravity(map) to be aligned
-    gravity_align: true                 # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
     frontend_type: 0                    # frontend type
 
     # fastlio
