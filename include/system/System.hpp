@@ -55,10 +55,11 @@ public:
 
         if (!relocalization->load_keyframe_descriptor(scd_path))
         {
-            LOG_ERROR("Load keyframe descriptor failed!");
-            std::exit(100);
+            relocalization->algorithm_type = "manually_set";
+            LOG_ERROR("Load keyframe descriptor failed, set algorithm_type to manually_set!");
         }
-        LOG_WARN("Load keyframe descriptor successfully! There are %lu descriptors.", relocalization->sc_manager->polarcontexts_.size());
+        else
+            LOG_WARN("Load keyframe descriptor successfully! There are %lu descriptors.", relocalization->sc_manager->polarcontexts_.size());
 
         /*** initialize the map kdtree ***/
         frontend->init_global_map(global_map);

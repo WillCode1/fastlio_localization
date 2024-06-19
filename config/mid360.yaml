@@ -61,8 +61,8 @@ official:
 
 # ============relocalization_cfg============
 relocalization_cfg:
-    # algorithm_type: "scan_context"
-    algorithm_type: "manually_set"
+    algorithm_type: "scan_context"
+    # algorithm_type: "manually_set"
 
     # lidar extrinsic to imu
     lidar_ext/x: -0.011
