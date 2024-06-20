@@ -84,6 +84,7 @@ public:
         state.grav.vec << VEC_FROM_ARRAY(gravity_init);
         state.pos = V3D(imu_pose.topRightCorner(3, 1));
         state.rot.coeffs() = Vector4d(fine_tune_quat.x(), fine_tune_quat.y(), fine_tune_quat.z(), fine_tune_quat.w());
+        imu_state = state;
         kf.change_x(state);
     }
 
@@ -255,6 +256,7 @@ public:
             return false;
         }
         state = kf.get_x();
+        imu_state = state;
         loger.meas_update_time = loger.timer.elapsedLast();
 #ifndef NO_LOGER
         loger.dump_state_to_log(loger.fout_update, state, measures->lidar_beg_time - loger.first_lidar_beg_time);
@@ -306,6 +308,26 @@ public:
     {
         state = kf.get_x();
         return state;
+    }
+
+    virtual state_ikfom integrate_imu_odom(state_ikfom &state, const ImuData &imu_meas)
+    {
+        static double last_time_ = 0;
+
+        double dt = 0;
+        input_ikfom in;
+        in.acc = imu_meas.linear_acceleration;
+        in.gyro = imu_meas.angular_velocity;
+        Eigen::Matrix<double, 24, 1> f = get_f(state, in);
+
+        if (last_time_ == 0)
+            dt = 1.0 / imu->imu_rate;
+        else
+            dt = imu_meas.timestamp - last_time_;
+
+        imu_state.oplus(f, dt);
+        last_time_ = imu_meas.timestamp;
+        return imu_state;
     }
 
 private:
@@ -657,4 +679,7 @@ public:
 private:
     esekfom::esekf<state_ikfom, 12, input_ikfom> kf;
     state_ikfom state;
+
+    /*** for imu odom ***/
+    state_ikfom imu_state;
 };

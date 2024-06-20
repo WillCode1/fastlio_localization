@@ -53,7 +53,7 @@ private:
 
   Eigen::Matrix<double, 12, 12> Q;
 
-  double last_lidar_end_time_;
+  double last_lidar_end_time_ = 0;
   int init_iter_num = 1;
   bool b_first_frame_ = true;
 };
