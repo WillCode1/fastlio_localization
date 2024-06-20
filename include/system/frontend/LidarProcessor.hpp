@@ -218,7 +218,7 @@ void LidarProcessor::velodyne_handler(const pcl::PointCloud<velodyne_ros::Point>
 
   for (int i = 0; i < plsize; i++)
   {
-    if (valid_ring.count(pl_orig.points[i].ring) == 0)
+    if (!valid_ring.empty() && valid_ring.count(pl_orig.points[i].ring) == 0)
     {
       continue;
     }

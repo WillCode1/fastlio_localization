@@ -9,8 +9,8 @@ common:
 preprocess:
     lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
     scan_line: 6
-    blind: 0.1
-    det_range: 450.0
+    blind: 1
+    det_range: 70.0
 
 mapping:
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
@@ -32,8 +32,8 @@ mapping:
     b_acc_cov: 0.0001
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic
-    extrinsic_T: [ 0.04165, 0.02326, -0.0284 ]  # avia
-    # extrinsic_T: [ -0.011, -0.02329, 0.04412 ]  # mid360
+    # extrinsic_T: [ 0.04165, 0.02326, -0.0284 ]  # avia
+    extrinsic_T: [ -0.011, -0.02329, 0.04412 ]  # mid360
     extrinsic_R: [ 1, 0, 0,
                    0, 1, 0,
                    0, 0, 1]

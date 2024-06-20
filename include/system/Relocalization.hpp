@@ -481,9 +481,6 @@ void Relocalization::set_bnb3d_param(const BnbOptions &match_option, const Pose 
     LOG_WARN("lidar_ext = (%.2lf,%.2lf,%.2lf,%.2lf,%.2lf,%.2lf)", lidar_extrinsic.x, lidar_extrinsic.y, lidar_extrinsic.z,
              lidar_extrinsic.roll, lidar_extrinsic.pitch, lidar_extrinsic.yaw);
     LOG_WARN("*******************************************");
-    lidar_extrinsic.roll = DEG2RAD(lidar_extrinsic.roll);
-    lidar_extrinsic.pitch = DEG2RAD(lidar_extrinsic.pitch);
-    lidar_extrinsic.yaw = DEG2RAD(lidar_extrinsic.yaw);
 }
 
 void Relocalization::set_ndt_param(const double &_step_size, const double &_resolution)

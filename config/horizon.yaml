@@ -1,8 +1,9 @@
 common:
     lidar_topic:  "/livox/lidar"
     imu_topic:  "/livox/imu"
-    map_frame:  "camera_init"
-    body_frame:  "body"
+    map_frame:  "map"
+    lidar_frame:  "lidar"
+    baselink_frame:  "base_link"
     timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
 
 preprocess:
@@ -12,10 +13,7 @@ preprocess:
     det_range: 260.0
 
 mapping:
-    start_in_aggressive_motion: false   # if true, a preknown gravity should be provided in following gravity_init
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
-    preset_gravity: [0, 0, -9.81]       # [0.0, 9.810, 0.0] # the direction of gravity(map) to be aligned
-    gravity_align: true                 # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
     frontend_type: 0                    # frontend type
 
     # fastlio
@@ -39,16 +37,67 @@ mapping:
                    0, 1, 0,
                    0, 0, 1]
 
-scan_context:
-    lidar_height: 2
-    sc_dist_thres: 0.5
+    # imu -> gnss
+    extrinsicT_imu2gnss: [ 0, 0, 0 ]
+    extrinsicR_imu2gnss: [ 1, 0, 0, 
+                           0, 1, 0, 
+                           0, 0, 1 ]
 
 publish:
     path_en:  true
     scan_publish_en:  true       # false: close all the point cloud output
     dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+    lidar_tf_broadcast: false
+    imu_tf_broadcast: false
 
 official:
-    save_globalmap_en: true
-    save_resolution: 0.1
-    save_keyframe_en: false
+    # map_path: "/robot/data/map/"
+    relocate_use_last_pose: false
+    # last_pose_record_path: "/home/will/last_pose_record.txt"
+    location_log_enable: false
+    # location_log_save_path: "/home/will/location.log"
+
+# ============relocalization_cfg============
+relocalization_cfg:
+    algorithm_type: "scan_context"
+    # algorithm_type: "manually_set"
+
+utm_origin:
+    zone: "51N"
+    east: 536808.26993
+    north: 4501498.61740
+    up: 44.21500
+
+scan_context:
+    lidar_height: 2.183
+    sc_dist_thres: 0.7
+
+bnb3d:
+    linear_xy_window_size: 5   # meter
+    linear_z_window_size: 0.5  # meter
+    angular_search_window: 180  # degree 0~180
+    pc_resolutions: [0.3, 0.5, 0.8]
+    bnb_depth: 3
+    min_score: 0.3
+    enough_score: 0.7
+
+    min_xy_resolution: 0.2
+    min_z_resolution: 0.1
+    min_angular_resolution: 5   # degree
+
+    thread_num: 6
+    filter_size_scan: 0.2
+    debug_mode: false
+
+ndt:
+    step_size: 0.1
+    resolution: 1
+
+gicp:
+    use_gicp: false
+    filter_range: 80.0
+    gicp_downsample: 0.1
+    search_radius: 0.5
+    teps: 1.0e-4
+    feps: 0.001
+    fitness_score: 0.3
