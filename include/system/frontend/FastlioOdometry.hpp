@@ -322,18 +322,15 @@ public:
         {
             in.acc = imu_meas.linear_acceleration;
             in.gyro = imu_meas.angular_velocity;
+            dt = 1.0 / imu->imu_rate;
         }
         else
         {
             in.acc = 0.5 * (imu_meas.linear_acceleration + last_acc);
             in.gyro = 0.5 * (imu_meas.angular_velocity + last_gyro);
+            dt = imu_meas.timestamp - last_time;
         }
         Eigen::Matrix<double, 24, 1> f = get_f(imu_state, in);
-
-        if (last_time == 0)
-            dt = 1.0 / imu->imu_rate;
-        else
-            dt = imu_meas.timestamp - last_time;
 
         imu_state.oplus(f, dt);
         last_time = imu_meas.timestamp;
