@@ -104,6 +104,7 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
         first_time = false;
         tf::TransformListener tfListener;
         tf::StampedTransform trans_lidar2baselink;
+        trans_lidar2baselink.setIdentity();
 
         try
         {
@@ -186,6 +187,7 @@ void publish_odometry2(const ros::Publisher &pubOdomDev, const state_ikfom &stat
         first_time = false;
         tf::TransformListener tfListener;
         tf::StampedTransform trans_lidar2baselink;
+        trans_lidar2baselink.setIdentity();
 
         try
         {
@@ -269,6 +271,7 @@ void publish_imu_odometry(const ros::Publisher &pubImuOdom, const state_ikfom &s
         first_time = false;
         tf::TransformListener tfListener;
         tf::StampedTransform trans_lidar2baselink;
+        trans_lidar2baselink.setIdentity();
 
         try
         {
