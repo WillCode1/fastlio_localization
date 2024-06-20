@@ -310,7 +310,7 @@ public:
         return state;
     }
 
-    virtual state_ikfom integrate_imu_odom(state_ikfom &state, const ImuData &imu_meas)
+    virtual state_ikfom integrate_imu_odom(const ImuData &imu_meas)
     {
         static double last_time_ = 0;
 
@@ -318,7 +318,7 @@ public:
         input_ikfom in;
         in.acc = imu_meas.linear_acceleration;
         in.gyro = imu_meas.angular_velocity;
-        Eigen::Matrix<double, 24, 1> f = get_f(state, in);
+        Eigen::Matrix<double, 24, 1> f = get_f(imu_state, in);
 
         if (last_time_ == 0)
             dt = 1.0 / imu->imu_rate;

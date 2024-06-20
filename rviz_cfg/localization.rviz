@@ -157,7 +157,7 @@ Visualization Manager:
             Value: true
           Enabled: true
           Keep: 20
-          Name: localization
+          Name: lidar_localization
           Position Tolerance: 0.0010000000474974513
           Queue Size: 10
           Shape:
@@ -171,6 +171,41 @@ Visualization Manager:
             Shaft Radius: 0.05000000074505806
             Value: Axes
           Topic: /lidar_localization
+          Unreliable: false
+          Value: true
+        - Angle Tolerance: 0.009999999776482582
+          Class: rviz/Odometry
+          Covariance:
+            Orientation:
+              Alpha: 0.5
+              Color: 255; 255; 127
+              Color Style: Unique
+              Frame: Local
+              Offset: 1
+              Scale: 1
+              Value: true
+            Position:
+              Alpha: 0.30000001192092896
+              Color: 204; 51; 204
+              Scale: 1
+              Value: true
+            Value: true
+          Enabled: true
+          Keep: 100
+          Name: imu_localization
+          Position Tolerance: 0.0010000000474974513
+          Queue Size: 10
+          Shape:
+            Alpha: 1
+            Axes Length: 1
+            Axes Radius: 0.10000000149011612
+            Color: 255; 25; 0
+            Head Length: 0.30000001192092896
+            Head Radius: 0.10000000149011612
+            Shaft Length: 1
+            Shaft Radius: 0.05000000074505806
+            Value: Axes
+          Topic: /imu_localization
           Unreliable: false
           Value: true
       Enabled: true

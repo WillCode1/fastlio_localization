@@ -48,7 +48,8 @@ publish:
     path_en:  true
     scan_publish_en:  true       # false: close all the point cloud output
     dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
-    tf_broadcast: false
+    lidar_tf_broadcast: false
+    imu_tf_broadcast: false
 
 official:
     # map_path: "/robot/data/map/"
