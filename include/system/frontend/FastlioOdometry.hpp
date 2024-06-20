@@ -312,21 +312,33 @@ public:
 
     virtual state_ikfom integrate_imu_odom(const ImuData &imu_meas)
     {
-        static double last_time_ = 0;
+        static double last_time = 0;
+        V3D last_acc;
+        V3D last_gyro;
 
         double dt = 0;
         input_ikfom in;
-        in.acc = imu_meas.linear_acceleration;
-        in.gyro = imu_meas.angular_velocity;
+        if (last_time == 0)
+        {
+            in.acc = imu_meas.linear_acceleration;
+            in.gyro = imu_meas.angular_velocity;
+        }
+        else
+        {
+            in.acc = 0.5 * (imu_meas.linear_acceleration + last_acc);
+            in.gyro = 0.5 * (imu_meas.angular_velocity + last_gyro);
+        }
         Eigen::Matrix<double, 24, 1> f = get_f(imu_state, in);
 
-        if (last_time_ == 0)
+        if (last_time == 0)
             dt = 1.0 / imu->imu_rate;
         else
-            dt = imu_meas.timestamp - last_time_;
+            dt = imu_meas.timestamp - last_time;
 
         imu_state.oplus(f, dt);
-        last_time_ = imu_meas.timestamp;
+        last_time = imu_meas.timestamp;
+        last_acc = imu_meas.linear_acceleration;
+        last_gyro = imu_meas.angular_velocity;
         return imu_state;
     }
 
