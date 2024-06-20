@@ -78,13 +78,18 @@ inline void load_parameters(System &slam, int &lidar_type)
         ros::param::param("bnb3d/filter_size_scan", match_option.filter_size_scan, 0.1);
         ros::param::param("bnb3d/debug_mode", match_option.debug_mode, false);
 
+        ros::param::param("mapping/extrinsic_T", extrinT, vector<double>());
+        ros::param::param("mapping/extrinsic_R", extrinR, vector<double>());
+        extrinT_eigen << VEC_FROM_ARRAY(extrinT);
+        extrinR_eigen << MAT_FROM_ARRAY(extrinR);
+        V3D ext_rpy = EigenMath::RotationMatrix2RPY(extrinR_eigen);
         Pose lidar_extrinsic;
-        ros::param::param("relocalization_cfg/lidar_ext/x", lidar_extrinsic.x, 0.);
-        ros::param::param("relocalization_cfg/lidar_ext/y", lidar_extrinsic.y, 0.);
-        ros::param::param("relocalization_cfg/lidar_ext/z", lidar_extrinsic.z, 0.);
-        ros::param::param("relocalization_cfg/lidar_ext/roll", lidar_extrinsic.roll, 0.);
-        ros::param::param("relocalization_cfg/lidar_ext/pitch", lidar_extrinsic.pitch, 0.);
-        ros::param::param("relocalization_cfg/lidar_ext/yaw", lidar_extrinsic.yaw, 0.);
+        lidar_extrinsic.x = extrinT_eigen.x();
+        lidar_extrinsic.y = extrinT_eigen.y();
+        lidar_extrinsic.z = extrinT_eigen.z();
+        lidar_extrinsic.roll = ext_rpy.x();
+        lidar_extrinsic.pitch = ext_rpy.y();
+        lidar_extrinsic.yaw = ext_rpy.z();
         slam.relocalization->set_bnb3d_param(match_option, lidar_extrinsic);
 
         double step_size, resolution;

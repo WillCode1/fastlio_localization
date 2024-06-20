@@ -65,14 +65,6 @@ relocalization_cfg:
     algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
 
-    # lidar extrinsic to imu
-    lidar_ext/x: 0.112
-    lidar_ext/y: 0.176
-    lidar_ext/z: -0.247
-    lidar_ext/roll: 0.8070001
-    lidar_ext/pitch: 0.1659997
-    lidar_ext/yaw: -90.7030017
-
 utm_origin:
     zone: "51N"
     east: 536808.26993
