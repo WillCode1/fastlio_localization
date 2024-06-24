@@ -19,7 +19,7 @@
 #include "system/System.hpp"
 
 #define MEASURES_BUFFER
-// #define WORK
+#define WORK
 #ifdef WORK
 #include "localization_msg/vehicle_pose.h"
 // #include "robot_msgs/Level.h"
