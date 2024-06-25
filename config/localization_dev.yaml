@@ -92,7 +92,6 @@ bnb3d:
     min_z_resolution: 0.1
     min_angular_resolution: 5   # degree
 
-    thread_num: 6
     filter_size_scan: 0.2
     debug_mode: false
 

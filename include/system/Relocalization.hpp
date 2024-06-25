@@ -468,7 +468,6 @@ void Relocalization::set_bnb3d_param(const BnbOptions &match_option, const Pose 
     LOG_WARN("min_xy_resolution: %lf", bnb_option.min_xy_resolution);
     LOG_WARN("min_z_resolution: %lf", bnb_option.min_z_resolution);
     LOG_WARN("min_angular_resolution: %lf", bnb_option.min_angular_resolution);
-    LOG_WARN("thread_num: %d", bnb_option.thread_num);
     LOG_WARN("filter_size_scan: %lf", bnb_option.filter_size_scan);
     LOG_WARN("debug_mode: %d", bnb_option.debug_mode);
     LOG_WARN("*******************************************");

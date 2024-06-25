@@ -75,7 +75,6 @@ inline void load_parameters(System &slam, int &lidar_type)
         ros::param::param("bnb3d/min_xy_resolution", match_option.min_xy_resolution, 0.2);
         ros::param::param("bnb3d/min_z_resolution", match_option.min_z_resolution, 0.1);
         ros::param::param("bnb3d/min_angular_resolution", match_option.min_angular_resolution, 0.1);
-        ros::param::param("bnb3d/thread_num", match_option.thread_num, 4);
         ros::param::param("bnb3d/filter_size_scan", match_option.filter_size_scan, 0.1);
         ros::param::param("bnb3d/debug_mode", match_option.debug_mode, false);
 
