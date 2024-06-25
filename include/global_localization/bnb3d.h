@@ -26,7 +26,6 @@ struct BnbOptions
     double min_z_resolution = 0.125;
     double min_angular_resolution = 0.1;
 
-    int thread_num = 4;
     double filter_size_scan = 0.1;
     bool debug_mode = false;
 
@@ -176,7 +175,7 @@ class BranchAndBoundMatcher3D
 {
 public:
     BranchAndBoundMatcher3D(PointCloudType::Ptr map, const BnbOptions &match_option)
-        : thread_num_(match_option.thread_num), precomputation_grid_stack_(map, match_option)
+        : precomputation_grid_stack_(map, match_option)
     {
     }
 
@@ -222,7 +221,7 @@ public:
     void ScoreCandidates(const int depth, const PointCloudType::Ptr &pointCloud,
                          const DiscretePose3D &discrete_candidate_pose, std::vector<Candidate3D> &candidates)
     {
-#pragma omp parallel for num_threads(thread_num_)
+#pragma omp parallel for num_threads(BNB_PROC_NUM)
         // omp mustn't use '!=' / 'range for'
         for (auto i = 0; i < candidates.size(); ++i)
         {
@@ -339,7 +338,6 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     int sort_cnt = 0;
 private:
-    int thread_num_;
     Eigen::Matrix4d init_lidar_orientation_;
     PrecomputationGridStack3D precomputation_grid_stack_;
 };
