@@ -10,5 +10,6 @@ def generate_launch_description():
     rviz_config = os.path.join(get_package_share_directory('fastlio_localization'), 'rviz_cfg', 'localization_ros2.rviz')
 
     fastlio_localization = Node(package="fastlio_localization", executable="fastlio_localization_ros2", output='screen', parameters=[config])
+    # fastlio_localization = Node(package="fastlio_localization", executable="fastlio_localization_ros2", prefix=['gdb -ex run --args'], output='screen', parameters=[config])
     rviz2 = Node(package='rviz2', executable='rviz2', arguments=['-d', rviz_config])
     return LaunchDescription([fastlio_localization, rviz2])
