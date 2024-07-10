@@ -63,7 +63,7 @@ MTK_BUILD_MANIFOLD(process_noise_output,
 ((vect3, nba))
 );
 
-MTK::get_cov<process_noise_input>::type process_noise_cov(const double &gyr_cov, const double &acc_cov, const double &b_gyr_cov, const double &b_acc_cov)
+inline MTK::get_cov<process_noise_input>::type process_noise_cov(const double &gyr_cov, const double &acc_cov, const double &b_gyr_cov, const double &b_acc_cov)
 {
 	MTK::get_cov<process_noise_input>::type cov = MTK::get_cov<process_noise_input>::type::Zero();
 	MTK::setDiagonal<process_noise_input, vect3, 0>(cov, &process_noise_input::ng, gyr_cov);	  // 0.03
@@ -74,7 +74,7 @@ MTK::get_cov<process_noise_input>::type process_noise_cov(const double &gyr_cov,
 }
 
 // fast_lio2论文公式(2), □+操作中增量对时间的雅克比矩阵
-Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
 {
 	// 这里的24个对应了pos(3), rot(3),offset_R_L_I(3),offset_T_L_I(3), vel(3), bg(3), ba(3), grav(3)
 	Eigen::Matrix<double, 24, 1> res = Eigen::Matrix<double, 24, 1>::Zero();
@@ -87,7 +87,7 @@ Eigen::Matrix<double, 24, 1> get_f(state_ikfom &s, const input_ikfom &in)
 }
 
 // eskf中，误差状态对各状态的雅克比矩阵F_x中的去掉对角线的一部分(对应符合函数求导式展开后，g对误差状态的偏导数)，对应fast_lio2论文公式(7)
-Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
 {
 	// 当中的23个对应了status的维度计算，为pos(3), rot(3),offset_R_L_I(3),offset_T_L_I(3), vel(3), bg(3), ba(3), grav(2);
 	Eigen::Matrix<double, 24, 23> cov = Eigen::Matrix<double, 24, 23>::Zero();
@@ -108,7 +108,7 @@ Eigen::Matrix<double, 24, 23> df_dx(state_ikfom &s, const input_ikfom &in)
 }
 
 // eskf中，误差状态对Noise的雅克比矩阵F_w，对应fast_lio2论文公式(7)
-Eigen::Matrix<double, 24, 12> df_dw(state_ikfom &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 12> df_dw(state_ikfom &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 12> cov = Eigen::Matrix<double, 24, 12>::Zero();
 	cov.template block<3, 3>(3, 0) = -Eigen::Matrix3d::Identity(); // w
@@ -119,7 +119,7 @@ Eigen::Matrix<double, 24, 12> df_dw(state_ikfom &s, const input_ikfom &in)
 }
 
 // point-lio
-Eigen::Matrix<double, 24, 24> process_noise_cov_input(const double &gyr_cov_input, const double &acc_cov_input, const double &b_gyr_cov, const double &b_acc_cov)
+inline Eigen::Matrix<double, 24, 24> process_noise_cov_input(const double &gyr_cov_input, const double &acc_cov_input, const double &b_gyr_cov, const double &b_acc_cov)
 {
 	Eigen::Matrix<double, 24, 24> cov;
 	cov.setZero();
@@ -130,7 +130,7 @@ Eigen::Matrix<double, 24, 24> process_noise_cov_input(const double &gyr_cov_inpu
 	return cov;
 }
 
-Eigen::Matrix<double, 30, 30> process_noise_cov_output(const double &vel_cov, const double &gyr_cov_output, const double &acc_cov_output, const double &b_gyr_cov, const double &b_acc_cov)
+inline Eigen::Matrix<double, 30, 30> process_noise_cov_output(const double &vel_cov, const double &gyr_cov_output, const double &acc_cov_output, const double &b_gyr_cov, const double &b_acc_cov)
 {
 	Eigen::Matrix<double, 30, 30> cov;
 	cov.setZero();
@@ -142,7 +142,7 @@ Eigen::Matrix<double, 30, 30> process_noise_cov_output(const double &vel_cov, co
 	return cov;
 }
 
-Eigen::Matrix<double, 24, 1> get_f_input(state_input &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 1> get_f_input(state_input &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 1> res = Eigen::Matrix<double, 24, 1>::Zero();
 	vect3 omega;
@@ -153,7 +153,7 @@ Eigen::Matrix<double, 24, 1> get_f_input(state_input &s, const input_ikfom &in)
 	return res;
 }
 
-Eigen::Matrix<double, 30, 1> get_f_output(state_output &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 30, 1> get_f_output(state_output &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 30, 1> res = Eigen::Matrix<double, 30, 1>::Zero();
 	res.block<3, 1>(0, 0) = s.vel;
@@ -162,7 +162,7 @@ Eigen::Matrix<double, 30, 1> get_f_output(state_output &s, const input_ikfom &in
 	return res;
 }
 
-Eigen::Matrix<double, 24, 24> df_dx_input(state_input &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 24, 24> df_dx_input(state_input &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 24, 24> cov = Eigen::Matrix<double, 24, 24>::Zero();
 	// pos
@@ -178,7 +178,7 @@ Eigen::Matrix<double, 24, 24> df_dx_input(state_input &s, const input_ikfom &in)
 	return cov;
 }
 
-Eigen::Matrix<double, 30, 30> df_dx_output(state_output &s, const input_ikfom &in)
+inline Eigen::Matrix<double, 30, 30> df_dx_output(state_output &s, const input_ikfom &in)
 {
 	Eigen::Matrix<double, 30, 30> cov = Eigen::Matrix<double, 30, 30>::Zero();
 	// pos

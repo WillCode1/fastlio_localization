@@ -1,0 +1,94 @@
+fastlio_localization:
+    ros__parameters:
+        lidar_topic:  "/livox/lidar"
+        imu_topic:  "/livox/imu"
+        map_frame:  "map"
+        lidar_frame:  "lidar"
+        baselink_frame:  "base_link"
+        timedelay_lidar2imu: 0.0 # Time offset between lidar and IMU calibrated by other algorithms, e.g. LI-Init (can be found in README).
+
+        lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
+        scan_line: 6
+        blind: 0.1
+        det_range: 70.0
+
+        gravity_init: [0., 0., -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+        frontend_type: 0                    # frontend type
+
+        # fastlio
+        point_skip_num: 4
+        space_down_sample: true
+        surf_frame_ds_res: 0.5
+        max_iteration: 3
+        ikdtree_resolution: 0.5
+        lidar_model_search_range: 5.
+        lidar_meas_cov: 0.001
+        cube_side_length: 1000
+        runtime_log_enable: 0
+
+        acc_cov: 0.1
+        gyr_cov: 0.1
+        b_acc_cov: 0.0001
+        b_gyr_cov: 0.0001
+        extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic
+        # extrinsic_T: [ 0.04165, 0.02326, -0.0284 ]  # avia
+        extrinsic_T: [ -0.011, -0.02329, 0.04412 ]  # mid360
+        extrinsic_R: [ 1., 0., 0.,
+                       0., 1., 0.,
+                       0., 0., 1.]
+
+        # imu -> gnss
+        extrinsicT_imu2gnss: [ 0., 0., 0. ]
+        extrinsicR_imu2gnss: [ 1., 0., 0., 
+                               0., 1., 0., 
+                               0., 0., 1. ]
+
+        path_en:  true
+        scan_publish_en:  true       # false: close all the point cloud output
+        dense_publish_en: true       # false: low down the points number in a global-frame point clouds scan.
+        lidar_tf_broadcast: false
+        imu_tf_broadcast: false
+
+        # map_path: "/robot/data/map/"
+        relocate_use_last_pose: false
+        # last_pose_record_path: "/home/will/last_pose_record.txt"
+        location_log_enable: false
+        # location_log_save_path: "/home/will/location.log"
+
+# ============relocalization_cfg============
+        algorithm_type: "scan_context"
+        # algorithm_type: "manually_set"
+
+        utm_origin_zone: "51N"
+        utm_origin_east: 536808.26993
+        utm_origin_north: 4501498.61740
+        utm_origin_up: 44.21500
+
+        lidar_height: 2.183
+        sc_dist_thres: 0.7
+
+        bnb3d_linear_xy_window_size: 5.   # meter
+        bnb3d_linear_z_window_size: 0.5  # meter
+        bnb3d_angular_search_window: 180.  # degree 0~180
+        bnb3d_pc_resolutions: [0.3, 0.5, 0.8]
+        bnb3d_depth: 3
+        bnb3d_min_score: 0.3
+        bnb3d_enough_score: 0.7
+
+        bnb3d_min_xy_resolution: 0.2
+        bnb3d_min_z_resolution: 0.1
+        bnb3d_min_angular_resolution: 5.   # degree
+
+        bnb3d_filter_size_scan: 0.2
+        bnb3d_debug_mode: false
+
+        ndt_step_size: 0.1
+        ndt_resolution: 1.
+
+        gicp_use_gicp: false
+        gicp_filter_range: 80.0
+        gicp_downsample: 0.1
+        gicp_search_radius: 0.5
+        gicp_teps: 1.0e-4
+        gicp_feps: 0.001
+        gicp_fitness_score: 0.3
