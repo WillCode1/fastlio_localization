@@ -15,7 +15,7 @@
 #include <livox_ros_driver/CustomMsg.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include "system/Header.h"
-#include "system/Parameters.h"
+#include "system/ParametersRos1.h"
 #include "system/System.hpp"
 
 #define MEASURES_BUFFER
