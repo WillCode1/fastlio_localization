@@ -8,7 +8,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
-#include "use-ikfom.hpp"
+#include "use-ikfom.h"
 #include "../DataDef.h"
 
 /// *************Preconfiguration

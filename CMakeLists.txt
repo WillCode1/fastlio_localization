@@ -85,6 +85,7 @@ if(ROS_EDITION STREQUAL "ROS1")
     include/ikd-Tree/ikd_Tree.cpp
     include/global_localization/scancontext/Scancontext.cpp
     include/system/frontend/ImuProcessor.cpp
+    include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
   target_link_libraries(${PROJECT_NAME} stdc++fs ${PCL_LIBRARIES})
 
@@ -137,6 +138,7 @@ else(ROS_EDITION STREQUAL "ROS2")
     include/ikd-Tree/ikd_Tree.cpp
     include/global_localization/scancontext/Scancontext.cpp
     include/system/frontend/ImuProcessor.cpp
+    include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
   target_link_libraries(fastlio_localization_ros2 stdc++fs ${PCL_LIBRARIES})
   ament_target_dependencies(fastlio_localization_ros2 rclcpp sensor_msgs nav_msgs tf2_ros livox_ros_driver2)
