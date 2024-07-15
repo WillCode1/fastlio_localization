@@ -18,9 +18,9 @@
 #include "livox_ros_driver2/msg/custom_msg.hpp"
 
 #define MEASURES_BUFFER
-// #define WORK
+#define WORK
 #ifdef WORK
-#include "localization_msg/vehicle_pose.h"
+#include "slam_interfaces/msg/vehicle_pose.hpp"
 // #include "robot_msgs/Level.h"
 // #include "robot_msgs/ModuleStatus.h"
 #endif
@@ -40,7 +40,7 @@ rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubImuOdom;
 rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubImuPath;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubrelocalizationDebug;
 #ifdef WORK
-rclcpp::Publisher<localization_msg::msg::vehicle_pose>::SharedPtr pubOdomDev;
+rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::SharedPtr pubOdomDev;
 rclcpp::Publisher<robot_msgs::msg::ModuleStatus>::SharedPtr pubModulesStatus;
 #endif
 std::unique_ptr<tf2_ros::Buffer> tf_buffer;
@@ -172,9 +172,9 @@ void publish_module_status(const double &time, int level)
     // pubModulesStatus.publish(status);
 }
 
-void publish_odometry2(rclcpp::Publisher<localization_msg::msg::vehicle_pose>::SharedPtr &pubOdomDev, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
+void publish_odometry2(rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::SharedPtr &pubOdomDev, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
 {
-    localization_msg::vehicle_pose odom;
+    slam_interfaces::vehicle_pose odom;
     odom.header.frame_id = map_frame;
     odom.header.stamp = rclcpp::Time(lidar_end_time * 1e9);
     odom.is_valid = vaild;
@@ -703,7 +703,7 @@ int main(int argc, char **argv)
     pubrelocalizationDebug = node->create_publisher<sensor_msgs::msg::PointCloud2>("/relocalization_debug", 1);
 
 #ifdef WORK
-    pubOdomDev = node->create_publisher<localization_msg::msg::vehicle_pose>("/robot/pose_dynamic_data", 1);
+    pubOdomDev = node->create_publisher<slam_interfaces::msg::vehicle_pose>("/robot/pose_dynamic_data", 1);
     // pubModulesStatus = node->create_publisher<robot_msgs::msg::ModuleStatus>("/robot/module_status", 1);
 #endif
     //------------------------------------------------------------------------------------------------------
