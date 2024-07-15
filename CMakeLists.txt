@@ -61,7 +61,7 @@ if(ROS_EDITION STREQUAL "ROS1")
     tf
     livox_ros_driver
     eigen_conversions
-    localization_msg
+    slam_interfaces
   )
 
   find_package(Eigen3 REQUIRED)

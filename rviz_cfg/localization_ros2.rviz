@@ -73,7 +73,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /cloud_registered
+            Value: /relocalization_debug
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -107,6 +107,39 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /cloud_registered
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 0.6000000238418579
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 11.835034370422363
+            Min Value: -1.5690058469772339
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz_default_plugins/PointCloud2
+          Color: 239; 41; 41
+          Color Transformer: AxisColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 210
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: map
+          Position Transformer: XYZ
+          Selectable: true
+          Size (Pixels): 1
+          Size (m): 0.009999999776482582
+          Style: Points
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /map
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -220,13 +253,19 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
+        map:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        map:
+          base_link:
+            {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -302,6 +341,26 @@ Visualization Manager:
         Value: TopDownOrtho (rviz_default_plugins)
         X: 0
         Y: 0
+      - Class: rviz_default_plugins/Orbit
+        Distance: 100
+        Enable Stereo Rendering:
+          Stereo Eye Separation: 0.05999999865889549
+          Stereo Focal Distance: 1
+          Swap Stereo Eyes: false
+          Value: false
+        Focal Point:
+          X: 0
+          Y: 0
+          Z: 0
+        Focal Shape Fixed Size: false
+        Focal Shape Size: 0.05000000074505806
+        Invert Z Axis: false
+        Name: Orbit
+        Near Clip Distance: 0.009999999776482582
+        Pitch: 0.7853981852531433
+        Target Frame: base_link
+        Value: Orbit (rviz_default_plugins)
+        Yaw: 0.7853981852531433
 Window Geometry:
   Displays:
     collapsed: false
