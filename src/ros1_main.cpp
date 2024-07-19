@@ -659,8 +659,8 @@ int main(int argc, char **argv)
     std::string last_pose_record_path;
     std::string location_log_save_path;
 
-    ros::param::param("lidar_turnover_roll", lidar_turnover_roll, 0.);
-    ros::param::param("lidar_turnover_pitch", lidar_turnover_pitch, 0.);
+    ros::param::param("relocalization_cfg/lidar_turnover_roll", lidar_turnover_roll, 0.);
+    ros::param::param("relocalization_cfg/lidar_turnover_pitch", lidar_turnover_pitch, 0.);
 
     load_log_parameters(relocate_use_last_pose, last_pose_record_path, location_log_enable, location_log_save_path);
 
