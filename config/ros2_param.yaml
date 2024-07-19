@@ -58,6 +58,8 @@ fastlio_localization:
 # ============relocalization_cfg============
         algorithm_type: "scan_context"
         # algorithm_type: "manually_set"
+        lidar_turnover_roll: 180
+        lidar_turnover_pitch: 0
 
         utm_origin_zone: "51N"
         utm_origin_east: 536808.26993

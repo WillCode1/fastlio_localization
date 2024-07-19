@@ -33,6 +33,7 @@ std::string baselink_frame;
 FILE *location_log = nullptr;
 FILE *last_pose_record = nullptr;
 
+double lidar_turnover_roll, lidar_turnover_pitch;
 bool path_en = true, scan_pub_en = false, dense_pub_en = false, lidar_tf_broadcast = false, imu_tf_broadcast = false;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFull;
 rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubLidarOdom;
@@ -635,8 +636,8 @@ void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::Sh
     init_pose.x = pose.position.x;
     init_pose.y = pose.position.y;
     init_pose.z = pose.position.z;
-    init_pose.roll = rpy.x();
-    init_pose.pitch = rpy.y();
+    init_pose.roll = DEG2RAD(lidar_turnover_roll);
+    init_pose.pitch = DEG2RAD(lidar_turnover_pitch);
     init_pose.yaw = rpy.z();
     slam.relocalization->set_init_pose(init_pose);
 }
@@ -653,6 +654,11 @@ int main(int argc, char **argv)
     bool relocate_use_last_pose = true, location_log_enable = true;
     std::string last_pose_record_path;
     std::string location_log_save_path;
+
+    node->declare_parameter("lidar_turnover_roll", 0);
+    node->declare_parameter("lidar_turnover_pitch", 0);
+    node->get_parameter("lidar_turnover_roll", lidar_turnover_roll);
+    node->get_parameter("lidar_turnover_pitch", lidar_turnover_pitch);
 
     load_log_parameters(node, relocate_use_last_pose, last_pose_record_path, location_log_enable, location_log_save_path);
 
