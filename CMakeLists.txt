@@ -119,6 +119,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   find_package(rclpy REQUIRED)
   find_package(nav_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
+  find_package(pcl_conversions REQUIRED)
   find_package(tf2_ros REQUIRED)
   find_package(livox_ros_driver2 REQUIRED)
 
