@@ -130,6 +130,7 @@ else(ROS_EDITION STREQUAL "ROS2")
     ${EIGEN3_INCLUDE_DIR}
     ${PCL_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${pcl_conversions_INCLUDE_DIRS}
     include)
 
   if(BUILD_TESTING)
