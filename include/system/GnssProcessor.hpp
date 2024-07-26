@@ -30,13 +30,17 @@ public:
   GnssProcessor()
   {
     extrinsic_lidar2gnss.setIdentity();
+#ifndef NO_LOGER
     file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
     fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+#endif
   }
 
   ~GnssProcessor()
   {
+#ifndef NO_LOGER
     fclose(file_pose_gnss);
+#endif
   }
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -59,7 +63,9 @@ private:
 
 private:
   Eigen::Matrix4d extrinsic_lidar2gnss;
+#ifndef NO_LOGER
   FILE *file_pose_gnss;
+#endif
 };
 
 void GnssProcessor::set_extrinsic(const V3D &transl, const M3D &rot)

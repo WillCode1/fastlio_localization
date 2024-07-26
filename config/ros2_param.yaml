@@ -49,7 +49,7 @@ fastlio_localization:
         lidar_tf_broadcast: false
         imu_tf_broadcast: false
 
-        # map_path: "/robot/data/map/"
+        map_path: "/home/chery/tmp/"
         relocate_use_last_pose: false
         # last_pose_record_path: "/home/will/last_pose_record.txt"
         location_log_enable: false
@@ -58,8 +58,8 @@ fastlio_localization:
 # ============relocalization_cfg============
         algorithm_type: "scan_context"
         # algorithm_type: "manually_set"
-        lidar_turnover_roll: 180
-        lidar_turnover_pitch: 0
+        lidar_turnover_roll: 180.
+        lidar_turnover_pitch: 0.
 
         utm_origin_zone: "51N"
         utm_origin_east: 536808.26993

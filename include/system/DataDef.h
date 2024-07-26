@@ -150,9 +150,11 @@ public:
 
     ~LogAnalysis()
     {
+#ifndef NO_LOGER
         fclose(fout_predict);
         fclose(fout_update);
         fclose(fout_fastlio_log);
+#endif
     }
 
     template <typename ikfom_state>

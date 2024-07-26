@@ -655,8 +655,8 @@ int main(int argc, char **argv)
     std::string last_pose_record_path;
     std::string location_log_save_path;
 
-    node->declare_parameter("lidar_turnover_roll", 0);
-    node->declare_parameter("lidar_turnover_pitch", 0);
+    node->declare_parameter("lidar_turnover_roll", 0.);
+    node->declare_parameter("lidar_turnover_pitch", 0.);
     node->get_parameter("lidar_turnover_roll", lidar_turnover_roll);
     node->get_parameter("lidar_turnover_pitch", lidar_turnover_pitch);
 
@@ -717,7 +717,8 @@ int main(int argc, char **argv)
 
     rclcpp::spin(node);
 
-    fclose(last_pose_record);
+	if (relocate_use_last_pose)
+        fclose(last_pose_record);
     if (location_log_enable && location_log)
         fclose(location_log);
 

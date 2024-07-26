@@ -714,7 +714,8 @@ int main(int argc, char **argv)
 
     ros::spin();
 
-    fclose(last_pose_record);
+	if (relocate_use_last_pose)
+        fclose(last_pose_record);
     if (location_log_enable && location_log)
         fclose(location_log);
 
