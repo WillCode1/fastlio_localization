@@ -116,6 +116,8 @@ public:
       return;
     }
 
+    fprintf(out, "P5\n%d %d\n255\n", resolution_, map_info_width, map_info_height);
+
     for (unsigned int y = 0; y < map_info_height; y++)
     {
       for (unsigned int x = 0; x < map_info_width; x++)
