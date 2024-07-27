@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -42,6 +43,7 @@ ros::Publisher pubImuOdom;
 ros::Publisher pubImuPath;
 ros::Publisher pubrelocalizationDebug;
 ros::Publisher pubGlobalMap;
+ros::Publisher pubOccGrid;
 #ifdef WORK
 ros::Publisher pubOdomDev;
 ros::Publisher pubModulesStatus;
@@ -641,6 +643,26 @@ void publish_global_map(const ros::TimerEvent &)
     cloud_msg.header.stamp = ros::Time::now();
     cloud_msg.header.frame_id = "map";
     pubGlobalMap.publish(cloud_msg);
+
+    nav_msgs::OccupancyGrid msg;
+    msg.header.stamp = ros::Time::now();
+    msg.header.frame_id = "map";
+
+    msg.info.map_load_time = ros::Time::now();
+    msg.info.resolution = slam.p2p->resolution_;
+
+    msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
+    msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
+    msg.info.origin.position.z = 0.0;
+    msg.info.origin.orientation.x = 0.0;
+    msg.info.origin.orientation.y = 0.0;
+    msg.info.origin.orientation.z = 0.0;
+    msg.info.origin.orientation.w = 1.0;
+
+    msg.info.width = slam.p2p->map_info_width;
+    msg.info.height = slam.p2p->map_info_height;
+    msg.data = slam.p2p->map_data;
+    pubOccGrid.publish(msg);
 }
 
 void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
@@ -712,6 +734,7 @@ int main(int argc, char **argv)
     pubImuOdom = nh.advertise<nav_msgs::Odometry>("/imu_localization", 100000);
     pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
     pubGlobalMap = nh.advertise<sensor_msgs::PointCloud2>("/global_map", 1);
+    pubOccGrid = nh.advertise<nav_msgs::OccupancyGrid>("/grid_map", 1);
 
     ros::Timer timer = nh.createTimer(ros::Duration(2.0), publish_global_map);
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);

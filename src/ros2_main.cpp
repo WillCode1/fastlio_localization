@@ -6,6 +6,7 @@
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -41,6 +42,7 @@ rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubImuOdom;
 rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubImuPath;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubrelocalizationDebug;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubGlobalMap;
+rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pubOccGrid;
 #ifdef WORK
 rclcpp::Publisher<localization_msg::msg::vehicle_pose>::SharedPtr pubOdomDev;
 rclcpp::Publisher<robot_msgs::msg::ModuleStatus>::SharedPtr pubModulesStatus;
@@ -633,6 +635,26 @@ void publish_global_map()
     cloud_msg.header.stamp = rclcpp::Clock().now();
     cloud_msg.header.frame_id = "map";
     pubGlobalMap->publish(cloud_msg);
+
+    nav_msgs::msg::OccupancyGrid msg;
+    msg.header.stamp = rclcpp::Clock().now();
+    msg.header.frame_id = "map";
+
+    msg.info.map_load_time = rclcpp::Clock().now();
+    msg.info.resolution = slam.p2p->resolution_;
+
+    msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
+    msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
+    msg.info.origin.position.z = 0.0;
+    msg.info.origin.orientation.x = 0.0;
+    msg.info.origin.orientation.y = 0.0;
+    msg.info.origin.orientation.z = 0.0;
+    msg.info.origin.orientation.w = 1.0;
+
+    msg.info.width = slam.p2p->map_info_width;
+    msg.info.height = slam.p2p->map_info_height;
+    msg.data = slam.p2p->map_data;
+    pubOccGrid->publish(msg);
 }
 
 void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
@@ -715,6 +737,7 @@ int main(int argc, char **argv)
     pubImuOdom = node->create_publisher<nav_msgs::msg::Odometry>("/imu_localization", 1000);
     pubImuPath = node->create_publisher<nav_msgs::msg::Path>("/imu_path", 1000);
     pubGlobalMap = node->create_publisher<sensor_msgs::msg::PointCloud2>("/global_map", 1);
+    pubOccGrid = node->create_publisher<nav_msgs::msg::OccupancyGrid>("/grid_map", 1);
 
     rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(2000ms, publish_global_map);
     auto sub_initpose = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 1, initialPoseCallback);
