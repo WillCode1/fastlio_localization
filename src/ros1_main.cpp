@@ -41,6 +41,7 @@ ros::Publisher pubLidarOdom;
 ros::Publisher pubImuOdom;
 ros::Publisher pubImuPath;
 ros::Publisher pubrelocalizationDebug;
+ros::Publisher pubGlobalMap;
 #ifdef WORK
 ros::Publisher pubOdomDev;
 ros::Publisher pubModulesStatus;
@@ -633,6 +634,15 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
     }
 }
 
+void publish_global_map(const ros::TimerEvent &)
+{
+    sensor_msgs::PointCloud2 cloud_msg;
+    pcl::toROSMsg(*slam.global_map, cloud_msg);
+    cloud_msg.header.stamp = ros::Time::now();
+    cloud_msg.header.frame_id = "map";
+    pubGlobalMap.publish(cloud_msg);
+}
+
 void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
 {
     const geometry_msgs::Pose &pose = msg->pose.pose;
@@ -701,7 +711,9 @@ int main(int argc, char **argv)
     pubLidarOdom = nh.advertise<nav_msgs::Odometry>("/lidar_localization", 100000);
     pubImuOdom = nh.advertise<nav_msgs::Odometry>("/imu_localization", 100000);
     pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
+    pubGlobalMap = nh.advertise<sensor_msgs::PointCloud2>("/global_map", 1);
 
+    ros::Timer timer = nh.createTimer(ros::Duration(2.0), publish_global_map);
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
     pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 

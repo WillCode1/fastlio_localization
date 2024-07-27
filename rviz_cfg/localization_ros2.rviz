@@ -110,11 +110,11 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 0.6000000238418579
+        - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 11.835034370422363
-            Min Value: -1.5690058469772339
+            Max Value: 22.76201820373535
+            Min Value: -7.234610080718994
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -139,7 +139,7 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /map
+            Value: /global_map
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
@@ -253,19 +253,13 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base_link:
-          Value: true
-        map:
-          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: false
       Tree:
-        map:
-          base_link:
-            {}
+        {}
       Update Interval: 0
       Value: true
   Enabled: true

@@ -40,6 +40,7 @@ rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubLidarOdom;
 rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubImuOdom;
 rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubImuPath;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubrelocalizationDebug;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubGlobalMap;
 #ifdef WORK
 rclcpp::Publisher<localization_msg::msg::vehicle_pose>::SharedPtr pubOdomDev;
 rclcpp::Publisher<robot_msgs::msg::ModuleStatus>::SharedPtr pubModulesStatus;
@@ -625,6 +626,15 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg)
     }
 }
 
+void publish_global_map()
+{
+    sensor_msgs::msg::PointCloud2 cloud_msg;
+    pcl::toROSMsg(*slam.global_map, cloud_msg);
+    cloud_msg.header.stamp = rclcpp::Clock().now();
+    cloud_msg.header.frame_id = "map";
+    pubGlobalMap->publish(cloud_msg);
+}
+
 void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
     const geometry_msgs::msg::Pose &pose = msg->pose.pose;
@@ -704,7 +714,9 @@ int main(int argc, char **argv)
     pubLidarOdom = node->create_publisher<nav_msgs::msg::Odometry>("/lidar_localization", 1000);
     pubImuOdom = node->create_publisher<nav_msgs::msg::Odometry>("/imu_localization", 1000);
     pubImuPath = node->create_publisher<nav_msgs::msg::Path>("/imu_path", 1000);
+    pubGlobalMap = node->create_publisher<sensor_msgs::msg::PointCloud2>("/global_map", 1);
 
+    rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(2000ms, publish_global_map);
     auto sub_initpose = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 1, initialPoseCallback);
     pubrelocalizationDebug = node->create_publisher<sensor_msgs::msg::PointCloud2>("/relocalization_debug", 1);
 
