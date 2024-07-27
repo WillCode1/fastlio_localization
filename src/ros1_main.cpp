@@ -641,22 +641,18 @@ void publish_global_map(const ros::TimerEvent &)
     sensor_msgs::PointCloud2 cloud_msg;
     pcl::toROSMsg(*slam.global_map, cloud_msg);
     cloud_msg.header.stamp = ros::Time::now();
-    cloud_msg.header.frame_id = "map";
+    cloud_msg.header.frame_id = map_frame;
     pubGlobalMap.publish(cloud_msg);
 
     nav_msgs::OccupancyGrid msg;
     msg.header.stamp = ros::Time::now();
-    msg.header.frame_id = "map";
+    msg.header.frame_id = map_frame;
 
     msg.info.map_load_time = ros::Time::now();
     msg.info.resolution = slam.p2p->resolution_;
 
     msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
     msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
-    msg.info.origin.position.z = 0.0;
-    msg.info.origin.orientation.x = 0.0;
-    msg.info.origin.orientation.y = 0.0;
-    msg.info.origin.orientation.z = 0.0;
     msg.info.origin.orientation.w = 1.0;
 
     msg.info.width = slam.p2p->map_info_width;
