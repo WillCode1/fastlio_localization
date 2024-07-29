@@ -169,18 +169,25 @@ public:
   void convert_from_pgm()
   {
     std::string mapdatafile = save_path_ + ".pgm";
-    std::ifstream file(mapdatafile, std::ios::binary);
-
-    if (!file.is_open())
+    FILE *fp = fopen(mapdatafile.c_str(), "rb");
+    if (!fp)
     {
       printf("Couldn't read map file from %s\n", mapdatafile.c_str());
       return;
     }
 
-    char c;
-    std::string format;
-    int width, height, maxGrayValue, value;
-    file >> format >> map_info_width >> map_info_height >> maxGrayValue;
+    int line = 0;
+    char header[1024] = {0};
+    while (line < 2)
+    {
+      fgets(header, 1024, fp);
+      if (header[0] != '#')
+      {
+        ++line;
+      }
+    }
+    sscanf(header, "%u %u\n", &map_info_width, &map_info_height);
+    fgets(header, 20, fp);
 
     map_data.resize(map_info_width * map_info_height);
     map_data.assign(map_info_width * map_info_height, 0);
@@ -190,22 +197,20 @@ public:
       for (unsigned int x = 0; x < map_info_width; x++)
       {
         unsigned int i = x + (map_info_height - y - 1) * map_info_width;
-
-        file >> value;
-        if (value == 0)
-        {
+        auto tmp = fgetc(fp);
+        if (tmp == 000)
           map_data[i] = 100;
-        }
       }
     }
-
-    file.close();
+    fclose(fp);
     printf("Received a %d X %d map @ %.3f m/pix\n",
            map_info_width, map_info_height, resolution_);
 
+    char c;
+    std::string format;
     std::string mapmetadatafile = save_path_ + ".yaml";
     printf("Reading map occupancy data from %s\n", mapmetadatafile.c_str());
-    file.open(mapmetadatafile, std::ios::binary);
+    std::ifstream file(mapmetadatafile, std::ios::binary);
     file >> format >> format;
     file >> format >> resolution_;
     file >> format >> c >> map_info_origin_position_x >> c >> map_info_origin_position_y >> c >> offset_yaw_ >> c;
