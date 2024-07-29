@@ -630,27 +630,33 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg)
 
 void publish_global_map()
 {
-    sensor_msgs::msg::PointCloud2 cloud_msg;
-    pcl::toROSMsg(*slam.global_map, cloud_msg);
-    cloud_msg.header.stamp = rclcpp::Clock().now();
-    cloud_msg.header.frame_id = map_frame;
-    pubGlobalMap->publish(cloud_msg);
+    if (pubGlobalMap->get_subscription_count() != 0)
+    {
+        sensor_msgs::msg::PointCloud2 cloud_msg;
+        pcl::toROSMsg(*slam.global_map, cloud_msg);
+        cloud_msg.header.stamp = rclcpp::Clock().now();
+        cloud_msg.header.frame_id = map_frame;
+        pubGlobalMap->publish(cloud_msg);
+    }
 
-    nav_msgs::msg::OccupancyGrid msg;
-    msg.header.stamp = rclcpp::Clock().now();
-    msg.header.frame_id = map_frame;
+    if (pubOccGrid->get_subscription_count() != 0 && !slam.p2p->map_data.empty())
+    {
+        nav_msgs::msg::OccupancyGrid msg;
+        msg.header.stamp = rclcpp::Clock().now();
+        msg.header.frame_id = map_frame;
 
-    msg.info.map_load_time = rclcpp::Clock().now();
-    msg.info.resolution = slam.p2p->resolution_;
+        msg.info.map_load_time = rclcpp::Clock().now();
+        msg.info.resolution = slam.p2p->resolution_;
 
-    msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
-    msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
-    msg.info.origin.orientation.w = 1.0;
+        msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
+        msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
+        msg.info.origin.orientation.w = 1.0;
 
-    msg.info.width = slam.p2p->map_info_width;
-    msg.info.height = slam.p2p->map_info_height;
-    msg.data = slam.p2p->map_data;
-    pubOccGrid->publish(msg);
+        msg.info.width = slam.p2p->map_info_width;
+        msg.info.height = slam.p2p->map_info_height;
+        msg.data = slam.p2p->map_data;
+        pubOccGrid->publish(msg);
+    }
 }
 
 void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
