@@ -43,11 +43,11 @@ mapping:
     extrinsic_R: [ 0, 1, 0, 
                   -1, 0, 0, 
                    0, 0, 1 ]
-    # lidar -> gnss
-    extrinsic_gnss_T: [ 1.06045, -0.5245, 0.798576 ]
-    extrinsic_gnss_R: [ 0, -1, 0, 
-                        -1, 0, 0, 
-                        0, 0, -1 ]
+    # imu -> gnss
+    extrinsicT_imu2gnss: [ 0.5245, 1.06045, 0.362376 ]
+    extrinsicR_imu2gnss: [ 0, -1, 0, 
+                           -1, 0, 0, 
+                           0, 0, -1 ]
 
 publish:
     path_en:  true
