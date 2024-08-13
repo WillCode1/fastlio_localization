@@ -11,6 +11,7 @@
     <rosparam file="$(find fastlio_localization)/config/localization_dev.yaml" command="load" />
     <!-- <rosparam file="$(find fastlio_localization)/config/nclt.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/UrbanLoco_HK.yaml" command="load" /> -->
+    <!-- <rosparam file="$(find fastlio_localization)/config/UrbanLoco_CA.yaml" command="load" /> -->
 
     <node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" respawn="true"/> 
 
