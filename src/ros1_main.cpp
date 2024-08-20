@@ -22,7 +22,7 @@
 #define MEASURES_BUFFER
 // #define WORK
 #ifdef WORK
-#include "localization_msg/vehicle_pose.h"
+#include "slam_interfaces/VehiclePose.h"
 // #include "robot_msgs/Level.h"
 // #include "robot_msgs/ModuleStatus.h"
 #endif
@@ -178,7 +178,7 @@ void publish_module_status(const double &time, int level)
 
 void publish_odometry2(const ros::Publisher &pubOdomDev, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
 {
-    localization_msg::vehicle_pose odom;
+    slam_interfaces::VehiclePose odom;
     odom.header.frame_id = map_frame;
     odom.header.stamp = ros::Time().fromSec(lidar_end_time);
     odom.is_valid = vaild;
@@ -743,7 +743,7 @@ int main(int argc, char **argv)
     pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 
 #ifdef WORK
-    pubOdomDev = nh.advertise<localization_msg::vehicle_pose>("/robot/pose_dynamic_data", 1);
+    pubOdomDev = nh.advertise<slam_interfaces::VehiclePose>("/robot/pose_dynamic_data", 1);
     // pubModulesStatus = nh.advertise<robot_msgs::ModuleStatus>("/robot/module_status", 1);
 #endif
     //------------------------------------------------------------------------------------------------------
