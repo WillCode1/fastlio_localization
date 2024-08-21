@@ -3,6 +3,10 @@
 #include "global_localization/UtmCoordinate.h"
 #include "DataDef.h"
 #include "system/Header.h"
+// #define ENU
+#ifdef ENU
+#include "backend/global_localization/EnuCoordinate.hpp"
+#endif
 // #define UrbanLoco
 // #define liosam
 
@@ -55,7 +59,6 @@ public:
   float gnssValidInterval = 0.2;
   float gpsCovThreshold = 2;
   bool useGpsElevation = false;
-  bool gnss_factor_enable = false;
   deque<GnssPose> gnss_buffer;
 
 private:
@@ -108,7 +111,6 @@ bool GnssProcessor::check_mean_and_variance(const std::vector<V3D> &start_point,
 
 void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
 {
-  gnss_factor_enable = true;
   static int count = 0;
   static utm_coordinate::utm_point utm_origin;
   static std::vector<V3D> start_point;
@@ -153,10 +155,14 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
   }
 #endif
 
-  GnssPose utm_pose = gnss_raw;
-  utm_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
-  gnss_buffer.push_back(utm_pose);
-  // LogAnalysis::save_trajectory(file_pose_gnss, utm_pose.gnss_position, utm_pose.gnss_quat, utm_pose.timestamp);
+  GnssPose gps_pose = gnss_raw;
+#ifdef ENU
+  gps_pose.gnss_position = zlam::Earth::LLH2ENU(gnss_raw.gnss_position, true);
+#else
+  gps_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
+#endif
+  gnss_buffer.push_back(gps_pose);
+  // LogAnalysis::save_trajectory(file_pose_gnss, gps_pose.gnss_position, gps_pose.gnss_quat, gps_pose.timestamp);
 }
 
 bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_time, const double &odom_z)
@@ -246,13 +252,15 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
 void GnssProcessor::UrbanLoco_handler(const GnssPose &gnss_raw)
 {
   static utm_coordinate::utm_point utm_origin;
-  if (!gnss_factor_enable)
+  static bool first_gps = true;
+  if (first_gps)
   {
     utm_origin.east = gnss_raw.gnss_position(0);
     utm_origin.north = gnss_raw.gnss_position(1);
     utm_origin.up = gnss_raw.gnss_position(2);
+    printf("--utm_origin: east: %.5f, north: %.5f, up: %.5f, zone: %s\n", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
+    first_gps = false;
   }
-  gnss_factor_enable = true;
   auto tmp = gnss_raw;
   tmp.gnss_position = gnss_raw.gnss_position - V3D(utm_origin.east, utm_origin.north, utm_origin.up);
   gnss_buffer.push_back(tmp);

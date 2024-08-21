@@ -3,7 +3,7 @@
 #include <cmath>
 #include <Eigen/Dense>
 using namespace std;
-namespace zhito {
+
 namespace zlam {
 
 // ellipsoid para
@@ -314,4 +314,4 @@ private:
 };
 
 } // namespace zlam
-} // namespace zhito
+
