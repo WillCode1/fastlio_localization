@@ -179,7 +179,7 @@ bool GnssProcessor::get_gnss_factor(GnssPose &thisGPS, const double &lidar_end_t
       while (!gnss_buffer.empty())
       {
         auto current_gnss_interval = std::abs(gnss_buffer.front().timestamp - lidar_end_time);
-        if (current_gnss_interval <= thisGPS.current_gnss_interval)
+        if (current_gnss_interval < thisGPS.current_gnss_interval)
         {
           thisGPS = gnss_buffer.front();
           thisGPS.current_gnss_interval = current_gnss_interval;
