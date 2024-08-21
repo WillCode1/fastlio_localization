@@ -123,7 +123,7 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
 
   if (count <= 10)
   {
-#if !defined(liosam)
+#if 0
     utm_origin = utm;
     printf("--utm_origin: east: %.5f, north: %.5f, up: %.5f, zone: %s\n", utm_origin.east, utm_origin.north, utm_origin.up, utm_origin.zone.c_str());
     start_point.emplace_back(V3D(utm_origin.east, utm_origin.north, utm_origin.up));
@@ -136,7 +136,7 @@ void GnssProcessor::gnss_handler(const GnssPose &gnss_raw)
 #endif
     return;
   }
-#if !defined(liosam)
+#if 0
   else if (count == 11)
   {
     if (check_mean_and_variance(start_point, utm_origin, 0.05))
