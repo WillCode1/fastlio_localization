@@ -18,6 +18,7 @@
 #include "system/Header.h"
 #include "system/ParametersRos1.h"
 #include "system/System.hpp"
+// #define EVO
 
 #define MEASURES_BUFFER
 // #define WORK
@@ -34,6 +35,10 @@ std::string lidar_frame;
 std::string baselink_frame;
 FILE *location_log = nullptr;
 FILE *last_pose_record = nullptr;
+
+#ifdef EVO
+FILE *file_pose_fastlio;
+#endif
 
 double lidar_turnover_roll, lidar_turnover_pitch;
 bool path_en = true, scan_pub_en = false, dense_pub_en = false, lidar_tf_broadcast = false, imu_tf_broadcast = false;
@@ -151,6 +156,10 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
     {
         LOG_WARN("localization state maybe abnormal! (baselink frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
     }
+
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_fastlio, baselink_pos, baselink_rot, lidar_end_time);
+#endif
 
     nav_msgs::Odometry odomAftMapped;
     odomAftMapped.header.frame_id = map_frame;
@@ -692,6 +701,11 @@ int main(int argc, char **argv)
     bool relocate_use_last_pose = true, location_log_enable = true;
     std::string last_pose_record_path;
     std::string location_log_save_path;
+
+#ifdef EVO
+    file_pose_fastlio = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
+    fprintf(file_pose_fastlio, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+#endif
 
     ros::param::param("relocalization_cfg/lidar_turnover_roll", lidar_turnover_roll, 0.);
     ros::param::param("relocalization_cfg/lidar_turnover_pitch", lidar_turnover_pitch, 0.);
