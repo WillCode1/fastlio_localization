@@ -1,6 +1,6 @@
 common:
-    lidar_topic:  "/drivers/top_lidar_origin"
-    imu_topic:  "/drivers/imu_data"
+    lidar_topic:  "/points_raw"
+    imu_topic:  "/imu_raw"
     gnss_topic:  "/gps/fix"
     map_frame:  "map"
     lidar_frame:  "lidar"
@@ -40,10 +40,10 @@ mapping:
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
     # lidar -> imu
-    extrinsic_T: [ -0.00665, 0, -1.51277]
-    extrinsic_R: [ 1, 0, 0, 
-                   0, -1, 0, 
-                   0, 0, -1 ]
+    extrinsic_T: [ -1.86788048, 1.439669, -0.04807745 ]
+    extrinsic_R: [ -0.00337318, 0.9999481, -0.00961673, 
+                   -0.9999394, -0.00347372, -0.01045515, 
+                   -0.01048799, 0.00958081, 0.99989912 ]
     # imu -> gnss
     extrinsicT_imu2gnss: [ 0, 0, 0 ]
     extrinsicR_imu2gnss: [ 1, 0, 0, 
@@ -59,7 +59,7 @@ publish:
 
 official:
     # map_path: "/robot/data/map/"
-    relocate_use_last_pose: true
+    relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
     location_log_enable: false
     # location_log_save_path: "/home/will/location.log"
@@ -108,4 +108,4 @@ gicp:
     search_radius: 0.5
     teps: 1.0e-4
     feps: 0.001
-    fitness_score: 0.3
+    fitness_score: 0.4
