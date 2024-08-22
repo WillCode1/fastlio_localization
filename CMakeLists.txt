@@ -84,6 +84,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   add_library(${PROJECT_NAME} SHARED
     include/ikd-Tree/ikd_Tree.cpp
     include/global_localization/scancontext/Scancontext.cpp
+    include/global_localization/InitCoordinate.cpp
     include/system/frontend/ImuProcessor.cpp
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
@@ -151,6 +152,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   add_executable(fastlio_localization_ros2 src/ros2_main.cpp
     include/ikd-Tree/ikd_Tree.cpp
     include/global_localization/scancontext/Scancontext.cpp
+    include/global_localization/InitCoordinate.cpp
     include/system/frontend/ImuProcessor.cpp
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)

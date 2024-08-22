@@ -19,6 +19,8 @@
 #include "system/ParametersRos1.h"
 #include "system/System.hpp"
 // #define EVO
+// #define UrbanLoco
+// #define liosam
 
 #define MEASURES_BUFFER
 // #define WORK

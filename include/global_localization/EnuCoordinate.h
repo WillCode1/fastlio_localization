@@ -2,9 +2,8 @@
 #include <iostream>
 #include <cmath>
 #include <Eigen/Dense>
-using namespace std;
 
-namespace zlam {
+namespace enu_coordinate {
 
 // ellipsoid para
 constexpr double WGS84_RE = 6378137.0;
@@ -313,5 +312,5 @@ private:
     static bool _origin_setted;     // 是否设置过圆心
 };
 
-} // namespace zlam
+} // namespace enu_coordinate
 
