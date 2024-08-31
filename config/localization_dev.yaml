@@ -1,7 +1,7 @@
 common:
     lidar_topic:  "/points_raw"
     imu_topic:  "/imu_raw"
-    gnss_topic:  "/gps/fix"
+    gnss_topic:  "/rtk_ins"
     map_frame:  "map"
     lidar_frame:  "lidar"
     baselink_frame:  "base_link"
@@ -45,10 +45,10 @@ mapping:
                    -0.9999394, -0.00347372, -0.01045515, 
                    -0.01048799, 0.00958081, 0.99989912 ]
     # imu -> gnss
-    extrinsicT_imu2gnss: [ 0, 0, 0 ]
-    extrinsicR_imu2gnss: [ 1, 0, 0, 
-                           0, 1, 0, 
-                           0, 0, 1 ]
+    extrinsicT_imu2gnss: [ 0.02, 1.42, 1.22 ]
+    extrinsicR_imu2gnss: [ 0.9999985, 0.0017453, 0.0000030,
+                           -0.0017453, 0.9999970, 0.0017453,
+                           -0.0000000, -0.0017453, 0.9999985 ]
 
 publish:
     path_en:  true
@@ -58,6 +58,7 @@ publish:
     imu_tf_broadcast: false
 
 official:
+    lla: [31.4200590, 120.6394099, 14.790]
     # map_path: "/robot/data/map/"
     relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
@@ -70,12 +71,6 @@ relocalization_cfg:
     # algorithm_type: "manually_set"
     lidar_turnover_roll: 0
     lidar_turnover_pitch: 0
-
-utm_origin:
-    zone: "51N"
-    east: 536808.26993
-    north: 4501498.61740
-    up: 44.21500
 
 scan_context:
     lidar_height: 2.183

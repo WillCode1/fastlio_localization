@@ -18,6 +18,7 @@
 #include "system/Header.h"
 #include "system/ParametersRos1.h"
 #include "system/System.hpp"
+#include "slam_interfaces/InsPvax.h"
 // #define EVO
 // #define UrbanLoco
 // #define liosam
@@ -360,19 +361,17 @@ void publish_imu_path(const ros::Publisher &pubPath, const QD &rot, const V3D &p
     }
 }
 
-#ifdef gnss_with_direction
-void gnss_cbk(const nav_msgs::OdometryConstPtr &msg)
+void gnss_cbk(const slam_interfaces::InsPvax::ConstPtr &msg)
 {
-    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(),
-                                              V3D(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z),
-                                              QD(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z));
-}
+    V3D gnss_position = V3D(RAD2DEG(msg->latitude), RAD2DEG(msg->longitude), msg->altitude);
+    QD rot = EigenMath::RPY2Quaternion(V3D(msg->roll, msg->pitch, msg->azimuth));
+#ifdef ENU
+    gnss_position = enu_coordinate::Earth::LLH2ENU(gnss_position, true);
 #else
-void gnss_cbk(const sensor_msgs::NavSatFix::ConstPtr &msg)
-{
-    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), V3D(msg->latitude, msg->longitude, msg->altitude));
-}
+    gnss_position = utm_coordinate::LLAtoUTM2(gnss_position);
 #endif
+    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
+}
 
 bool load_last_pose(const PointCloudType::Ptr &scan)
 {
@@ -703,6 +702,7 @@ int main(int argc, char **argv)
     bool relocate_use_last_pose = true, location_log_enable = true;
     std::string last_pose_record_path;
     std::string location_log_save_path;
+    std::vector<double> lla;
 
 #ifdef EVO
     file_pose_fastlio = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
@@ -711,6 +711,7 @@ int main(int argc, char **argv)
 
     ros::param::param("relocalization_cfg/lidar_turnover_roll", lidar_turnover_roll, 0.);
     ros::param::param("relocalization_cfg/lidar_turnover_pitch", lidar_turnover_pitch, 0.);
+    ros::param::param("official/lla", lla, std::vector<double>());
 
     load_log_parameters(relocate_use_last_pose, last_pose_record_path, location_log_enable, location_log_save_path);
 
@@ -742,6 +743,12 @@ int main(int argc, char **argv)
     }
     load_ros_parameters(path_en, scan_pub_en, dense_pub_en, lidar_tf_broadcast, imu_tf_broadcast, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, lidar_type);
+
+#ifdef ENU
+    enu_coordinate::Earth::SetOrigin(V3D(lla[0], lla[1], lla[2]));
+#else
+    utm_coordinate::SetUtmOrigin(V3D(lla[0], lla[1], lla[2]));
+#endif
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);

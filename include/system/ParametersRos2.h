@@ -80,18 +80,9 @@ inline void load_parameters(rclcpp::Node::SharedPtr &node, System &slam, int &li
 
     if (true)
     {
-        node->declare_parameter("utm_origin_zone", "51N");
-        node->declare_parameter("utm_origin_east", 0.);
-        node->declare_parameter("utm_origin_north", 0.);
-        node->declare_parameter("utm_origin_up", 0.);
         node->declare_parameter("extrinsicT_imu2gnss", vector<double>());
         node->declare_parameter("extrinsicR_imu2gnss", vector<double>());
         node->declare_parameter("relocal_cfg_algorithm_type", "UNKONW");
-
-        node->get_parameter("utm_origin_zone", slam.relocalization->utm_origin.zone);
-        node->get_parameter("utm_origin_east", slam.relocalization->utm_origin.east);
-        node->get_parameter("utm_origin_north", slam.relocalization->utm_origin.north);
-        node->get_parameter("utm_origin_up", slam.relocalization->utm_origin.up);
 
         node->get_parameter("extrinsicT_imu2gnss", extrinT);
         node->get_parameter("extrinsicR_imu2gnss", extrinR);

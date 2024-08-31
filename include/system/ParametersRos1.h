@@ -51,11 +51,6 @@ inline void load_parameters(System &slam, int &lidar_type)
 
     if (true)
     {
-        ros::param::param("utm_origin/zone", slam.relocalization->utm_origin.zone, std::string("51N"));
-        ros::param::param("utm_origin/east", slam.relocalization->utm_origin.east, 0.);
-        ros::param::param("utm_origin/north", slam.relocalization->utm_origin.north, 0.);
-        ros::param::param("utm_origin/up", slam.relocalization->utm_origin.up, 0.);
-
         ros::param::param("mapping/extrinsicT_imu2gnss", extrinT, vector<double>());
         ros::param::param("mapping/extrinsicR_imu2gnss", extrinR, vector<double>());
         extrinT_eigen << VEC_FROM_ARRAY(extrinT);

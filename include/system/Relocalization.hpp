@@ -42,7 +42,6 @@ public:
     std::shared_ptr<ScanContext::SCManager> sc_manager; // scan context
 
     GnssPose gnss_pose;
-    utm_coordinate::utm_point utm_origin;
     Eigen::Matrix4d extrinsic_imu2gnss;
 
 private:
@@ -98,20 +97,6 @@ bool Relocalization::run_gnss_relocalization(PointCloudType::Ptr scan, Eigen::Ma
         return false;
     }
 
-    utm_coordinate::geographic_position lla;
-    utm_coordinate::utm_point utm;
-    lla.latitude = gnss_pose.gnss_position(0);
-    lla.longitude = gnss_pose.gnss_position(1);
-    lla.altitude = gnss_pose.gnss_position(2);
-    utm_coordinate::LLAtoUTM(lla, utm);
-
-    if (utm.zone.compare(utm_origin.zone) != 0)
-    {
-        LOG_ERROR("utm zone inconsistency!");
-        return false;
-    }
-
-    gnss_pose.gnss_position = V3D(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
     rough_mat = Eigen::Matrix4d::Identity();
     rough_mat.topLeftCorner(3, 3) = gnss_pose.gnss_quat.toRotationMatrix();
     rough_mat.topRightCorner(3, 1) = gnss_pose.gnss_position;

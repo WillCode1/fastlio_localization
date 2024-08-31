@@ -65,12 +65,6 @@ relocalization_cfg:
     lidar_turnover_roll: 180
     lidar_turnover_pitch: 0
 
-utm_origin:
-    zone: "51N"
-    east: 536808.26993
-    north: 4501498.61740
-    up: 44.21500
-
 scan_context:
     lidar_height: 2.183
     sc_dist_thres: 0.7
