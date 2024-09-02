@@ -40,10 +40,10 @@ mapping:
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
     # lidar -> imu
-    extrinsic_T: [ -1.86788048, 1.439669, -0.04807745 ]
-    extrinsic_R: [ -0.00337318, 0.9999481, -0.00961673, 
-                   -0.9999394, -0.00347372, -0.01045515, 
-                   -0.01048799, 0.00958081, 0.99989912 ]
+    extrinsic_T: [ 1.43277653, 1.87324502, 0.04516174 ]
+    extrinsic_R: [ -0.0033732, -0.99993922, -0.01048801,
+                   0.99994804, -0.0034737, 0.00958088,
+                   -0.00961666, -0.01045512, 0.99989908 ]
     # imu -> gnss
     extrinsicT_imu2gnss: [ 0.02, 1.42, 1.22 ]
     extrinsicR_imu2gnss: [ 0.9999985, 0.0017453, 0.0000030,
