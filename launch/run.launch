@@ -14,7 +14,7 @@
 
     <node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" respawn="true"/> 
 
-    <node pkg="tf" type="static_transform_publisher" name="baselink_to_lidar" args="-1.12596381 -0.03317966 -1.9863546 -0.0150008 0.0030467 0.0029566 /base_link /top_lidar 10" />
+    <node pkg="tf" type="static_transform_publisher" name="baselink_to_lidar" args="-1.12596381 -0.03317966 -1.9863546 0 0 0 1 /base_link /top_lidar 10" />
 
 	<group if="$(arg rviz)">
 		<!-- glbal map-->
