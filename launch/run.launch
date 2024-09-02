@@ -15,7 +15,7 @@
 
     <node pkg="fastlio_localization" type="fastlio_localization_ros1" name="system" output="screen" respawn="true"/> 
 
-    <!-- <node pkg="tf" type="static_transform_publisher" name="baselink_to_lidar" args="0 0 0 0 0 0 /base_link /lidar 10" /> -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="baselink_to_lidar" args="0 0 0 0 0 0 1 /base_link /lidar 10" /> -->
 
 	<group if="$(arg rviz)">
 		<node launch-prefix="nice" pkg="rviz" type="rviz" name="rviz" args="-d $(find fastlio_localization)/rviz_cfg/localization.rviz" />
