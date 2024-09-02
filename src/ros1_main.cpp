@@ -150,8 +150,8 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
@@ -237,8 +237,8 @@ void publish_odometry2(const ros::Publisher &pubOdomDev, const state_ikfom &stat
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
