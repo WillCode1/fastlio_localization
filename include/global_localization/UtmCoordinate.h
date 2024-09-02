@@ -21,6 +21,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string>
+#include <iostream>
+#include <Eigen/Core>
 
 namespace utm_coordinate
 {
@@ -238,6 +240,9 @@ namespace utm_coordinate
         std::string zone;
     };
 
+    extern bool origin_setted;
+    extern utm_point utm_origin;
+
     static inline void LLAtoUTM(const geographic_position &lla, utm_point &utm)
     {
         char zone_buf[] = {0, 0, 0, 0};
@@ -250,5 +255,49 @@ namespace utm_coordinate
     {
         UTMtoLL(utm.north, utm.east, utm.zone.c_str(), lla.latitude, lla.longitude);
         lla.altitude = utm.up;
+    }
+
+    static inline void SetUtmOrigin(const Eigen::Vector3d &llh)
+    {
+        utm_coordinate::geographic_position lla;
+        lla.latitude = llh(0);
+        lla.longitude = llh(1);
+        lla.altitude = llh(2);
+        utm_coordinate::LLAtoUTM(lla, utm_origin);
+        origin_setted = true;
+    }
+
+    static inline Eigen::Vector3d LLAtoUTM2(const Eigen::Vector3d &llh)
+    {
+        if (!origin_setted)
+        {
+            std::cerr << "please set the origin first.\n";
+            return Eigen::Vector3d::Zero();
+        }
+
+        utm_point utm;
+        utm_coordinate::geographic_position lla;
+        lla.latitude = llh(0);
+        lla.longitude = llh(1);
+        lla.altitude = llh(2);
+        utm_coordinate::LLAtoUTM(lla, utm);
+        return Eigen::Vector3d(utm.east - utm_origin.east, utm.north - utm_origin.north, utm.up - utm_origin.up);
+    }
+
+    static inline Eigen::Vector3d UTMtoLLA2(const Eigen::Vector3d &utm_offset)
+    {
+        if (!origin_setted)
+        {
+            std::cerr << "please set the origin first.\n";
+            return Eigen::Vector3d::Zero();
+        }
+
+        utm_point utm = utm_origin;
+        utm_coordinate::geographic_position lla;
+        utm.east += utm_offset(0);
+        utm.north += utm_offset(1);
+        utm.up += utm_offset(2);
+        utm_coordinate::UTMtoLLA(utm, lla);
+        return Eigen::Vector3d(lla.latitude, lla.longitude, lla.altitude);
     }
 } // end namespace UTM

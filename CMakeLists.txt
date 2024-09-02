@@ -84,6 +84,7 @@ if(ROS_EDITION STREQUAL "ROS1")
   add_library(${PROJECT_NAME} SHARED
     include/ikd-Tree/ikd_Tree.cpp
     include/global_localization/scancontext/Scancontext.cpp
+    include/global_localization/InitCoordinate.cpp
     include/system/frontend/ImuProcessor.cpp
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
@@ -97,6 +98,17 @@ if(ROS_EDITION STREQUAL "ROS1")
 
   add_executable(fastlio_localization_test_bag_relcalization test/read_rosbag_test_relcalization.cpp)
   target_link_libraries(fastlio_localization_test_bag_relcalization ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
+
+  install(TARGETS ${PROJECT_NAME} fastlio_localization_ros1
+    ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+    RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  )
+
+  install(DIRECTORY launch config rviz_cfg Log
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+  )
+
 else(ROS_EDITION STREQUAL "ROS2")
   if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
@@ -108,6 +120,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   find_package(rclpy REQUIRED)
   find_package(nav_msgs REQUIRED)
   find_package(sensor_msgs REQUIRED)
+  find_package(pcl_conversions REQUIRED)
   find_package(tf2_ros REQUIRED)
   find_package(livox_ros_driver2 REQUIRED)
   find_package(slam_interfaces REQUIRED)
@@ -120,6 +133,7 @@ else(ROS_EDITION STREQUAL "ROS2")
     ${EIGEN3_INCLUDE_DIR}
     ${PCL_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
+    ${pcl_conversions_INCLUDE_DIRS}
     include)
 
   if(BUILD_TESTING)
@@ -138,6 +152,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   add_executable(fastlio_localization_ros2 src/ros2_main.cpp
     include/ikd-Tree/ikd_Tree.cpp
     include/global_localization/scancontext/Scancontext.cpp
+    include/global_localization/InitCoordinate.cpp
     include/system/frontend/ImuProcessor.cpp
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)

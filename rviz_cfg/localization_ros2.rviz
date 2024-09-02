@@ -110,11 +110,11 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
-        - Alpha: 0.6000000238418579
+        - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 11.835034370422363
-            Min Value: -1.5690058469772339
+            Max Value: 2.3158063888549805
+            Min Value: -1.3807365894317627
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -139,10 +139,30 @@ Visualization Manager:
             Durability Policy: Volatile
             History Policy: Keep Last
             Reliability Policy: Reliable
-            Value: /map
+            Value: /global_map
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
+        - Alpha: 0.699999988079071
+          Class: rviz_default_plugins/Map
+          Color Scheme: map
+          Draw Behind: false
+          Enabled: false
+          Name: Map
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /grid_map
+          Update Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /grid_map_updates
+          Use Timestamp: false
+          Value: false
         - Angle Tolerance: 0.009999999776482582
           Class: rviz_default_plugins/Odometry
           Covariance:
@@ -253,9 +273,33 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        base_link:
+        camera_accel_frame:
           Value: true
-        map:
+        camera_accel_optical_frame:
+          Value: true
+        camera_aligned_depth_to_infra1_frame:
+          Value: true
+        camera_color_frame:
+          Value: true
+        camera_color_optical_frame:
+          Value: true
+        camera_depth_frame:
+          Value: true
+        camera_depth_optical_frame:
+          Value: true
+        camera_gyro_frame:
+          Value: true
+        camera_gyro_optical_frame:
+          Value: true
+        camera_infra1_frame:
+          Value: true
+        camera_infra1_optical_frame:
+          Value: true
+        camera_infra2_frame:
+          Value: true
+        camera_infra2_optical_frame:
+          Value: true
+        camera_link:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -263,9 +307,7 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        map:
-          base_link:
-            {}
+        {}
       Update Interval: 0
       Value: true
   Enabled: true

@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <nav_msgs/Path.h>
+#include <nav_msgs/OccupancyGrid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -17,6 +18,10 @@
 #include "system/Header.h"
 #include "system/ParametersRos1.h"
 #include "system/System.hpp"
+#include "slam_interfaces/InsPvax.h"
+// #define EVO
+// #define UrbanLoco
+// #define liosam
 
 #define MEASURES_BUFFER
 #define WORK
@@ -34,12 +39,19 @@ std::string baselink_frame;
 FILE *location_log = nullptr;
 FILE *last_pose_record = nullptr;
 
+#ifdef EVO
+FILE *file_pose_fastlio;
+#endif
+
+double lidar_turnover_roll, lidar_turnover_pitch;
 bool path_en = true, scan_pub_en = false, dense_pub_en = false, lidar_tf_broadcast = false, imu_tf_broadcast = false;
 ros::Publisher pubLaserCloudFull;
 ros::Publisher pubLidarOdom;
 ros::Publisher pubImuOdom;
 ros::Publisher pubImuPath;
 ros::Publisher pubrelocalizationDebug;
+ros::Publisher pubGlobalMap;
+ros::Publisher pubOccGrid;
 #ifdef WORK
 ros::Publisher pubOdomDev;
 ros::Publisher pubModulesStatus;
@@ -138,8 +150,8 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
@@ -147,6 +159,10 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
     {
         LOG_WARN("localization state maybe abnormal! (baselink frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
     }
+
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_fastlio, baselink_pos, baselink_rot, lidar_end_time);
+#endif
 
     nav_msgs::Odometry odomAftMapped;
     odomAftMapped.header.frame_id = map_frame;
@@ -221,8 +237,8 @@ void publish_odometry2(const ros::Publisher &pubOdomDev, const state_ikfom &stat
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
@@ -345,19 +361,17 @@ void publish_imu_path(const ros::Publisher &pubPath, const QD &rot, const V3D &p
     }
 }
 
-#ifdef gnss_with_direction
-void gnss_cbk(const nav_msgs::OdometryConstPtr &msg)
+void gnss_cbk(const slam_interfaces::InsPvax::ConstPtr &msg)
 {
-    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(),
-                                              V3D(msg->pose.pose.position.x, msg->pose.pose.position.y, msg->pose.pose.position.z),
-                                              QD(msg->pose.pose.orientation.w, msg->pose.pose.orientation.x, msg->pose.pose.orientation.y, msg->pose.pose.orientation.z));
-}
+    V3D gnss_position = V3D(RAD2DEG(msg->latitude), RAD2DEG(msg->longitude), msg->altitude);
+    QD rot = EigenMath::RPY2Quaternion(V3D(msg->roll, msg->pitch, msg->azimuth));
+#ifdef ENU
+    gnss_position = enu_coordinate::Earth::LLH2ENU(gnss_position, true);
 #else
-void gnss_cbk(const sensor_msgs::NavSatFix::ConstPtr &msg)
-{
-    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), V3D(msg->latitude, msg->longitude, msg->altitude));
-}
+    gnss_position = utm_coordinate::LLAtoUTM2(gnss_position);
 #endif
+    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
+}
 
 bool load_last_pose(const PointCloudType::Ptr &scan)
 {
@@ -632,6 +646,37 @@ void imu_cbk(const sensor_msgs::Imu::ConstPtr &msg)
     }
 }
 
+void publish_global_map(const ros::TimerEvent &)
+{
+    if (pubGlobalMap.getNumSubscribers() != 0)
+    {
+        sensor_msgs::PointCloud2 cloud_msg;
+        pcl::toROSMsg(*slam.global_map, cloud_msg);
+        cloud_msg.header.stamp = ros::Time::now();
+        cloud_msg.header.frame_id = map_frame;
+        pubGlobalMap.publish(cloud_msg);
+    }
+
+    if (pubOccGrid.getNumSubscribers() != 0 && !slam.p2p->map_data.empty())
+    {
+        nav_msgs::OccupancyGrid msg;
+        msg.header.stamp = ros::Time::now();
+        msg.header.frame_id = map_frame;
+
+        msg.info.map_load_time = ros::Time::now();
+        msg.info.resolution = slam.p2p->resolution_;
+
+        msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
+        msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
+        msg.info.origin.orientation.w = 1.0;
+
+        msg.info.width = slam.p2p->map_info_width;
+        msg.info.height = slam.p2p->map_info_height;
+        msg.data = slam.p2p->map_data;
+        pubOccGrid.publish(msg);
+    }
+}
+
 void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr &msg)
 {
     const geometry_msgs::Pose &pose = msg->pose.pose;
@@ -643,8 +688,8 @@ void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPt
     init_pose.x = pose.position.x;
     init_pose.y = pose.position.y;
     init_pose.z = pose.position.z;
-    init_pose.roll = rpy.x();
-    init_pose.pitch = rpy.y();
+    init_pose.roll = DEG2RAD(lidar_turnover_roll);
+    init_pose.pitch = DEG2RAD(lidar_turnover_pitch);
     init_pose.yaw = rpy.z();
     slam.relocalization->set_init_pose(init_pose);
 }
@@ -657,6 +702,16 @@ int main(int argc, char **argv)
     bool relocate_use_last_pose = true, location_log_enable = true;
     std::string last_pose_record_path;
     std::string location_log_save_path;
+    std::vector<double> lla;
+
+#ifdef EVO
+    file_pose_fastlio = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
+    fprintf(file_pose_fastlio, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+#endif
+
+    ros::param::param("relocalization_cfg/lidar_turnover_roll", lidar_turnover_roll, 0.);
+    ros::param::param("relocalization_cfg/lidar_turnover_pitch", lidar_turnover_pitch, 0.);
+    ros::param::param("official/lla", lla, std::vector<double>());
 
     load_log_parameters(relocate_use_last_pose, last_pose_record_path, location_log_enable, location_log_save_path);
 
@@ -689,6 +744,12 @@ int main(int argc, char **argv)
     load_ros_parameters(path_en, scan_pub_en, dense_pub_en, lidar_tf_broadcast, imu_tf_broadcast, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, lidar_type);
 
+#ifdef ENU
+    enu_coordinate::Earth::SetOrigin(V3D(lla[0], lla[1], lla[2]));
+#else
+    utm_coordinate::SetUtmOrigin(V3D(lla[0], lla[1], lla[2]));
+#endif
+
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
@@ -697,7 +758,10 @@ int main(int argc, char **argv)
     pubLidarOdom = nh.advertise<nav_msgs::Odometry>("/lidar_localization", 100000);
     pubImuOdom = nh.advertise<nav_msgs::Odometry>("/imu_localization", 100000);
     pubImuPath = nh.advertise<nav_msgs::Path>("/imu_path", 100000);
+    pubGlobalMap = nh.advertise<sensor_msgs::PointCloud2>("/global_map", 1);
+    pubOccGrid = nh.advertise<nav_msgs::OccupancyGrid>("/grid_map", 1);
 
+    ros::Timer timer = nh.createTimer(ros::Duration(2.0), publish_global_map);
     ros::Subscriber sub_initpose = nh.subscribe("/initialpose", 1, initialPoseCallback);
     pubrelocalizationDebug = nh.advertise<sensor_msgs::PointCloud2>("/relocalization_debug", 1);
 
@@ -710,7 +774,8 @@ int main(int argc, char **argv)
 
     ros::spin();
 
-    fclose(last_pose_record);
+	if (relocate_use_last_pose)
+        fclose(last_pose_record);
     if (location_log_enable && location_log)
         fclose(location_log);
 

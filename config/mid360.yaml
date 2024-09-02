@@ -62,12 +62,8 @@ official:
 relocalization_cfg:
     algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
-
-utm_origin:
-    zone: "51N"
-    east: 536808.26993
-    north: 4501498.61740
-    up: 44.21500
+    lidar_turnover_roll: 180
+    lidar_turnover_pitch: 0
 
 scan_context:
     lidar_height: 2.183

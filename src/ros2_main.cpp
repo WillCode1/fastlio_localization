@@ -6,6 +6,7 @@
 #include <sensor_msgs/msg/nav_sat_fix.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
+#include <nav_msgs/msg/occupancy_grid.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
@@ -33,12 +34,15 @@ std::string baselink_frame;
 FILE *location_log = nullptr;
 FILE *last_pose_record = nullptr;
 
+double lidar_turnover_roll, lidar_turnover_pitch;
 bool path_en = true, scan_pub_en = false, dense_pub_en = false, lidar_tf_broadcast = false, imu_tf_broadcast = false;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFull;
 rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubLidarOdom;
 rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubImuOdom;
 rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr pubImuPath;
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubrelocalizationDebug;
+rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubGlobalMap;
+rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pubOccGrid;
 #ifdef WORK
 rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::SharedPtr pubOdomDev;
 rclcpp::Publisher<robot_msgs::msg::ModuleStatus>::SharedPtr pubModulesStatus;
@@ -624,6 +628,37 @@ void imu_cbk(const sensor_msgs::msg::Imu::SharedPtr msg)
     }
 }
 
+void publish_global_map()
+{
+    if (pubGlobalMap->get_subscription_count() != 0)
+    {
+        sensor_msgs::msg::PointCloud2 cloud_msg;
+        pcl::toROSMsg(*slam.global_map, cloud_msg);
+        cloud_msg.header.stamp = rclcpp::Clock().now();
+        cloud_msg.header.frame_id = map_frame;
+        pubGlobalMap->publish(cloud_msg);
+    }
+
+    if (pubOccGrid->get_subscription_count() != 0 && !slam.p2p->map_data.empty())
+    {
+        nav_msgs::msg::OccupancyGrid msg;
+        msg.header.stamp = rclcpp::Clock().now();
+        msg.header.frame_id = map_frame;
+
+        msg.info.map_load_time = rclcpp::Clock().now();
+        msg.info.resolution = slam.p2p->resolution_;
+
+        msg.info.origin.position.x = slam.p2p->map_info_origin_position_x;
+        msg.info.origin.position.y = slam.p2p->map_info_origin_position_y;
+        msg.info.origin.orientation.w = 1.0;
+
+        msg.info.width = slam.p2p->map_info_width;
+        msg.info.height = slam.p2p->map_info_height;
+        msg.data = slam.p2p->map_data;
+        pubOccGrid->publish(msg);
+    }
+}
+
 void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::SharedPtr msg)
 {
     const geometry_msgs::msg::Pose &pose = msg->pose.pose;
@@ -635,8 +670,8 @@ void initialPoseCallback(const geometry_msgs::msg::PoseWithCovarianceStamped::Sh
     init_pose.x = pose.position.x;
     init_pose.y = pose.position.y;
     init_pose.z = pose.position.z;
-    init_pose.roll = rpy.x();
-    init_pose.pitch = rpy.y();
+    init_pose.roll = DEG2RAD(lidar_turnover_roll);
+    init_pose.pitch = DEG2RAD(lidar_turnover_pitch);
     init_pose.yaw = rpy.z();
     slam.relocalization->set_init_pose(init_pose);
 }
@@ -653,6 +688,11 @@ int main(int argc, char **argv)
     bool relocate_use_last_pose = true, location_log_enable = true;
     std::string last_pose_record_path;
     std::string location_log_save_path;
+
+    node->declare_parameter("lidar_turnover_roll", 0.);
+    node->declare_parameter("lidar_turnover_pitch", 0.);
+    node->get_parameter("lidar_turnover_roll", lidar_turnover_roll);
+    node->get_parameter("lidar_turnover_pitch", lidar_turnover_pitch);
 
     load_log_parameters(node, relocate_use_last_pose, last_pose_record_path, location_log_enable, location_log_save_path);
 
@@ -698,7 +738,10 @@ int main(int argc, char **argv)
     pubLidarOdom = node->create_publisher<nav_msgs::msg::Odometry>("/lidar_localization", 1000);
     pubImuOdom = node->create_publisher<nav_msgs::msg::Odometry>("/imu_localization", 1000);
     pubImuPath = node->create_publisher<nav_msgs::msg::Path>("/imu_path", 1000);
+    pubGlobalMap = node->create_publisher<sensor_msgs::msg::PointCloud2>("/global_map", 1);
+    pubOccGrid = node->create_publisher<nav_msgs::msg::OccupancyGrid>("/grid_map", 1);
 
+    rclcpp::TimerBase::SharedPtr timer = node->create_wall_timer(2000ms, publish_global_map);
     auto sub_initpose = node->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>("/initialpose", 1, initialPoseCallback);
     pubrelocalizationDebug = node->create_publisher<sensor_msgs::msg::PointCloud2>("/relocalization_debug", 1);
 
@@ -711,7 +754,8 @@ int main(int argc, char **argv)
 
     rclcpp::spin(node);
 
-    fclose(last_pose_record);
+	if (relocate_use_last_pose)
+        fclose(last_pose_record);
     if (location_log_enable && location_log)
         fclose(location_log);
 

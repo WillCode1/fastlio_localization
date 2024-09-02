@@ -37,7 +37,7 @@ mapping:
     b_acc_cov: 1.e-6
     b_gyr_cov: 1.e-5
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
-    # lidar -> imu
+    # lidar -> imu = lidar->base * base->imu
     extrinsic_T: [ 0.112, 0.176, -0.247]
     extrinsic_R: [ -0.01226931,  0.99982505, -0.01411883, 
                    -0.99992053, -0.01230894, -0.00272393, 
@@ -66,12 +66,6 @@ official:
 relocalization_cfg:
     algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
-
-utm_origin:
-    zone: "51N"
-    east: 536808.26993
-    north: 4501498.61740
-    up: 44.21500
 
 scan_context:
     lidar_height: 2.183

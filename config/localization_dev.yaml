@@ -1,7 +1,7 @@
 common:
-    lidar_topic:  "/drivers/top_lidar_origin"
-    imu_topic:  "/drivers/imu_data"
-    gnss_topic:  "/gps/fix"
+    lidar_topic:  "/points_raw"
+    imu_topic:  "/imu_raw"
+    gnss_topic:  "/rtk_ins"
     map_frame:  "map"
     lidar_frame:  "top_lidar"
     baselink_frame:  "base_link"
@@ -39,16 +39,16 @@ mapping:
     b_acc_cov: 0.0001
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
-    # lidar -> imu
-    extrinsic_T: [ -0.00665, 0, -1.51277]
-    extrinsic_R: [ 1, 0, 0, 
-                   0, -1, 0, 
-                   0, 0, -1 ]
+    # lidar -> imu = lidar->base * base->imu
+    extrinsic_T: [ 1.43277653, 1.87324502, 0.04516174 ]
+    extrinsic_R: [ -0.0033732, -0.99993922, -0.01048801,
+                   0.99994804, -0.0034737, 0.00958088,
+                   -0.00961666, -0.01045512, 0.99989908 ]
     # imu -> gnss
-    extrinsicT_imu2gnss: [ 0, 0, 0 ]
-    extrinsicR_imu2gnss: [ 1, 0, 0, 
-                           0, 1, 0, 
-                           0, 0, 1 ]
+    extrinsicT_imu2gnss: [ 0.02, 1.42, 1.22 ]
+    extrinsicR_imu2gnss: [ 0.9999985, 0.0017453, 0.0000030,
+                           -0.0017453, 0.9999970, 0.0017453,
+                           -0.0000000, -0.0017453, 0.9999985 ]
 
 publish:
     path_en:  true
@@ -58,8 +58,9 @@ publish:
     imu_tf_broadcast: false
 
 official:
+    lla: [31.4200590, 120.6394099, 14.790]
     # map_path: "/robot/data/map/"
-    relocate_use_last_pose: true
+    relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
     location_log_enable: false
     # location_log_save_path: "/home/will/location.log"
@@ -68,12 +69,8 @@ official:
 relocalization_cfg:
     algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
-
-utm_origin:
-    zone: "51N"
-    east: 536808.26993
-    north: 4501498.61740
-    up: 44.21500
+    lidar_turnover_roll: 0
+    lidar_turnover_pitch: 0
 
 scan_context:
     lidar_height: 2.183
@@ -106,4 +103,4 @@ gicp:
     search_radius: 0.5
     teps: 1.0e-4
     feps: 0.001
-    fitness_score: 0.3
+    fitness_score: 0.4

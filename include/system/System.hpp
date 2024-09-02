@@ -7,6 +7,7 @@
 #include "frontend/PointlioOdometry.hpp"
 #include "system/Header.h"
 #include "Relocalization.hpp"
+#include "utility/Pcd2Pgm.hpp"
 
 class System
 {
@@ -16,6 +17,7 @@ public:
         relocalization = make_shared<Relocalization>();
 
         feats_undistort.reset(new PointCloudType());
+        global_map.reset(new PointCloudType());
     }
 
     void init_system_mode()
@@ -30,7 +32,6 @@ public:
             std::exit(100);
         }
 
-        PointCloudType::Ptr global_map(new PointCloudType());
         Timer timer;
         pcl::io::loadPCDFile(globalmap_path, *global_map);
         if (global_map->points.size() < 5000)
@@ -60,6 +61,9 @@ public:
         }
         else
             LOG_WARN("Load keyframe descriptor successfully! There are %lu descriptors.", relocalization->sc_manager->polarcontexts_.size());
+
+        p2p = make_shared<Pcd2Pgm>(0.05, map_path + "/map");
+        p2p->convert_from_pgm();
 
         /*** initialize the map kdtree ***/
         frontend->init_global_map(global_map);
@@ -117,9 +121,11 @@ public:
     /*** module ***/
     shared_ptr<FastlioOdometry> frontend;
     shared_ptr<Relocalization> relocalization;
+    shared_ptr<Pcd2Pgm> p2p;
 
     /*** keyframe config ***/
     PointCloudType::Ptr feats_undistort;
+    PointCloudType::Ptr global_map;
 
     /*** global map maintain ***/
     string map_path;
