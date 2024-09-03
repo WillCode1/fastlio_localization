@@ -41,6 +41,7 @@ FILE *last_pose_record = nullptr;
 
 #ifdef EVO
 FILE *file_pose_fastlio;
+FILE *file_pose_gnss;
 #endif
 
 double lidar_turnover_roll, lidar_turnover_pitch;
@@ -371,6 +372,9 @@ void gnss_cbk(const slam_interfaces::InsPvax::ConstPtr &msg)
     gnss_position = utm_coordinate::LLAtoUTM2(gnss_position);
 #endif
     slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_gnss, gnss_position, rot, msg->header.stamp.toSec());
+#endif
 }
 
 bool load_last_pose(const PointCloudType::Ptr &scan)
@@ -706,7 +710,9 @@ int main(int argc, char **argv)
 
 #ifdef EVO
     file_pose_fastlio = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
-    fprintf(file_pose_fastlio, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    fprintf(file_pose_fastlio, "# fastlio_pose trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
+    fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
 #endif
 
     ros::param::param("relocalization_cfg/lidar_turnover_roll", lidar_turnover_roll, 0.);
