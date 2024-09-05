@@ -334,7 +334,7 @@ void publish_imu_odometry(const ros::Publisher &pubImuOdom, const state_ikfom &s
     }
 
 #ifdef EVO
-    LogAnalysis::save_trajectory(file_pose_fastlio_imu, baselink_pos, baselink_rot, lidar_end_time);
+    LogAnalysis::save_trajectory(file_pose_fastlio_imu, baselink_pos, baselink_rot, imu_time);
 #endif
 
     nav_msgs::Odometry imuOdom;
