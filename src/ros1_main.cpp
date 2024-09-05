@@ -40,7 +40,8 @@ FILE *location_log = nullptr;
 FILE *last_pose_record = nullptr;
 
 #ifdef EVO
-FILE *file_pose_fastlio;
+FILE *file_pose_fastlio_lidar;
+FILE *file_pose_fastlio_imu;
 FILE *file_pose_gnss;
 #endif
 
@@ -162,7 +163,7 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
     }
 
 #ifdef EVO
-    LogAnalysis::save_trajectory(file_pose_fastlio, baselink_pos, baselink_rot, lidar_end_time);
+    LogAnalysis::save_trajectory(file_pose_fastlio_lidar, baselink_pos, baselink_rot, lidar_end_time);
 #endif
 
     nav_msgs::Odometry odomAftMapped;
@@ -331,6 +332,10 @@ void publish_imu_odometry(const ros::Publisher &pubImuOdom, const state_ikfom &s
     {
         LOG_WARN("localization state maybe abnormal! (baselink frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
     }
+
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_fastlio_imu, baselink_pos, baselink_rot, lidar_end_time);
+#endif
 
     nav_msgs::Odometry imuOdom;
     imuOdom.header.frame_id = map_frame;
@@ -709,8 +714,10 @@ int main(int argc, char **argv)
     std::vector<double> lla;
 
 #ifdef EVO
-    file_pose_fastlio = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
-    fprintf(file_pose_fastlio, "# fastlio_pose trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    file_pose_fastlio_lidar = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
+    fprintf(file_pose_fastlio_lidar, "# fastlio_pose trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    file_pose_fastlio_imu = fopen(DEBUG_FILE_DIR("fastlio_pose_imu.txt").c_str(), "w");
+    fprintf(file_pose_fastlio_imu, "# fastlio_pose_imu trajectory\n# timestamp tx ty tz qx qy qz qw\n");
     file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
     fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
 #endif
