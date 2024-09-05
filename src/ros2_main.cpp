@@ -142,8 +142,8 @@ void publish_odometry(rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr &pub
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
@@ -221,8 +221,8 @@ void publish_odometry2(rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::Sh
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     baselink_pos = pose_mat.topRightCorner(3, 1);
 
@@ -301,8 +301,8 @@ void publish_imu_odometry(rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr 
     pose_mat.topRightCorner(3, 1) = state.pos;
 
     // baselink pose
-    auto baselink2imu = lidar2baselink * lidar2imu.inverse();
-    pose_mat = pose_mat * baselink2imu.inverse();
+    auto baselink2imu = lidar2baselink.inverse() * lidar2imu;
+    pose_mat = pose_mat * baselink2imu;
     QD baselink_rot = QD(M3D(pose_mat.topLeftCorner(3, 3)));
     V3D baselink_pos = pose_mat.topRightCorner(3, 1);
 
