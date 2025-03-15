@@ -195,9 +195,9 @@ private:
 
 private:
 #ifdef USE_CUDA
-        std::unique_ptr<gpu::BBS3D> bbs3d_ptr;
+    std::unique_ptr<gpu::BBS3D> bbs3d_ptr;
 #else
-        std::unique_ptr<cpu::BBS3D> bbs3d_ptr;
+    std::unique_ptr<cpu::BBS3D> bbs3d_ptr;
 #endif
 
     std::string tar_path;
