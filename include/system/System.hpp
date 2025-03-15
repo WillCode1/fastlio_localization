@@ -62,8 +62,10 @@ public:
         else
             LOG_WARN("Load keyframe descriptor successfully! There are %lu descriptors.", relocalization->sc_manager->polarcontexts_.size());
 
+#if 0
         p2p = make_shared<Pcd2Pgm>(0.05, map_path + "/map");
         p2p->convert_from_pgm();
+#endif
 
         /*** initialize the map kdtree ***/
         frontend->init_global_map(global_map);
