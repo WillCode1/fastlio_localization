@@ -17,7 +17,7 @@ public:
     {
         YAML::Node conf = YAML::LoadFile(config);
 
-        std::cout << "[YAML] Loading 3D-BBS parameters..." << std::endl;
+        std::cout << "[BBS3D] Loading 3D-BBS parameters..." << std::endl;
         min_level_res = conf["min_level_res"].as<double>();
         max_level = conf["max_level"].as<int>();
 
@@ -27,7 +27,7 @@ public:
             return false;
         }
 
-        std::cout << "[YAML] Loading angular search range..." << std::endl;
+        std::cout << "[BBS3D] Loading angular search range..." << std::endl;
         std::vector<double> min_rpy_temp = conf["min_rpy"].as<std::vector<double>>();
         std::vector<double> max_rpy_temp = conf["max_rpy"].as<std::vector<double>>();
         if (min_rpy_temp.size() == 3 && max_rpy_temp.size() == 3)
@@ -41,10 +41,10 @@ public:
             return false;
         }
 
-        std::cout << "[YAML] Loading score threshold percentage..." << std::endl;
+        std::cout << "[BBS3D] Loading score threshold percentage..." << std::endl;
         score_threshold_percentage = conf["score_threshold_percentage"].as<double>();
 
-        std::cout << "[YAML] Loading downsample parameters..." << std::endl;
+        std::cout << "[BBS3D] Loading downsample parameters..." << std::endl;
         tar_leaf_size = conf["tar_leaf_size"].as<float>();
         src_leaf_size = conf["src_leaf_size"].as<float>();
         min_scan_range = conf["min_scan_range"].as<double>();
@@ -60,7 +60,7 @@ public:
 #if 1
     bool load_config()
     {
-        std::cout << "[YAML] Loading 3D-BBS parameters..." << std::endl;
+        std::cout << "[BBS3D] Loading 3D-BBS parameters..." << std::endl;
         ros::param::param("min_level_res", min_level_res, 1.0);
         ros::param::param("max_level", max_level, 6);
 
@@ -70,7 +70,7 @@ public:
             return false;
         }
 
-        std::cout << "[YAML] Loading angular search range..." << std::endl;
+        std::cout << "[BBS3D] Loading angular search range..." << std::endl;
         std::vector<double> min_rpy_temp;
         std::vector<double> max_rpy_temp;
         ros::param::param("min_rpy", min_rpy_temp, vector<double>());
@@ -86,10 +86,10 @@ public:
             return false;
         }
 
-        std::cout << "[YAML] Loading score threshold percentage..." << std::endl;
+        std::cout << "[BBS3D] Loading score threshold percentage..." << std::endl;
         ros::param::param("score_threshold_percentage", score_threshold_percentage, 0.9);
 
-        std::cout << "[YAML] Loading downsample parameters..." << std::endl;
+        std::cout << "[BBS3D] Loading downsample parameters..." << std::endl;
         ros::param::param("tar_leaf_size", tar_leaf_size, 0.1f);
         ros::param::param("src_leaf_size", src_leaf_size, 2.0f);
         ros::param::param("min_scan_range", min_scan_range, 0.0);
