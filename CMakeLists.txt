@@ -54,6 +54,7 @@ option(BUILD_CUDA "Build GPU ver" ON)
 find_package(cpu_bbs3d REQUIRED)
 
 if (BUILD_CUDA)
+  add_definitions(-DUSE_CUDA)
   find_package(gpu_bbs3d REQUIRED)
   find_package(CUDA REQUIRED)
   include_directories(${CUDA_INCLUDE_DIRS})

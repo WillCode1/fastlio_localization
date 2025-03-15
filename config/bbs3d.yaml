@@ -1,4 +1,6 @@
 ################[Necessary]################
+target_clouds: "your_path/target"
+
 ## 3D-BBS parameters
 min_level_res: 1.0 # [m], e.g. outdoor: 1.0, indoor: 0.5
 max_level: 6
