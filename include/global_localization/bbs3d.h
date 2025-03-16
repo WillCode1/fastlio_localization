@@ -154,7 +154,6 @@ public:
 
     bool run(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, Eigen::Matrix4d &lidar_pose_mat)
     {
-        double sum_time = 0;
 #ifdef USE_CUDA
         std::vector<Eigen::Vector3f> src_points;
 #else
@@ -176,8 +175,6 @@ public:
             return false;
         }
 
-        sum_time = bbs3d_ptr->get_elapsed_time();
-        std::cout << "[Localize] Average time: " << sum_time << "[msec] per frame" << std::endl;
         lidar_pose_mat = bbs3d_ptr->get_global_pose().cast<double>();
         return true;
     }
