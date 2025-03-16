@@ -145,13 +145,14 @@ public:
 
 #ifndef USE_CUDA
         int num_threads = 4;
+        ros::param::param("num_threads", num_threads, 4);
         bbs3d_ptr->set_num_threads(num_threads);
 #endif
         return true;
     }
 #endif
 
-    bool run(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud)
+    bool run(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, Eigen::Matrix4d &lidar_pose_mat)
     {
         double sum_time = 0;
 #ifdef USE_CUDA
@@ -177,6 +178,7 @@ public:
 
         sum_time = bbs3d_ptr->get_elapsed_time();
         std::cout << "[Localize] Average time: " << sum_time << "[msec] per frame" << std::endl;
+        lidar_pose_mat = bbs3d_ptr->get_global_pose().cast<double>();
         return true;
     }
 

@@ -46,6 +46,11 @@ public:
             std::exit(100);
         }
 
+        if (!relocalization->bbs3d.load_config())
+        {
+            std::exit(100);
+        }
+
         pcl::io::loadPCDFile(trajectory_path, *relocalization->trajectory_poses);
         if (relocalization->trajectory_poses->points.size() < 10)
         {

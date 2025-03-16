@@ -111,9 +111,17 @@ if(ROS_EDITION STREQUAL "ROS1")
 
   add_executable(fastlio_localization_test_bag_lcalization test/read_rosbag_test_lcalization.cpp)
   target_link_libraries(fastlio_localization_test_bag_lcalization ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
+  target_link_libraries(fastlio_localization_test_bag_lcalization ${cpu_bbs3d_LIBRARY})
+  if(BUILD_CUDA)
+    target_link_libraries(fastlio_localization_test_bag_lcalization ${gpu_bbs3d_LIBRARY})
+  endif()
 
   add_executable(fastlio_localization_test_bag_relcalization test/read_rosbag_test_relcalization.cpp)
   target_link_libraries(fastlio_localization_test_bag_relcalization ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
+  target_link_libraries(fastlio_localization_test_bag_relcalization ${cpu_bbs3d_LIBRARY})
+  if(BUILD_CUDA)
+    target_link_libraries(fastlio_localization_test_bag_relcalization ${gpu_bbs3d_LIBRARY})
+  endif()
 
   install(TARGETS ${PROJECT_NAME} fastlio_localization_ros1
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
