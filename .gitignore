@@ -4,6 +4,7 @@ Log/*.txt
 Log/*.csv
 Log/*.pdf
 Log/*.log
+PCD/voxelmaps_coords/*.txt
 .vscode/c_cpp_properties.json
 .vscode/settings.json
 *.pcd

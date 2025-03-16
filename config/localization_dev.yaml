@@ -1,6 +1,6 @@
 common:
-    lidar_topic:  "/points_raw"
-    imu_topic:  "/imu_raw"
+    lidar_topic:  "/drivers/top_lidar_origin"
+    imu_topic:  "/drivers/imu_data"
     gnss_topic:  "/rtk_ins"
     map_frame:  "map"
     lidar_frame:  "lidar"
@@ -40,10 +40,10 @@ mapping:
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
     # lidar -> imu = lidar->base * base->imu
-    extrinsic_T: [ 1.43277653, 1.87324502, 0.04516174 ]
-    extrinsic_R: [ -0.0033732, -0.99993922, -0.01048801,
-                   0.99994804, -0.0034737, 0.00958088,
-                   -0.00961666, -0.01045512, 0.99989908 ]
+    extrinsic_T: [ -0.00665, 0, -1.51277 ]
+    extrinsic_R: [ 1, 0, 0,
+                   0, -1, 0,
+                   0, 0, -1 ]
     # imu -> gnss
     extrinsicT_imu2gnss: [ 0.02, 1.42, 1.22 ]
     extrinsicR_imu2gnss: [ 0.9999985, 0.0017453, 0.0000030,
@@ -67,7 +67,8 @@ official:
 
 # ============relocalization_cfg============
 relocalization_cfg:
-    algorithm_type: "scan_context"
+    algorithm_type: "bbs3d"
+    # algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
     lidar_turnover_roll: 0
     lidar_turnover_pitch: 0

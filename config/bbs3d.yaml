@@ -1,5 +1,5 @@
 ################[Necessary]################
-target_clouds: "your_path/target"
+target_clouds: "/home/will/code/slam/slam_ws/src/slam/fastlio_localization/PCD/"
 
 ## 3D-BBS parameters
 min_level_res: 1.0 # [m], e.g. outdoor: 1.0, indoor: 0.5
