@@ -271,7 +271,7 @@ bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &resul
 
     if (algorithm_type.compare("bbs3d") == 0)
     {
-        if (!run_bbs3d(scan, result, lidar_beg_time, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
+        if (!run_bbs3d(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
         {
 #ifdef DEDUB_MODE
             result = EigenMath::CreateAffineMatrix(V3D(rough_pose.x, rough_pose.y, rough_pose.z), V3D(rough_pose.roll, rough_pose.pitch, rough_pose.yaw));
