@@ -108,8 +108,10 @@ public:
         // ====3D-BBS====
 #ifdef USE_CUDA
         bbs3d_ptr = std::make_unique<gpu::BBS3D>();
+        std::cout << "[Localize] USE CUDA!" << std::endl;
 #else
         bbs3d_ptr = std::make_unique<cpu::BBS3D>();
+        std::cout << "[Localize] NOT USE CUDA!" << std::endl;
 #endif
 
         // Set target points
