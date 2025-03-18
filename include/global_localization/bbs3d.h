@@ -163,6 +163,7 @@ public:
 #endif
         pciof::pcl_to_eigen(src_cloud, src_points);
         bbs3d_ptr->set_src_points(src_points);
+        std::cout << "[Localize] bbs3d start localize." << bbs3d_ptr->get_best_score() << std::endl;
         bbs3d_ptr->localize();
 
         std::cout << "[Localize] Execution time: " << bbs3d_ptr->get_elapsed_time() << "[msec] " << std::endl;
