@@ -3,7 +3,9 @@
 #include <vector>
 #include <Eigen/Core>
 #include <cpu_bbs3d/bbs3d.hpp>
+#ifdef USE_CUDA
 #include <gpu_bbs3d/bbs3d.cuh>
+#endif
 #include <pointcloud_iof/pcl_eigen_converter.hpp>
 // #include <pointcloud_iof/pcd_loader.hpp>
 #if 0
@@ -163,7 +165,7 @@ public:
 #endif
         pciof::pcl_to_eigen(src_cloud, src_points);
         bbs3d_ptr->set_src_points(src_points);
-        std::cout << "[Localize] bbs3d start localize." << bbs3d_ptr->get_best_score() << std::endl;
+        std::cout << "[Localize] bbs3d start localize." << std::endl;
         bbs3d_ptr->localize();
 
         std::cout << "[Localize] Execution time: " << bbs3d_ptr->get_elapsed_time() << "[msec] " << std::endl;

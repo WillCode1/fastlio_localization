@@ -14,7 +14,7 @@ max_rpy: [0.02,0.02,6.28] # [roll, pitch, yaw]
 # score_threshold = floor(src_points.size() * score_threshold_percentage)
 score_threshold_percentage: 0.9
 
-num_threads: 4
+num_threads: 6
 ################[Optional]################
 ## Downsample target clouds [m]
 tar_leaf_size: 0.1 # off: 0.0
