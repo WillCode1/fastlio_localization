@@ -102,30 +102,20 @@ if(ROS_EDITION STREQUAL "ROS1")
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
   target_link_libraries(${PROJECT_NAME} stdc++fs ${PCL_LIBRARIES})
+  if(BUILD_CUDA)
+    target_link_libraries(${PROJECT_NAME} ${gpu_bbs3d_LIBRARY})
+  else()
+    target_link_libraries(${PROJECT_NAME} ${cpu_bbs3d_LIBRARY})
+  endif()
 
   add_executable(fastlio_localization_ros1 src/ros1_main.cpp)
   target_link_libraries(fastlio_localization_ros1 ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-  if(BUILD_CUDA)
-    target_link_libraries(fastlio_localization_ros1 ${gpu_bbs3d_LIBRARY})
-  else()
-    target_link_libraries(fastlio_localization_ros1 ${cpu_bbs3d_LIBRARY})
-  endif()
 
   add_executable(fastlio_localization_test_bag_lcalization test/read_rosbag_test_lcalization.cpp)
   target_link_libraries(fastlio_localization_test_bag_lcalization ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
-  if(BUILD_CUDA)
-    target_link_libraries(fastlio_localization_test_bag_lcalization ${gpu_bbs3d_LIBRARY})
-  else()
-    target_link_libraries(fastlio_localization_test_bag_lcalization ${cpu_bbs3d_LIBRARY})
-  endif()
 
   add_executable(fastlio_localization_test_bag_relcalization test/read_rosbag_test_relcalization.cpp)
   target_link_libraries(fastlio_localization_test_bag_relcalization ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
-  if(BUILD_CUDA)
-    target_link_libraries(fastlio_localization_test_bag_relcalization ${gpu_bbs3d_LIBRARY})
-  else()
-    target_link_libraries(fastlio_localization_test_bag_relcalization ${cpu_bbs3d_LIBRARY})
-  endif()
 
   install(TARGETS ${PROJECT_NAME} fastlio_localization_ros1
     ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
