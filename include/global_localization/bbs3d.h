@@ -2,9 +2,10 @@
 #include <iostream>
 #include <vector>
 #include <Eigen/Core>
-#include <cpu_bbs3d/bbs3d.hpp>
 #ifdef USE_CUDA
 #include <gpu_bbs3d/bbs3d.cuh>
+#else
+#include <cpu_bbs3d/bbs3d.hpp>
 #endif
 #include <pointcloud_iof/pcl_eigen_converter.hpp>
 // #include <pointcloud_iof/pcd_loader.hpp>
