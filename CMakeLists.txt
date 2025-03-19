@@ -51,7 +51,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-set(BUILD_CUDA OFF)
+set(BUILD_CUDA ON)
 if (BUILD_CUDA)
   add_definitions(-DUSE_CUDA)
   find_package(gpu_bbs3d REQUIRED)
