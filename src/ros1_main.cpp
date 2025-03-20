@@ -757,11 +757,18 @@ int main(int argc, char **argv)
     load_ros_parameters(path_en, scan_pub_en, dense_pub_en, lidar_tf_broadcast, imu_tf_broadcast, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, lidar_type);
 
+    if (lla.size() == 3 && lla[0] != 0)
+    {
 #ifdef ENU
-    enu_coordinate::Earth::SetOrigin(V3D(lla[0], lla[1], lla[2]));
+        enu_coordinate::Earth::SetOrigin(V3D(lla[0], lla[1], lla[2]));
 #else
-    utm_coordinate::SetUtmOrigin(V3D(lla[0], lla[1], lla[2]));
+        utm_coordinate::SetUtmOrigin(V3D(lla[0], lla[1], lla[2]));
 #endif
+    }
+    else
+    {
+        LOG_WARN("use gps, please set the origin first!");
+    }
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);
