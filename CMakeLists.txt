@@ -62,6 +62,15 @@ else()
   find_package(cpu_bbs3d REQUIRED)
 endif()
 
+find_package(Eigen3 REQUIRED)
+find_package(PCL 1.8 REQUIRED)
+find_package(OpenCV REQUIRED)
+
+include_directories(
+  ${EIGEN3_INCLUDE_DIR}
+  ${PCL_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS})
+
 if(ROS_EDITION STREQUAL "ROS1")
   find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
@@ -77,15 +86,8 @@ if(ROS_EDITION STREQUAL "ROS1")
     slam_interfaces
   )
 
-  find_package(Eigen3 REQUIRED)
-  find_package(PCL 1.8 REQUIRED)
-  find_package(OpenCV REQUIRED)
-
   include_directories(
     ${catkin_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
-    ${PCL_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
     include)
 
   catkin_package(
@@ -143,14 +145,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   find_package(livox_ros_driver2 REQUIRED)
   find_package(slam_interfaces REQUIRED)
 
-  find_package(Eigen3 REQUIRED)
-  find_package(PCL 1.8 REQUIRED)
-  find_package(OpenCV REQUIRED)
-
   include_directories(
-    ${EIGEN3_INCLUDE_DIR}
-    ${PCL_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
     ${pcl_conversions_INCLUDE_DIRS}
     include)
 
