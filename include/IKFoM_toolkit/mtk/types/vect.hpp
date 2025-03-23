@@ -83,6 +83,7 @@
 #include <iosfwd>
 #include <iostream>
 #include <vector>
+#include <cassert>
 
 #include "../src/vectview.hpp"
 

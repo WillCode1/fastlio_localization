@@ -62,12 +62,31 @@ else()
   find_package(cpu_bbs3d REQUIRED)
 endif()
 
-find_package(Eigen3 REQUIRED)
+## find thirdparty/Eigen or Eigen3 package
+option(USE_THIRDPARTY_EIGEN "Include thirdparty eigen" OFF)
+file(GLOB entries "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/3d_bbs/thirdparty/Eigen/*")
+list(LENGTH entries num_entries)
+message(STATUS "num_entries in thirdparty/Eigen: ${num_entries}")
+if(num_entries EQUAL 0)
+  find_package(Eigen3 REQUIRED)
+else()
+  find_package(Eigen3 REQUIRED)
+  set(USE_THIRDPARTY_EIGEN ON)
+endif()
+
+# Common include directories
+if(USE_THIRDPARTY_EIGEN)
+  include_directories(../thirdparty/3d_bbs/thirdparty/Eigen)
+  message(STATUS "Use thirdparty Eigen")
+else()
+  include_directories(${EIGEN3_INCLUDE_DIR})
+  message(STATUS "Use EIGEN3_INCLUDE_DIR")
+endif()
+
 find_package(PCL 1.8 REQUIRED)
 find_package(OpenCV REQUIRED)
 
 include_directories(
-  ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS})
 
