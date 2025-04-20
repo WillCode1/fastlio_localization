@@ -57,7 +57,7 @@ publish:
     imu_tf_broadcast: false
 
 official:
-    lla: [31.4200590, 120.6394099, 14.790]
+    lla: [37.94168046, 105.83672459, 1225.67004395]
     # map_path: "/robot/data/map/"
     relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
