@@ -19,6 +19,7 @@
 #include "system/ParametersRos1.h"
 #include "system/System.hpp"
 #include "slam_interfaces/InsPvax.h"
+#include <chcnav/hcinspvatzcb.h>
 // #define EVO
 // #define UrbanLoco
 // #define liosam
@@ -365,6 +366,21 @@ void publish_imu_path(const ros::Publisher &pubPath, const QD &rot, const V3D &p
     {
         path.poses.erase(path.poses.begin());
     }
+}
+
+void chcnav_cbk(const chcnav::hcinspvatzcb::ConstPtr &msg)
+{
+    V3D gnss_position = V3D(msg->latitude, msg->longitude, msg->altitude);
+    QD rot = EigenMath::RPY2Quaternion(V3D(DEG2RAD(msg->roll), DEG2RAD(msg->pitch), DEG2RAD(msg->yaw)));
+#ifdef ENU
+    gnss_position = enu_coordinate::Earth::LLH2ENU(gnss_position, true);
+#else
+    gnss_position = utm_coordinate::LLAtoUTM2(gnss_position);
+#endif
+    slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_gnss, gnss_position, rot, msg->header.stamp.toSec());
+#endif
 }
 
 void gnss_cbk(const slam_interfaces::InsPvax::ConstPtr &msg)
@@ -773,7 +789,7 @@ int main(int argc, char **argv)
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);
     ros::Subscriber sub_imu = nh.subscribe(imu_topic, 200000, imu_cbk);
-    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, gnss_cbk);
+    ros::Subscriber sub_gnss = nh.subscribe(gnss_topic, 200000, chcnav_cbk);
     pubLaserCloudFull = nh.advertise<sensor_msgs::PointCloud2>("/cloud_registered", 100000);
     pubLidarOdom = nh.advertise<nav_msgs::Odometry>("/lidar_localization", 100000);
     pubImuOdom = nh.advertise<nav_msgs::Odometry>("/imu_localization", 100000);

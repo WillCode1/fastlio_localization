@@ -1,7 +1,7 @@
 common:
     lidar_topic:  "/livox/lidar"
     imu_topic:  "/livox/imu"
-    gnss_topic:  "/rtk_ins"
+    gnss_topic:  "/chcnav/devpvt"
     map_frame:  "map"
     lidar_frame:  "lidar"
     baselink_frame:  "base_link"
