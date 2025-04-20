@@ -66,8 +66,8 @@ official:
 
 # ============relocalization_cfg============
 relocalization_cfg:
-    # algorithm_type: "bbs3d"
-    algorithm_type: "scan_context"
+    algorithm_type: "bbs3d"
+    # algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
     lidar_turnover_roll: 180
     lidar_turnover_pitch: 0
