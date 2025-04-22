@@ -44,9 +44,9 @@ mapping:
                    0, 0, 1]
 
     # imu -> gnss
-    extrinsicT_imu2gnss: [ 0.11771, -0.011, 0.27712 ]
-    extrinsicR_imu2gnss: [ 0, -1, 0, 
-                           -1, 0, 0, 
+    extrinsicT_imu2gnss: [ -0.11771, 0.011, 0.27712 ]
+    extrinsicR_imu2gnss: [ 0, 1, 0, 
+                           1, 0, 0, 
                            0, 0, -1 ]
 
 publish:
