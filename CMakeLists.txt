@@ -157,7 +157,7 @@ else(ROS_EDITION STREQUAL "ROS2")
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
   target_link_libraries(fastlio_localization_ros2 stdc++fs ${PCL_LIBRARIES})
-  ament_target_dependencies(fastlio_localization_ros2 rclcpp sensor_msgs nav_msgs tf2_ros livox_ros_driver2)
+  ament_target_dependencies(fastlio_localization_ros2 rclcpp sensor_msgs nav_msgs tf2_ros livox_ros_driver2 slam_interfaces)
 
   # add_executable(fastlio_sam_test_bag test/read_rosbag_test.cpp)
   # target_link_libraries(fastlio_sam_test_bag ${PROJECT_NAME} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})

@@ -44,8 +44,8 @@ rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubrelocalizationDeb
 rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubGlobalMap;
 rclcpp::Publisher<nav_msgs::msg::OccupancyGrid>::SharedPtr pubOccGrid;
 #ifdef WORK
-rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::SharedPtr pubOdomDev;
-rclcpp::Publisher<robot_msgs::msg::ModuleStatus>::SharedPtr pubModulesStatus;
+rclcpp::Publisher<slam_interfaces::msg::VehiclePose>::SharedPtr pubOdomDev;
+// rclcpp::Publisher<robot_msgs::msg::ModuleStatus>::SharedPtr pubModulesStatus;
 #endif
 std::unique_ptr<tf2_ros::Buffer> tf_buffer;
 std::shared_ptr<tf2_ros::TransformListener> tf_listener;
@@ -176,9 +176,9 @@ void publish_module_status(const double &time, int level)
     // pubModulesStatus.publish(status);
 }
 
-void publish_odometry2(rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::SharedPtr &pubOdomDev, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
+void publish_odometry2(rclcpp::Publisher<slam_interfaces::msg::VehiclePose>::SharedPtr &pubOdomDev, const state_ikfom &state, const double &lidar_end_time, bool vaild, QD &baselink_rot, V3D &baselink_pos)
 {
-    slam_interfaces::vehicle_pose odom;
+    slam_interfaces::msg::VehiclePose odom;
     odom.header.frame_id = map_frame;
     odom.header.stamp = rclcpp::Time(lidar_end_time * 1e9);
     odom.is_valid = vaild;
@@ -255,7 +255,7 @@ void publish_odometry2(rclcpp::Publisher<slam_interfaces::msg::vehicle_pose>::Sh
         odom.is_valid = false;
     }
 
-    pubOdomDev.publish(odom);
+    pubOdomDev->publish(odom);
     if (lidar_tf_broadcast)
         publish_tf(baselink_rot, baselink_pos, lidar_end_time);
 }
@@ -746,7 +746,7 @@ int main(int argc, char **argv)
     pubrelocalizationDebug = node->create_publisher<sensor_msgs::msg::PointCloud2>("/relocalization_debug", 1);
 
 #ifdef WORK
-    pubOdomDev = node->create_publisher<slam_interfaces::msg::vehicle_pose>("/robot/pose_dynamic_data", 1);
+    pubOdomDev = node->create_publisher<slam_interfaces::msg::VehiclePose>("/robot/pose_dynamic_data", 1);
     // pubModulesStatus = node->create_publisher<robot_msgs::msg::ModuleStatus>("/robot/module_status", 1);
 #endif
     //------------------------------------------------------------------------------------------------------
