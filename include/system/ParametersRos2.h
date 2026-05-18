@@ -82,7 +82,7 @@ inline void load_parameters(rclcpp::Node::SharedPtr &node, System &slam, int &li
     {
         node->declare_parameter("extrinsicT_imu2gnss", vector<double>());
         node->declare_parameter("extrinsicR_imu2gnss", vector<double>());
-        node->declare_parameter("relocal_cfg_algorithm_type", "UNKONW");
+        node->declare_parameter("algorithm_type", "UNKONW");
 
         node->get_parameter("extrinsicT_imu2gnss", extrinT);
         node->get_parameter("extrinsicR_imu2gnss", extrinR);
@@ -90,7 +90,36 @@ inline void load_parameters(rclcpp::Node::SharedPtr &node, System &slam, int &li
         extrinR_eigen << MAT_FROM_ARRAY(extrinR);
         slam.relocalization->set_extrinsic(extrinT_eigen, extrinR_eigen);
 
-        node->get_parameter("relocal_cfg_algorithm_type", slam.relocalization->algorithm_type);
+        node->get_parameter("algorithm_type", slam.relocalization->algorithm_type);
+
+        BBS3DOptions bbs3d_option;
+        node->declare_parameter("bbs3d_min_level_res", 1.0);
+        node->declare_parameter("bbs3d_max_level", 6);
+        node->declare_parameter("bbs3d_min_rpy", vector<double>());
+        node->declare_parameter("bbs3d_max_rpy", vector<double>());
+        node->declare_parameter("bbs3d_score_threshold_percentage", 0.9);
+        node->declare_parameter("bbs3d_num_threads", 6);
+        node->declare_parameter("bbs3d_tar_leaf_size", 0.1);
+        node->declare_parameter("bbs3d_src_leaf_size", 2.0);
+        node->declare_parameter("bbs3d_min_scan_range", 0.0);
+        node->declare_parameter("bbs3d_max_scan_range", 100.0);
+        node->declare_parameter("bbs3d_timeout_msec", 0);
+        node->declare_parameter("bbs3d_use_gicp", false);
+
+        bbs3d_option.tar_path = slam.map_path;
+        node->get_parameter("bbs3d_min_level_res", bbs3d_option.min_level_res);
+        node->get_parameter("bbs3d_max_level", bbs3d_option.max_level);
+        node->get_parameter("bbs3d_min_rpy", bbs3d_option.min_rpy);
+        node->get_parameter("bbs3d_max_rpy", bbs3d_option.max_rpy);
+        node->get_parameter("bbs3d_score_threshold_percentage", bbs3d_option.score_threshold_percentage);
+        node->get_parameter("bbs3d_num_threads", bbs3d_option.num_threads);
+        node->get_parameter("bbs3d_tar_leaf_size", bbs3d_option.tar_leaf_size);
+        node->get_parameter("bbs3d_src_leaf_size", bbs3d_option.src_leaf_size);
+        node->get_parameter("bbs3d_min_scan_range", bbs3d_option.min_scan_range);
+        node->get_parameter("bbs3d_max_scan_range", bbs3d_option.max_scan_range);
+        node->get_parameter("bbs3d_timeout_msec", bbs3d_option.timeout_msec);
+        node->get_parameter("bbs3d_use_gicp", bbs3d_option.use_gicp);
+        slam.relocalization->bbs3d.load_config(bbs3d_option);
 
         BnbOptions match_option;
         node->declare_parameter("bnb3d_linear_xy_window_size", 10.);

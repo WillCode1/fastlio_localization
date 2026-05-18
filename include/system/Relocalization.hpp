@@ -15,7 +15,7 @@
 #include "global_localization/bnb3d.h"
 #include "global_localization/bbs3d.h"
 #include "global_localization/scancontext/Scancontext.h"
-#define gnss_with_direction
+// #define gnss_with_direction
 
 class Relocalization
 {
@@ -145,10 +145,21 @@ bool Relocalization::run_bbs3d(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_
     pcl::PointXYZ tmp;
     for (auto &point : scan->points)
     {
+        auto norm = pcl::euclideanDistance(point, pcl::PointXYZ(0, 0, 0));
+        if (norm < bbs3d.min_scan_range || norm > bbs3d.max_scan_range)
+          continue;
         tmp.x = point.x;
         tmp.y = point.y;
         tmp.z = point.z;
         bbs_input->push_back(tmp);
+    }
+
+    if (bbs3d.src_leaf_size != 0.0f)
+    {
+        pcl::VoxelGrid<pcl::PointXYZ> filter;
+        filter.setLeafSize(bbs3d.src_leaf_size, bbs3d.src_leaf_size, bbs3d.src_leaf_size);
+        filter.setInputCloud(bbs_input);
+        filter.filter(*bbs_input);
     }
 
     if (!bbs3d.run(bbs_input, rough_mat))

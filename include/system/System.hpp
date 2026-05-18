@@ -46,11 +46,6 @@ public:
             std::exit(100);
         }
 
-        if (!relocalization->bbs3d.load_config())
-        {
-            std::exit(100);
-        }
-
         pcl::io::loadPCDFile(trajectory_path, *relocalization->trajectory_poses);
         if (relocalization->trajectory_poses->points.size() < 10)
         {
@@ -59,7 +54,7 @@ public:
         }
         LOG_WARN("Load trajectory poses successfully! There are %lu poses.", relocalization->trajectory_poses->points.size());
 
-        if (!relocalization->load_keyframe_descriptor(scd_path))
+        if (relocalization->algorithm_type == "scan_context" && !relocalization->load_keyframe_descriptor(scd_path))
         {
             relocalization->algorithm_type = "manually_set";
             LOG_ERROR("Load keyframe descriptor failed, set algorithm_type to manually_set!");

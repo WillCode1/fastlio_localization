@@ -9,24 +9,45 @@
 #endif
 #include <pointcloud_iof/pcl_eigen_converter.hpp>
 // #include <pointcloud_iof/pcd_loader.hpp>
-#if 0
-#include <yaml-cpp/yaml.h>
-#endif
-#if 1
-#include <ros/ros.h>
-#endif
+
+struct BBS3DOptions
+{
+    std::string tar_path;
+
+    // 3D-BBS parameters
+    double min_level_res;
+    int max_level;
+
+    // angular search range
+    std::vector<double> min_rpy;
+    std::vector<double> max_rpy;
+
+    // score threshold percentage
+    double score_threshold_percentage;
+
+    int num_threads;
+
+    // downsample
+    double tar_leaf_size, src_leaf_size;
+    double min_scan_range, max_scan_range;
+
+    // timeout
+    int timeout_msec;
+
+    // align
+    bool use_gicp;
+};
 
 class BBS3D
 {
 public:
-#if 0
-    bool load_config(const std::string &config)
+    bool load_config(const BBS3DOptions &bbs3d_option)
     {
-        YAML::Node conf = YAML::LoadFile(config);
+        tar_path = bbs3d_option.tar_path;
 
         std::cout << "[BBS3D] Loading 3D-BBS parameters..." << std::endl;
-        min_level_res = conf["min_level_res"].as<double>();
-        max_level = conf["max_level"].as<int>();
+        min_level_res = bbs3d_option.min_level_res;
+        max_level = bbs3d_option.max_level;
 
         if (min_level_res == 0.0 || max_level == 0)
         {
@@ -35,12 +56,10 @@ public:
         }
 
         std::cout << "[BBS3D] Loading angular search range..." << std::endl;
-        std::vector<double> min_rpy_temp = conf["min_rpy"].as<std::vector<double>>();
-        std::vector<double> max_rpy_temp = conf["max_rpy"].as<std::vector<double>>();
-        if (min_rpy_temp.size() == 3 && max_rpy_temp.size() == 3)
+        if (bbs3d_option.min_rpy.size() == 3 && bbs3d_option.max_rpy.size() == 3)
         {
-            min_rpy = to_eigen(min_rpy_temp);
-            max_rpy = to_eigen(max_rpy_temp);
+            min_rpy = to_eigen(bbs3d_option.min_rpy);
+            max_rpy = to_eigen(bbs3d_option.max_rpy);
         }
         else
         {
@@ -49,64 +68,16 @@ public:
         }
 
         std::cout << "[BBS3D] Loading score threshold percentage..." << std::endl;
-        score_threshold_percentage = conf["score_threshold_percentage"].as<double>();
+        score_threshold_percentage = bbs3d_option.score_threshold_percentage;
 
         std::cout << "[BBS3D] Loading downsample parameters..." << std::endl;
-        tar_leaf_size = conf["tar_leaf_size"].as<float>();
-        src_leaf_size = conf["src_leaf_size"].as<float>();
-        min_scan_range = conf["min_scan_range"].as<double>();
-        max_scan_range = conf["max_scan_range"].as<double>();
+        tar_leaf_size = bbs3d_option.tar_leaf_size;
+        src_leaf_size = bbs3d_option.src_leaf_size;
+        min_scan_range = bbs3d_option.min_scan_range;
+        max_scan_range = bbs3d_option.max_scan_range;
 
-        timeout_msec = conf["timeout_msec"].as<int>();
-
-        use_gicp = conf["use_gicp"].as<bool>();
-        return true;
-    }
-#endif
-
-#if 1
-    bool load_config()
-    {
-        ros::param::param("target_clouds", tar_path, std::string(""));
-
-        std::cout << "[BBS3D] Loading 3D-BBS parameters..." << std::endl;
-        ros::param::param("min_level_res", min_level_res, 1.0);
-        ros::param::param("max_level", max_level, 6);
-
-        if (min_level_res == 0.0 || max_level == 0)
-        {
-            std::cout << "[ERROR] Set min_level and num_layers except for 0" << std::endl;
-            return false;
-        }
-
-        std::cout << "[BBS3D] Loading angular search range..." << std::endl;
-        std::vector<double> min_rpy_temp;
-        std::vector<double> max_rpy_temp;
-        ros::param::param("min_rpy", min_rpy_temp, vector<double>());
-        ros::param::param("max_rpy", max_rpy_temp, vector<double>());
-        if (min_rpy_temp.size() == 3 && max_rpy_temp.size() == 3)
-        {
-            min_rpy = to_eigen(min_rpy_temp);
-            max_rpy = to_eigen(max_rpy_temp);
-        }
-        else
-        {
-            std::cout << "[ERROR] Set min_rpy and max_rpy correctly" << std::endl;
-            return false;
-        }
-
-        std::cout << "[BBS3D] Loading score threshold percentage..." << std::endl;
-        ros::param::param("score_threshold_percentage", score_threshold_percentage, 0.9);
-
-        std::cout << "[BBS3D] Loading downsample parameters..." << std::endl;
-        ros::param::param("tar_leaf_size", tar_leaf_size, 0.1f);
-        ros::param::param("src_leaf_size", src_leaf_size, 2.0f);
-        ros::param::param("min_scan_range", min_scan_range, 0.0);
-        ros::param::param("max_scan_range", max_scan_range, 100.0);
-
-        ros::param::param("timeout_msec", timeout_msec, 0);
-
-        ros::param::param("use_gicp", use_gicp, false);
+        timeout_msec = bbs3d_option.timeout_msec;
+        use_gicp = bbs3d_option.use_gicp;
 
         // ====3D-BBS====
 #ifdef USE_CUDA
@@ -149,13 +120,10 @@ public:
         }
 
 #ifndef USE_CUDA
-        int num_threads = 4;
-        ros::param::param("num_threads", num_threads, 4);
-        bbs3d_ptr->set_num_threads(num_threads);
+        bbs3d_ptr->set_num_threads(bbs3d_option.num_threads);
 #endif
         return true;
     }
-#endif
 
     bool run(pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud, Eigen::Matrix4d &lidar_pose_mat)
     {
@@ -198,7 +166,7 @@ private:
         return e_vec;
     }
 
-private:
+public:
 #ifdef USE_CUDA
     std::unique_ptr<gpu::BBS3D> bbs3d_ptr;
 #else

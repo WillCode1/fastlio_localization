@@ -49,16 +49,18 @@ fastlio_localization:
         lidar_tf_broadcast: false
         imu_tf_broadcast: false
 
-        map_path: "/home/chery/tmp/"
+        map_path: "/home/kshg/code/slam_ws/src/slam/fastlio_localization/PCD/"
+        # map_path: "/home/chery/tmp/"
         relocate_use_last_pose: false
         # last_pose_record_path: "/home/will/last_pose_record.txt"
         location_log_enable: false
         # location_log_save_path: "/home/will/location.log"
 
 # ============relocalization_cfg============
-        algorithm_type: "scan_context"
+        algorithm_type: "bbs3d"
+        # algorithm_type: "scan_context"
         # algorithm_type: "manually_set"
-        lidar_turnover_roll: 180.
+        lidar_turnover_roll: 0.
         lidar_turnover_pitch: 0.
 
         utm_origin_zone: "51N"
@@ -68,6 +70,40 @@ fastlio_localization:
 
         lidar_height: 2.183
         sc_dist_thres: 0.7
+
+        ################[Necessary]################
+        ## 3D-BBS parameters
+        bbs3d_min_level_res: 0.5 # [m], e.g. outdoor: 1.0, indoor: 0.5
+        bbs3d_max_level: 6
+
+        ## Angular search range [rad]
+        # 6.28 input is converted to 2*M_PI
+        bbs3d_min_rpy: [-0.02,-0.02,0.0] # [roll, pitch, yaw]
+        bbs3d_max_rpy: [0.02,0.02,6.28] # [roll, pitch, yaw]
+
+        ## Score threshold
+        # score_threshold = floor(src_points.size() * score_threshold_percentage)
+        bbs3d_score_threshold_percentage: 0.9
+
+        bbs3d_num_threads: 6
+        ################[Optional]################
+        ## Downsample target clouds [m]
+        bbs3d_tar_leaf_size: 0.1 # off: 0.0
+
+        ## Downsample source clouds [m]
+        bbs3d_src_leaf_size: 2.0 # off: 0.0
+
+        ## Crop source clouds [m]
+        bbs3d_min_scan_range: 0.0 # [m]
+        bbs3d_max_scan_range: 100.0 # [m]
+        # off: set 0.0 to both min_scan_range and max_scan_range
+
+        ## Timeout [msec]
+        # Enter the number as int
+        bbs3d_timeout_msec: 0 # off: 0
+
+        ## Final align (evaluate the error)
+        bbs3d_use_gicp: false
 
         bnb3d_linear_xy_window_size: 5.   # meter
         bnb3d_linear_z_window_size: 0.5  # meter
