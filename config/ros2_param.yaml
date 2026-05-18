@@ -57,9 +57,9 @@ fastlio_localization:
         # location_log_save_path: "/home/will/location.log"
 
 # ============relocalization_cfg============
-        algorithm_type: "bbs3d"
+        # algorithm_type: "bbs3d"
         # algorithm_type: "scan_context"
-        # algorithm_type: "manually_set"
+        algorithm_type: "manually_set"
         lidar_turnover_roll: 0.
         lidar_turnover_pitch: 0.
 
@@ -105,7 +105,7 @@ fastlio_localization:
         ## Final align (evaluate the error)
         bbs3d_use_gicp: false
 
-        bnb3d_linear_xy_window_size: 5.   # meter
+        bnb3d_linear_xy_window_size: 30.   # meter
         bnb3d_linear_z_window_size: 0.5  # meter
         bnb3d_angular_search_window: 180.  # degree 0~180
         bnb3d_pc_resolutions: [0.3, 0.5, 0.8]
@@ -117,7 +117,7 @@ fastlio_localization:
         bnb3d_min_z_resolution: 0.1
         bnb3d_min_angular_resolution: 5.   # degree
 
-        bnb3d_filter_size_scan: 0.2
+        bnb3d_filter_size_scan: 2.0
         bnb3d_debug_mode: false
 
         ndt_step_size: 0.1

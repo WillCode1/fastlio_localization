@@ -67,7 +67,7 @@ scan_context:
     sc_dist_thres: 0.7
 
 bnb3d:
-    linear_xy_window_size: 5   # meter
+    linear_xy_window_size: 30   # meter
     linear_z_window_size: 0.5  # meter
     angular_search_window: 180  # degree 0~180
     pc_resolutions: [0.3, 0.5, 0.8]
@@ -79,7 +79,7 @@ bnb3d:
     min_z_resolution: 0.1
     min_angular_resolution: 5   # degree
 
-    filter_size_scan: 0.2
+    filter_size_scan: 2.0
     debug_mode: false
 
 ndt:
