@@ -57,9 +57,9 @@ fastlio_localization:
         # location_log_save_path: "/home/will/location.log"
 
 # ============relocalization_cfg============
-        # algorithm_type: "bbs3d"
+        algorithm_type: "bbs3d"
         # algorithm_type: "scan_context"
-        algorithm_type: "manually_set"
+        # algorithm_type: "manually_set"
         lidar_turnover_roll: 0.
         lidar_turnover_pitch: 0.
 
