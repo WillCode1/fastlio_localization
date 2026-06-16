@@ -313,8 +313,8 @@ public:
     virtual state_ikfom integrate_imu_odom(const ImuData &imu_meas)
     {
         static double last_time = 0;
-        V3D last_acc;
-        V3D last_gyro;
+        static V3D last_acc = V3D::Zero();
+        static V3D last_gyro = V3D::Zero();
 
         double dt = 0;
         input_ikfom in;
