@@ -49,6 +49,28 @@ find_package(OpenMP QUIET)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+set(BUILD_CUDA OFF)
+if (BUILD_CUDA)
+  add_definitions(-DUSE_CUDA)
+  find_package(gpu_bbs3d REQUIRED)
+  find_package(CUDA REQUIRED)
+  include_directories(${CUDA_INCLUDE_DIRS})
+  link_directories(${CUDA_LIBRARY_DIRS})
+else()
+  find_package(cpu_bbs3d REQUIRED)
+endif()
+
+find_package(Eigen3 REQUIRED)
+find_package(PCL 1.8 REQUIRED)
+find_package(OpenCV REQUIRED)
+
+include_directories(
+  ${EIGEN3_INCLUDE_DIR}
+  ${PCL_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS})
+
 if(ROS_EDITION STREQUAL "ROS1")
   find_package(catkin REQUIRED COMPONENTS
     geometry_msgs
@@ -64,15 +86,8 @@ if(ROS_EDITION STREQUAL "ROS1")
     slam_interfaces
   )
 
-  find_package(Eigen3 REQUIRED)
-  find_package(PCL 1.8 REQUIRED)
-  find_package(OpenCV REQUIRED)
-
   include_directories(
     ${catkin_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
-    ${PCL_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
     include)
 
   catkin_package(
@@ -89,6 +104,11 @@ if(ROS_EDITION STREQUAL "ROS1")
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
   target_link_libraries(${PROJECT_NAME} stdc++fs ${PCL_LIBRARIES})
+  if(BUILD_CUDA)
+    target_link_libraries(${PROJECT_NAME} ${gpu_bbs3d_LIBRARY})
+  else()
+    target_link_libraries(${PROJECT_NAME} ${cpu_bbs3d_LIBRARY})
+  endif()
 
   add_executable(fastlio_localization_ros1 src/ros1_main.cpp)
   target_link_libraries(fastlio_localization_ros1 ${PROJECT_NAME} ${catkin_LIBRARIES} ${PCL_LIBRARIES})
@@ -125,14 +145,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   find_package(livox_ros_driver2 REQUIRED)
   find_package(slam_interfaces REQUIRED)
 
-  find_package(Eigen3 REQUIRED)
-  find_package(PCL 1.8 REQUIRED)
-  find_package(OpenCV REQUIRED)
-
   include_directories(
-    ${EIGEN3_INCLUDE_DIR}
-    ${PCL_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
     ${pcl_conversions_INCLUDE_DIRS}
     include)
 
@@ -157,6 +170,11 @@ else(ROS_EDITION STREQUAL "ROS2")
     include/system/frontend/use-ikfom.cpp
     include/system/System.hpp)
   target_link_libraries(fastlio_localization_ros2 stdc++fs ${PCL_LIBRARIES})
+  if(BUILD_CUDA)
+    target_link_libraries(fastlio_localization_ros2 ${gpu_bbs3d_LIBRARY})
+  else()
+    target_link_libraries(fastlio_localization_ros2 ${cpu_bbs3d_LIBRARY})
+  endif()
   ament_target_dependencies(fastlio_localization_ros2 rclcpp sensor_msgs nav_msgs tf2_ros livox_ros_driver2 slam_interfaces)
 
   # add_executable(fastlio_sam_test_bag test/read_rosbag_test.cpp)

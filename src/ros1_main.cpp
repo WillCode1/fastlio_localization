@@ -40,7 +40,9 @@ FILE *location_log = nullptr;
 FILE *last_pose_record = nullptr;
 
 #ifdef EVO
-FILE *file_pose_fastlio;
+FILE *file_pose_fastlio_lidar;
+FILE *file_pose_fastlio_imu;
+FILE *file_pose_gnss;
 #endif
 
 double lidar_turnover_roll, lidar_turnover_pitch;
@@ -161,7 +163,7 @@ void publish_odometry(const ros::Publisher &pubLidarOdom, const state_ikfom &sta
     }
 
 #ifdef EVO
-    LogAnalysis::save_trajectory(file_pose_fastlio, baselink_pos, baselink_rot, lidar_end_time);
+    LogAnalysis::save_trajectory(file_pose_fastlio_lidar, baselink_pos, baselink_rot, lidar_end_time);
 #endif
 
     nav_msgs::Odometry odomAftMapped;
@@ -331,6 +333,10 @@ void publish_imu_odometry(const ros::Publisher &pubImuOdom, const state_ikfom &s
         LOG_WARN("localization state maybe abnormal! (baselink frame) pos(%f, %f, %f)", baselink_pos.x(), baselink_pos.y(), baselink_pos.z());
     }
 
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_fastlio_imu, baselink_pos, baselink_rot, imu_time);
+#endif
+
     nav_msgs::Odometry imuOdom;
     imuOdom.header.frame_id = map_frame;
     imuOdom.child_frame_id = baselink_frame;
@@ -371,6 +377,9 @@ void gnss_cbk(const slam_interfaces::InsPvax::ConstPtr &msg)
     gnss_position = utm_coordinate::LLAtoUTM2(gnss_position);
 #endif
     slam.relocalization->gnss_pose = GnssPose(msg->header.stamp.toSec(), gnss_position, rot);
+#ifdef EVO
+    LogAnalysis::save_trajectory(file_pose_gnss, gnss_position, rot, msg->header.stamp.toSec());
+#endif
 }
 
 bool load_last_pose(const PointCloudType::Ptr &scan)
@@ -705,8 +714,12 @@ int main(int argc, char **argv)
     std::vector<double> lla;
 
 #ifdef EVO
-    file_pose_fastlio = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
-    fprintf(file_pose_fastlio, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    file_pose_fastlio_lidar = fopen(DEBUG_FILE_DIR("fastlio_pose.txt").c_str(), "w");
+    fprintf(file_pose_fastlio_lidar, "# fastlio_pose trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    file_pose_fastlio_imu = fopen(DEBUG_FILE_DIR("fastlio_pose_imu.txt").c_str(), "w");
+    fprintf(file_pose_fastlio_imu, "# fastlio_pose_imu trajectory\n# timestamp tx ty tz qx qy qz qw\n");
+    file_pose_gnss = fopen(DEBUG_FILE_DIR("gnss_pose.txt").c_str(), "w");
+    fprintf(file_pose_gnss, "# gnss trajectory\n# timestamp tx ty tz qx qy qz qw\n");
 #endif
 
     ros::param::param("relocalization_cfg/lidar_turnover_roll", lidar_turnover_roll, 0.);
@@ -744,11 +757,18 @@ int main(int argc, char **argv)
     load_ros_parameters(path_en, scan_pub_en, dense_pub_en, lidar_tf_broadcast, imu_tf_broadcast, lidar_topic, imu_topic, gnss_topic, map_frame, lidar_frame, baselink_frame);
     load_parameters(slam, lidar_type);
 
+    if (lla.size() == 3 && lla[0] != 0)
+    {
 #ifdef ENU
-    enu_coordinate::Earth::SetOrigin(V3D(lla[0], lla[1], lla[2]));
+        enu_coordinate::Earth::SetOrigin(V3D(lla[0], lla[1], lla[2]));
 #else
-    utm_coordinate::SetUtmOrigin(V3D(lla[0], lla[1], lla[2]));
+        utm_coordinate::SetUtmOrigin(V3D(lla[0], lla[1], lla[2]));
 #endif
+    }
+    else
+    {
+        LOG_WARN("use gps, please set the origin first!");
+    }
 
     /*** ROS subscribe initialization ***/
     ros::Subscriber sub_pcl = lidar_type == AVIA ? nh.subscribe(lidar_topic, 200000, livox_pcl_cbk) : nh.subscribe(lidar_topic, 200000, standard_pcl_cbk);

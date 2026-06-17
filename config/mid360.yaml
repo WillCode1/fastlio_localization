@@ -1,6 +1,7 @@
 common:
     lidar_topic:  "/livox/lidar"
     imu_topic:  "/livox/imu"
+    gnss_topic:  "/chcnav/devpvt"
     map_frame:  "map"
     lidar_frame:  "lidar"
     baselink_frame:  "base_link"
@@ -9,19 +10,23 @@ common:
 preprocess:
     lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
     scan_line: 6
-    blind: 0.1
+    scan_rate: 10                # only need to be set for velodyne, unit: Hz,
+    imu_rate: 200                # only need to be set for imu, unit: Hz,
+    timestamp_unit: 2            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+    blind: 0.2
     det_range: 70.0
+    # imu_meas_check: [3, 3, 3, 20, 20, 50] # rad/s, m/s^2
 
 mapping:
     gravity_init: [0, 0, -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
     frontend_type: 0                    # frontend type
 
     # fastlio
-    point_skip_num: 4
+    point_skip_num: 4            # for mapping, Increase accuracy 4 -> 1
     space_down_sample: true
-    surf_frame_ds_res: 0.5
+    surf_frame_ds_res: 0.2       # outdoor: 0.5, indoor: 0.1
     max_iteration: 3
-    ikdtree_resolution: 0.5
+    ikdtree_resolution: 0.2      # outdoor: 0.5, indoor: 0.1
     lidar_model_search_range: 5
     lidar_meas_cov: 0.001
     cube_side_length: 1000
@@ -39,10 +44,10 @@ mapping:
                    0, 0, 1]
 
     # imu -> gnss
-    extrinsicT_imu2gnss: [ 0, 0, 0 ]
-    extrinsicR_imu2gnss: [ 1, 0, 0, 
-                           0, 1, 0, 
-                           0, 0, 1 ]
+    extrinsicT_imu2gnss: [ -0.11771, 0.011, 0.27712 ]
+    extrinsicR_imu2gnss: [ 0, 1, 0, 
+                           1, 0, 0, 
+                           0, 0, -1 ]
 
 publish:
     path_en:  true
@@ -52,6 +57,8 @@ publish:
     imu_tf_broadcast: false
 
 official:
+    lla: [37.94168046, 105.83672459, 1225.67004395]
+    map_path: "/home/kshg/code/slam_ws/src/slam/fastlio_localization/PCD/"
     # map_path: "/robot/data/map/"
     relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
@@ -60,17 +67,53 @@ official:
 
 # ============relocalization_cfg============
 relocalization_cfg:
-    algorithm_type: "scan_context"
+    algorithm_type: "bbs3d"
+    # algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
-    lidar_turnover_roll: 180
+    lidar_turnover_roll: 0
     lidar_turnover_pitch: 0
 
 scan_context:
     lidar_height: 2.183
     sc_dist_thres: 0.7
 
+bbs3d:
+    ################[Necessary]################
+    ## 3D-BBS parameters
+    min_level_res: 0.5 # [m], e.g. outdoor: 1.0, indoor: 0.5
+    max_level: 6
+
+    ## Angular search range [rad]
+    # 6.28 input is converted to 2*M_PI
+    min_rpy: [-0.02,-0.02,0.0] # [roll, pitch, yaw]
+    max_rpy: [0.02,0.02,6.28] # [roll, pitch, yaw]
+
+    ## Score threshold
+    # score_threshold = floor(src_points.size() * score_threshold_percentage)
+    score_threshold_percentage: 0.9
+
+    num_threads: 6
+    ################[Optional]################
+    ## Downsample target clouds [m]
+    tar_leaf_size: 0.1 # off: 0.0
+
+    ## Downsample source clouds [m]
+    src_leaf_size: 2.0 # off: 0.0
+
+    ## Crop source clouds [m]
+    min_scan_range: 0.0 # [m]
+    max_scan_range: 100.0 # [m]
+    # off: set 0.0 to both min_scan_range and max_scan_range
+
+    ## Timeout [msec]
+    # Enter the number as int
+    timeout_msec: 0 # off: 0
+
+    ## Final align (evaluate the error)
+    use_gicp: false
+
 bnb3d:
-    linear_xy_window_size: 5   # meter
+    linear_xy_window_size: 30   # meter
     linear_z_window_size: 0.5  # meter
     angular_search_window: 180  # degree 0~180
     pc_resolutions: [0.3, 0.5, 0.8]
@@ -82,7 +125,7 @@ bnb3d:
     min_z_resolution: 0.1
     min_angular_resolution: 5   # degree
 
-    filter_size_scan: 0.2
+    filter_size_scan: 2.0
     debug_mode: false
 
 ndt:

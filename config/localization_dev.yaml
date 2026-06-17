@@ -1,6 +1,6 @@
 common:
-    lidar_topic:  "/points_raw"
-    imu_topic:  "/imu_raw"
+    lidar_topic:  "/drivers/top_lidar_origin"
+    imu_topic:  "/drivers/imu_data"
     gnss_topic:  "/rtk_ins"
     map_frame:  "map"
     lidar_frame:  "top_lidar"
@@ -24,9 +24,9 @@ mapping:
     # fastlio
     point_skip_num: 4            # for mapping, Increase accuracy 4 -> 1
     space_down_sample: true
-    surf_frame_ds_res: 0.5       # In unstructured scenarios, smaller is more likely to degenerate
+    surf_frame_ds_res: 0.5       # outdoor: 0.5, indoor: 0.1
     max_iteration: 3
-    ikdtree_resolution: 0.5      # In unstructured scenarios, smaller is more likely to degenerate
+    ikdtree_resolution: 0.5      # outdoor: 0.5, indoor: 0.1
     lidar_model_search_range: 5
     lidar_meas_cov: 0.001
     cube_side_length: 10000
@@ -40,10 +40,10 @@ mapping:
     b_gyr_cov: 0.0001
     extrinsic_est_en:  false      # true: enable the online estimation of IMU-LiDAR extrinsic,
     # lidar -> imu = lidar->base * base->imu
-    extrinsic_T: [ 1.43277653, 1.87324502, 0.04516174 ]
-    extrinsic_R: [ -0.0033732, -0.99993922, -0.01048801,
-                   0.99994804, -0.0034737, 0.00958088,
-                   -0.00961666, -0.01045512, 0.99989908 ]
+    extrinsic_T: [ -0.00665, 0, -1.51277 ]
+    extrinsic_R: [ 1, 0, 0,
+                   0, -1, 0,
+                   0, 0, -1 ]
     # imu -> gnss
     extrinsicT_imu2gnss: [ 0.02, 1.42, 1.22 ]
     extrinsicR_imu2gnss: [ 0.9999985, 0.0017453, 0.0000030,
@@ -59,6 +59,7 @@ publish:
 
 official:
     lla: [31.4200590, 120.6394099, 14.790]
+    map_path: "/home/kshg/code/slam_ws/src/slam/fastlio_localization/PCD/"
     # map_path: "/robot/data/map/"
     relocate_use_last_pose: false
     # last_pose_record_path: "/home/will/last_pose_record.txt"
@@ -67,7 +68,8 @@ official:
 
 # ============relocalization_cfg============
 relocalization_cfg:
-    algorithm_type: "scan_context"
+    algorithm_type: "bbs3d"
+    # algorithm_type: "scan_context"
     # algorithm_type: "manually_set"
     lidar_turnover_roll: 0
     lidar_turnover_pitch: 0
@@ -76,8 +78,43 @@ scan_context:
     lidar_height: 2.183
     sc_dist_thres: 0.7
 
+bbs3d:
+    ################[Necessary]################
+    ## 3D-BBS parameters
+    min_level_res: 0.5 # [m], e.g. outdoor: 1.0, indoor: 0.5
+    max_level: 6
+
+    ## Angular search range [rad]
+    # 6.28 input is converted to 2*M_PI
+    min_rpy: [-0.02,-0.02,0.0] # [roll, pitch, yaw]
+    max_rpy: [0.02,0.02,6.28] # [roll, pitch, yaw]
+
+    ## Score threshold
+    # score_threshold = floor(src_points.size() * score_threshold_percentage)
+    score_threshold_percentage: 0.9
+
+    num_threads: 6
+    ################[Optional]################
+    ## Downsample target clouds [m]
+    tar_leaf_size: 0.1 # off: 0.0
+
+    ## Downsample source clouds [m]
+    src_leaf_size: 2.0 # off: 0.0
+
+    ## Crop source clouds [m]
+    min_scan_range: 0.0 # [m]
+    max_scan_range: 100.0 # [m]
+    # off: set 0.0 to both min_scan_range and max_scan_range
+
+    ## Timeout [msec]
+    # Enter the number as int
+    timeout_msec: 0 # off: 0
+
+    ## Final align (evaluate the error)
+    use_gicp: false
+
 bnb3d:
-    linear_xy_window_size: 5   # meter
+    linear_xy_window_size: 10   # meter
     linear_z_window_size: 0.5  # meter
     angular_search_window: 180  # degree 0~180
     pc_resolutions: [0.3, 0.5, 0.8]
@@ -89,7 +126,7 @@ bnb3d:
     min_z_resolution: 0.1
     min_angular_resolution: 5   # degree
 
-    filter_size_scan: 0.2
+    filter_size_scan: 2.0
     debug_mode: false
 
 ndt:

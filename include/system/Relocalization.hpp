@@ -13,6 +13,7 @@
 #include "system/Header.h"
 #include "GnssProcessor.hpp"
 #include "global_localization/bnb3d.h"
+#include "global_localization/bbs3d.h"
 #include "global_localization/scancontext/Scancontext.h"
 // #define gnss_with_direction
 
@@ -37,6 +38,7 @@ public:
     BnbOptions bnb_option;
     Pose manual_pose, lidar_extrinsic, rough_pose;
     std::shared_ptr<BranchAndBoundMatcher3D> bnb3d;
+    BBS3D bbs3d;
 
     pcl::PointCloud<PointXYZIRPYT>::Ptr trajectory_poses;
     std::shared_ptr<ScanContext::SCManager> sc_manager; // scan context
@@ -47,6 +49,7 @@ public:
 private:
     bool fine_tune_pose(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const Eigen::Matrix4d &lidar_ext, const double &score);
     bool run_gnss_relocalization(PointCloudType::Ptr scan, Eigen::Matrix4d &result, const double &lidar_beg_time, const Eigen::Matrix4d &lidar_ext, double &score);
+    bool run_bbs3d(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
     bool run_scan_context(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
     bool run_manually_set(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score);
 
@@ -132,6 +135,46 @@ bool Relocalization::run_gnss_relocalization(PointCloudType::Ptr scan, Eigen::Ma
                  rough_pose.x, rough_pose.y, rough_pose.z, RAD2DEG(rough_pose.roll), RAD2DEG(rough_pose.pitch), RAD2DEG(rough_pose.yaw),
                  bnb3d->sort_cnt, timer.elapsedLast());
     }
+    return true;
+}
+
+bool Relocalization::run_bbs3d(PointCloudType::Ptr scan, Eigen::Matrix4d &rough_mat, const Eigen::Matrix4d &lidar_ext, double &score)
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr bbs_input(new pcl::PointCloud<pcl::PointXYZ>());
+
+    pcl::PointXYZ tmp;
+    for (auto &point : scan->points)
+    {
+        auto norm = pcl::euclideanDistance(point, pcl::PointXYZ(0, 0, 0));
+        if (norm < bbs3d.min_scan_range || norm > bbs3d.max_scan_range)
+          continue;
+        tmp.x = point.x;
+        tmp.y = point.y;
+        tmp.z = point.z;
+        bbs_input->push_back(tmp);
+    }
+
+    if (bbs3d.src_leaf_size != 0.0f)
+    {
+        pcl::VoxelGrid<pcl::PointXYZ> filter;
+        filter.setLeafSize(bbs3d.src_leaf_size, bbs3d.src_leaf_size, bbs3d.src_leaf_size);
+        filter.setInputCloud(bbs_input);
+        filter.filter(*bbs_input);
+    }
+
+    if (!bbs3d.run(bbs_input, rough_mat))
+    {
+        LOG_ERROR("bbs3d failed! Please move the vehicle to another position and try again.");
+        return false;
+    }
+
+    // lidar pose -> imu pose
+    rough_mat *= lidar_ext.inverse();
+
+    EigenMath::DecomposeAffineMatrix(rough_mat, rough_pose.x, rough_pose.y, rough_pose.z, rough_pose.roll, rough_pose.pitch, rough_pose.yaw);
+    LOG_WARN("bbs3d success! res pose = (%.2lf,%.2lf,%.2lf,%.2lf,%.2lf,%.2lf)!",
+             rough_pose.x, rough_pose.y, rough_pose.z, RAD2DEG(rough_pose.roll), RAD2DEG(rough_pose.pitch), RAD2DEG(rough_pose.yaw));
+
     return true;
 }
 
@@ -231,12 +274,22 @@ bool Relocalization::run(const PointCloudType::Ptr &scan, Eigen::Matrix4d &resul
     bool success_flag = true;
     double score = 0;
 
-    if (run_gnss_relocalization(scan, result, lidar_beg_time, lidar_ext, score) && fine_tune_pose(scan, result, lidar_ext, score))
+    if (run_gnss_relocalization(scan, result, lidar_beg_time, lidar_ext, score) && fine_tune_pose(scan, result, lidar_ext, 0))
     {
         LOG_WARN("relocalization successfully!!!!!!");
         return true;
     }
 
+    if (algorithm_type.compare("bbs3d") == 0)
+    {
+        if (!run_bbs3d(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))
+        {
+#ifdef DEDUB_MODE
+            result = EigenMath::CreateAffineMatrix(V3D(rough_pose.x, rough_pose.y, rough_pose.z), V3D(rough_pose.roll, rough_pose.pitch, rough_pose.yaw));
+#endif
+            success_flag = false;
+        }
+    }
     if (algorithm_type.compare("scan_context") == 0)
     {
         if (!run_scan_context(scan, result, lidar_ext, score) || !fine_tune_pose(scan, result, lidar_ext, score))

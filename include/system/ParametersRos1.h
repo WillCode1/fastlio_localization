@@ -59,6 +59,22 @@ inline void load_parameters(System &slam, int &lidar_type)
 
         ros::param::param("relocalization_cfg/algorithm_type", slam.relocalization->algorithm_type, std::string("UNKONW"));
 
+        BBS3DOptions bbs3d_option;
+        bbs3d_option.tar_path = slam.map_path;
+        ros::param::param("bbs3d/min_level_res", bbs3d_option.min_level_res, 1.0);
+        ros::param::param("bbs3d/max_level", bbs3d_option.max_level, 6);
+        ros::param::param("bbs3d/min_rpy", bbs3d_option.min_rpy, vector<double>());
+        ros::param::param("bbs3d/max_rpy", bbs3d_option.max_rpy, vector<double>());
+        ros::param::param("bbs3d/score_threshold_percentage", bbs3d_option.score_threshold_percentage, 0.9);
+        ros::param::param("bbs3d/num_threads", bbs3d_option.num_threads, 6);
+        ros::param::param("bbs3d/tar_leaf_size", bbs3d_option.tar_leaf_size, 0.1);
+        ros::param::param("bbs3d/src_leaf_size", bbs3d_option.src_leaf_size, 2.0);
+        ros::param::param("bbs3d/min_scan_range", bbs3d_option.min_scan_range, 0.0);
+        ros::param::param("bbs3d/max_scan_range", bbs3d_option.max_scan_range, 100.0);
+        ros::param::param("bbs3d/timeout_msec", bbs3d_option.timeout_msec, 0);
+        ros::param::param("bbs3d/use_gicp", bbs3d_option.use_gicp, false);
+        slam.relocalization->bbs3d.load_config(bbs3d_option);
+
         BnbOptions match_option;
         ros::param::param("bnb3d/linear_xy_window_size", match_option.linear_xy_window_size, 10.);
         ros::param::param("bnb3d/linear_z_window_size", match_option.linear_z_window_size, 1.);

@@ -54,7 +54,7 @@ public:
         }
         LOG_WARN("Load trajectory poses successfully! There are %lu poses.", relocalization->trajectory_poses->points.size());
 
-        if (!relocalization->load_keyframe_descriptor(scd_path))
+        if (relocalization->algorithm_type == "scan_context" && !relocalization->load_keyframe_descriptor(scd_path))
         {
             relocalization->algorithm_type = "manually_set";
             LOG_ERROR("Load keyframe descriptor failed, set algorithm_type to manually_set!");
@@ -62,8 +62,10 @@ public:
         else
             LOG_WARN("Load keyframe descriptor successfully! There are %lu descriptors.", relocalization->sc_manager->polarcontexts_.size());
 
+#if 0
         p2p = make_shared<Pcd2Pgm>(0.05, map_path + "/map");
         p2p->convert_from_pgm();
+#endif
 
         /*** initialize the map kdtree ***/
         frontend->init_global_map(global_map);

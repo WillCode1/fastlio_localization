@@ -3,6 +3,8 @@
 
 	<arg name="rviz" default="true" />
 
+    <rosparam file="$(find fastlio_localization)/config/bbs3d.yaml" command="load" />
+
     <!-- <rosparam file="$(find fastlio_localization)/config/avia.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/horizon.yaml" command="load" /> -->
     <!-- <rosparam file="$(find fastlio_localization)/config/velodyne.yaml" command="load" /> -->
