@@ -24,9 +24,9 @@ mapping:
     # fastlio
     point_skip_num: 4            # for mapping, Increase accuracy 4 -> 1
     space_down_sample: true
-    surf_frame_ds_res: 0.2       # outdoor: 0.5, indoor: 0.1
+    surf_frame_ds_res: 0.1       # outdoor: 0.5, indoor: 0.1
     max_iteration: 3
-    ikdtree_resolution: 0.2      # outdoor: 0.5, indoor: 0.1
+    ikdtree_resolution: 0.1      # outdoor: 0.5, indoor: 0.1
     lidar_model_search_range: 5
     lidar_meas_cov: 0.001
     cube_side_length: 1000
