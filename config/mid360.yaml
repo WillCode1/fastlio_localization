@@ -13,7 +13,7 @@ preprocess:
     scan_rate: 10                # only need to be set for velodyne, unit: Hz,
     imu_rate: 200                # only need to be set for imu, unit: Hz,
     timestamp_unit: 2            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
-    blind: 0.1
+    blind: 0.5
     det_range: 70.0
     # imu_meas_check: [3, 3, 3, 20, 20, 50] # rad/s, m/s^2
 
