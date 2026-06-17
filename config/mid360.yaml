@@ -13,7 +13,7 @@ preprocess:
     scan_rate: 10                # only need to be set for velodyne, unit: Hz,
     imu_rate: 200                # only need to be set for imu, unit: Hz,
     timestamp_unit: 2            # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
-    blind: 0.5
+    blind: 0.2
     det_range: 70.0
     # imu_meas_check: [3, 3, 3, 20, 20, 50] # rad/s, m/s^2
 
@@ -24,9 +24,9 @@ mapping:
     # fastlio
     point_skip_num: 4            # for mapping, Increase accuracy 4 -> 1
     space_down_sample: true
-    surf_frame_ds_res: 0.5       # In unstructured scenarios, smaller is more likely to degenerate
+    surf_frame_ds_res: 0.2       # In unstructured scenarios, smaller is more likely to degenerate
     max_iteration: 3
-    ikdtree_resolution: 0.5      # In unstructured scenarios, smaller is more likely to degenerate
+    ikdtree_resolution: 0.2      # In unstructured scenarios, smaller is more likely to degenerate
     lidar_model_search_range: 5
     lidar_meas_cov: 0.001
     cube_side_length: 1000

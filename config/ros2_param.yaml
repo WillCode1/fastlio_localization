@@ -9,7 +9,7 @@ fastlio_localization:
 
         lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
         scan_line: 6
-        blind: 0.1
+        blind: 0.2
         det_range: 70.0
 
         gravity_init: [0., 0., -9.81]         # [0.0, 9.810, 0.0] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
@@ -18,9 +18,9 @@ fastlio_localization:
         # fastlio
         point_skip_num: 4
         space_down_sample: true
-        surf_frame_ds_res: 0.5
+        surf_frame_ds_res: 0.2
         max_iteration: 3
-        ikdtree_resolution: 0.5
+        ikdtree_resolution: 0.2
         lidar_model_search_range: 5.
         lidar_meas_cov: 0.001
         cube_side_length: 1000
