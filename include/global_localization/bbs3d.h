@@ -99,7 +99,7 @@ public:
         {
             // bbs3d_ptr->set_tar_points(tar_points, min_level_res, max_level);
             // bbs3d_ptr->set_trans_search_range(tar_points);
-            std::cout << "[Voxel map] Loaded voxelmaps failed!" << std::endl;
+            std::cout << "\033[31m" << "[Voxel map] Loaded voxelmaps failed!" << "\033[0m" << std::endl;
             return false;
         }
         auto init_t2 = std::chrono::high_resolution_clock::now();
