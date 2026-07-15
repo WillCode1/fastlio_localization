@@ -15,4 +15,21 @@ def generate_launch_description():
     map_publisher = Node(package='pcl_ros', executable='pointcloud_to_pcd', output='screen',
                          parameters=[{'file_name': '/path/to/your/pcd/file.pcd', 'frame_id': 'map'}],
                          remappings=[('/cloud_pcd', '/your/pointcloud_topic')])
+    
+    # static_tf = Node(
+    #     package='tf2_ros',
+    #     executable='static_transform_publisher',
+    #     name='static_tf_publisher',
+    #     arguments=[
+    #         '--x', '0.0',
+    #         '--y', '0.0',
+    #         '--z', '0.0',
+    #         '--roll', '0.0',
+    #         '--pitch', '0.0',
+    #         '--yaw', '0.0',
+    #         '--frame-id', 'base_link',
+    #         '--child-frame-id', 'lidar'
+    #     ]
+    # )
+    # return LaunchDescription([fastlio_localization, rviz2, static_tf])
     return LaunchDescription([fastlio_localization, rviz2])
