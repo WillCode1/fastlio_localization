@@ -118,6 +118,8 @@ void ImuProcessor::UndistortPcl(const MeasureCollection &meas, esekfom::esekf<st
       dt = tail->timestamp - head->timestamp;
     }
 
+    LOG_ERROR_COND(dt > 0.05, "warning: imu dt error, = %f", dt);
+
     in.acc = acc_avr;
     in.gyro = angvel_avr;
     kf_state.predict(dt, Q, in);
