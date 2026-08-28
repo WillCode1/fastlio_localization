@@ -9,6 +9,7 @@ fastlio_localization:
 
         lidar_type: 1                # 1 for Livox serials LiDAR, 2 for Velodyne LiDAR, 3 for ouster LiDAR, 
         scan_line: 6
+        timestamp_unit: 2
         blind: 0.2
         det_range: 70.0
 
