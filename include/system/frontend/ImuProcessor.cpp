@@ -306,3 +306,18 @@ void ImuProcessor::get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_g
   rpy.z() = 0;
   rot_init = EigenMath::RPY2Quaternion(rpy);
 }
+
+void ImuProcessor::lidar_gravity_align(const MeasureCollection &meas, const V3D &preset_gravity, QD &rot_init)
+{
+  V3D meas_gravity = V3D::Zero();
+
+  for (const auto &imu : meas.imu)
+  {
+    const auto &cur_acc = imu->linear_acceleration;
+    meas_gravity -= cur_acc;
+  }
+
+  meas_gravity /= meas.imu.size();
+
+  get_imu_init_rot(preset_gravity, meas_gravity, rot_init);
+}

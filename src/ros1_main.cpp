@@ -458,6 +458,14 @@ void sensor_data_process()
 
             PointCloudType::Ptr cur_scan(new PointCloudType);
             *cur_scan = *slam.frontend->measures->lidar;
+            V3D preset_gravity = V3D(0, 0, -1);
+            QD rot_init;
+            slam.frontend->imu->lidar_gravity_align(*slam.frontend->measures, preset_gravity, rot_init);
+            rot_init.normalize();
+            auto rpy = EigenMath::Quaternion2RPY(rot_init);
+            slam.relocalization->bbs3d.reset_rpy(rpy);
+            lidar_turnover_roll = rpy.x();
+            lidar_turnover_pitch = rpy.y();
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan, slam.frontend->measures->lidar_beg_time);
         }
         // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::WARN);
@@ -697,8 +705,8 @@ void initialPoseCallback(const geometry_msgs::PoseWithCovarianceStamped::ConstPt
     init_pose.x = pose.position.x;
     init_pose.y = pose.position.y;
     init_pose.z = pose.position.z;
-    init_pose.roll = DEG2RAD(lidar_turnover_roll);
-    init_pose.pitch = DEG2RAD(lidar_turnover_pitch);
+    init_pose.roll = lidar_turnover_roll;
+    init_pose.pitch = lidar_turnover_pitch;
     init_pose.yaw = rpy.z();
     slam.relocalization->set_init_pose(init_pose);
 }

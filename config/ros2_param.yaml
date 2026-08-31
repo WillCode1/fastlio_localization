@@ -79,8 +79,8 @@ fastlio_localization:
 
         ## Angular search range [rad]
         # 6.28 input is converted to 2*M_PI
-        bbs3d_min_rpy: [-0.02,-0.02,0.0] # [roll, pitch, yaw]
-        bbs3d_max_rpy: [0.02,0.02,6.28] # [roll, pitch, yaw]
+        bbs3d_min_rpy: [-0.04,-0.04,0.0] # [roll, pitch, yaw]
+        bbs3d_max_rpy: [0.04,0.04,6.28] # [roll, pitch, yaw]
 
         ## Score threshold
         # score_threshold = floor(src_points.size() * score_threshold_percentage)

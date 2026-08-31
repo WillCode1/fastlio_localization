@@ -153,6 +153,18 @@ public:
         return true;
     }
 
+    void reset_rpy(const Eigen::Vector3d &rpy_fix)
+    {
+        auto tmp_min_rpy = min_rpy + rpy_fix;
+        auto tmp_max_rpy = max_rpy + rpy_fix;
+
+#ifdef USE_CUDA
+        bbs3d_ptr->set_angular_search_range(tmp_min_rpy.cast<float>(), tmp_max_rpy.cast<float>());
+#else
+        bbs3d_ptr->set_angular_search_range(tmp_min_rpy, tmp_max_rpy);
+#endif
+    }
+
 private:
     Eigen::Vector3d to_eigen(const std::vector<double>& vec) {
         Eigen::Vector3d e_vec;

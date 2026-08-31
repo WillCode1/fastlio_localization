@@ -30,6 +30,7 @@ public:
   void Process(const MeasureCollection &meas, esekfom::esekf<state_ikfom, 12, input_ikfom> &kf_state, PointCloudType::Ptr pcl_un_);
   void Process(const MeasureCollection &meas, PointCloudType::Ptr pcl_un_, bool imu_en);
   void get_imu_init_rot(const V3D &preset_gravity, const V3D &meas_gravity, QD &rot_init);
+  void lidar_gravity_align(const MeasureCollection &meas, const V3D &preset_gravity, QD &rpy);
 
   V3D cov_acc;
   V3D cov_gyr;
