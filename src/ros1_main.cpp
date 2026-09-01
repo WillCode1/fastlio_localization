@@ -466,6 +466,7 @@ void sensor_data_process()
             slam.relocalization->bbs3d.reset_rpy(rpy);
             lidar_turnover_roll = rpy.x();
             lidar_turnover_pitch = rpy.y();
+            LOG_WARN("lidar roll = %lf, pitch = %lf.", RAD2DEG(rpy.x()), RAD2DEG(rpy.y()));
             slam.relocalization_thread = std::thread(&System::run_relocalization, &slam, cur_scan, slam.frontend->measures->lidar_beg_time);
         }
         // publish_module_status(slam.frontend->measures->lidar_end_time, robot_msgs::Level::WARN);
