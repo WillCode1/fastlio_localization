@@ -3,9 +3,9 @@
 #include <vector>
 #include <Eigen/Core>
 #ifdef USE_CUDA
-#include <gpu_bbs3d/bbs3d.cuh>
+#include "global_localization/bbs3d/gpu_bbs3d/bbs3d.cuh"
 #else
-#include <cpu_bbs3d/bbs3d.hpp>
+#include "global_localization/bbs3d/cpu_bbs3d/bbs3d.hpp"
 #endif
 #include <pointcloud_iof/pcl_eigen_converter.hpp>
 // #include <pointcloud_iof/pcd_loader.hpp>

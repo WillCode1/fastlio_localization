@@ -51,12 +51,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 set(BUILD_CUDA OFF)
 if (BUILD_CUDA)
   add_definitions(-DUSE_CUDA)
-  find_package(gpu_bbs3d REQUIRED)
   find_package(CUDA REQUIRED)
   include_directories(${CUDA_INCLUDE_DIRS})
   link_directories(${CUDA_LIBRARY_DIRS})
-else()
-  find_package(cpu_bbs3d REQUIRED)
 endif()
 
 find_package(Eigen3 REQUIRED)
@@ -67,6 +64,22 @@ include_directories(
   ${EIGEN3_INCLUDE_DIR}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS})
+
+add_library(cpu_bbs3d
+  include/global_localization/bbs3d/cpu_bbs3d/bbs3d.cpp
+  include/global_localization/bbs3d/cpu_bbs3d/voxelmaps.cpp
+  include/global_localization/bbs3d/cpu_bbs3d/voxelmaps_io.cpp
+)
+
+if(BUILD_CUDA)
+  cuda_add_library(gpu_bbs3d
+    include/global_localization/bbs3d/gpu_bbs3d/bbs3d.cu
+    include/global_localization/bbs3d/gpu_bbs3d/calc_score.cu
+    include/global_localization/bbs3d/gpu_bbs3d/voxelmaps.cu
+    include/global_localization/bbs3d/gpu_bbs3d/stream_manager/check_error.cu
+    include/global_localization/bbs3d/gpu_bbs3d/voxelmaps_io.cu
+  )
+endif()
 
 if(ROS_EDITION STREQUAL "ROS1")
   find_package(catkin REQUIRED COMPONENTS
@@ -102,9 +115,9 @@ if(ROS_EDITION STREQUAL "ROS1")
     include/system/System.hpp)
   target_link_libraries(${PROJECT_NAME} stdc++fs ${PCL_LIBRARIES})
   if(BUILD_CUDA)
-    target_link_libraries(${PROJECT_NAME} ${gpu_bbs3d_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} gpu_bbs3d)
   else()
-    target_link_libraries(${PROJECT_NAME} ${cpu_bbs3d_LIBRARY})
+    target_link_libraries(${PROJECT_NAME} cpu_bbs3d)
   endif()
 
   add_executable(fastlio_localization_ros1 src/ros1_main.cpp)
@@ -168,9 +181,9 @@ else(ROS_EDITION STREQUAL "ROS2")
     include/system/System.hpp)
   target_link_libraries(fastlio_localization_ros2 stdc++fs ${PCL_LIBRARIES})
   if(BUILD_CUDA)
-    target_link_libraries(fastlio_localization_ros2 ${gpu_bbs3d_LIBRARY})
+    target_link_libraries(fastlio_localization_ros2 gpu_bbs3d)
   else()
-    target_link_libraries(fastlio_localization_ros2 ${cpu_bbs3d_LIBRARY})
+    target_link_libraries(fastlio_localization_ros2 cpu_bbs3d)
   endif()
   ament_target_dependencies(fastlio_localization_ros2 rclcpp sensor_msgs nav_msgs tf2_ros livox_ros_driver2)
 
