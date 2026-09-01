@@ -1,7 +1,7 @@
 #include "bbs3d.cuh"
 #include "voxelmaps.cuh"
 #include "stream_manager/check_error.cuh"
-#include <discrete_transformation/discrete_transformation.hpp>
+#include "../discrete_transformation/discrete_transformation.hpp"
 
 namespace gpu {
 __global__ void calc_scores_kernel(

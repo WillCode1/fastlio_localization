@@ -7,7 +7,7 @@
 #else
 #include "global_localization/bbs3d/cpu_bbs3d/bbs3d.hpp"
 #endif
-#include <pointcloud_iof/pcl_eigen_converter.hpp>
+#include "bbs3d/pointcloud_iof/pcl_eigen_converter.hpp"
 // #include <pointcloud_iof/pcd_loader.hpp>
 
 struct BBS3DOptions

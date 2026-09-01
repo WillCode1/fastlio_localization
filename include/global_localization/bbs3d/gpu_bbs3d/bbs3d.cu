@@ -1,7 +1,7 @@
 #include "voxelmaps.cuh"
 #include "bbs3d.cuh"
 #include "stream_manager/check_error.cuh"
-#include <discrete_transformation/discrete_transformation.hpp>
+#include "../discrete_transformation/discrete_transformation.hpp"
 
 namespace gpu {
 BBS3D::BBS3D()

@@ -7,7 +7,7 @@
 #include <chrono>
 #include <Eigen/Dense>
 
-#include <discrete_transformation/discrete_transformation.hpp>
+#include "../discrete_transformation/discrete_transformation.hpp"
 
 namespace cpu {
 class VoxelMaps;

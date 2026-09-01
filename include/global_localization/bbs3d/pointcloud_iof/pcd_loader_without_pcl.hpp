@@ -1,6 +1,6 @@
 #pragma once
-#include <pointcloud_iof/pcd_io.hpp>
-#include <pointcloud_iof/filter.hpp>
+#include "pcd_io.hpp"
+#include "filter.hpp"
 #include <boost/filesystem.hpp>
 
 namespace pciof {
