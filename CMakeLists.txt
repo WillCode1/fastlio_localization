@@ -187,10 +187,14 @@ else(ROS_EDITION STREQUAL "ROS2")
   endif()
   ament_target_dependencies(fastlio_localization_ros2 rclcpp sensor_msgs nav_msgs tf2_ros livox_ros_driver2)
 
+  add_executable(voxelmaps_saver src/voxelmaps_saver.cpp)
+  target_link_libraries(voxelmaps_saver cpu_bbs3d ${PCL_LIBRARIES})
+  ament_target_dependencies(voxelmaps_saver rclcpp)
+
   # add_executable(fastlio_sam_test_bag test/read_rosbag_test.cpp)
   # target_link_libraries(fastlio_sam_test_bag ${PROJECT_NAME} ${PCL_LIBRARIES} ${OpenCV_LIBRARIES})
 
-  install(TARGETS fastlio_localization_ros2
+  install(TARGETS fastlio_localization_ros2 voxelmaps_saver
     DESTINATION lib/${PROJECT_NAME}
   )
   install(DIRECTORY launch config rviz_cfg

@@ -37,7 +37,7 @@ bool load_tar_points(const std::string& tar_folder_path, const T& filter_voxel_w
   return true;
 }
 
-bool can_convert_to_int(const std::vector<std::pair<std::string, std::string>>& name_vec) {
+inline bool can_convert_to_int(const std::vector<std::pair<std::string, std::string>>& name_vec) {
   for (const auto& str : name_vec) {
     try {
       std::stoi(str.second);
@@ -50,7 +50,7 @@ bool can_convert_to_int(const std::vector<std::pair<std::string, std::string>>& 
   return true;
 }
 
-std::vector<std::pair<std::string, std::string>> load_pcd_file_paths(const std::string& folder_path) {
+inline std::vector<std::pair<std::string, std::string>> load_pcd_file_paths(const std::string& folder_path) {
   boost::filesystem::path dir(folder_path);
   if (!boost::filesystem::exists(dir)) {
     return {};  // output error

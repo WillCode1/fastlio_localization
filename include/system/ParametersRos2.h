@@ -119,6 +119,11 @@ inline void load_parameters(rclcpp::Node::SharedPtr &node, System &slam, int &li
         node->get_parameter("bbs3d_max_scan_range", bbs3d_option.max_scan_range);
         node->get_parameter("bbs3d_timeout_msec", bbs3d_option.timeout_msec);
         node->get_parameter("bbs3d_use_gicp", bbs3d_option.use_gicp);
+        if (!fs::exists(bbs3d_option.tar_path + "/voxelmaps_coords"))
+        {
+            std::string cmd = "ros2 run fastlio_localization voxelmaps_saver --ros-args -p map_path:=" + slam.map_path + " -p min_level_res:=" + std::to_string(bbs3d_option.min_level_res) + " -p max_level:=" + std::to_string(bbs3d_option.max_level);
+            int ret = std::system(cmd.c_str());
+        }
         slam.relocalization->bbs3d.load_config(bbs3d_option);
 
         BnbOptions match_option;
