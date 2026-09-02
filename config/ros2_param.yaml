@@ -133,4 +133,4 @@ fastlio_localization:
         gicp_search_radius: 0.5
         gicp_teps: 1.0e-4
         gicp_feps: 0.001
-        gicp_fitness_score: 8.3
+        gicp_fitness_score: 0.3
