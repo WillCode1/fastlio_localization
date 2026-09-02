@@ -48,12 +48,13 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}   ${OpenMP_C_FLAGS}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-set(BUILD_CUDA OFF)
+set(BUILD_CUDA ON)
 if (BUILD_CUDA)
   add_definitions(-DUSE_CUDA)
   find_package(CUDA REQUIRED)
   include_directories(${CUDA_INCLUDE_DIRS})
   link_directories(${CUDA_LIBRARY_DIRS})
+  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -std=c++17)
 endif()
 
 find_package(Eigen3 REQUIRED)

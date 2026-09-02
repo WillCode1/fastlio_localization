@@ -50,7 +50,10 @@ fastlio_localization:
         lidar_tf_broadcast: false
         imu_tf_broadcast: false
 
-        map_path: "/home/kshg/code/slam_ws/src/slam/fastlio_localization/PCD/"
+        # map_path: "/home/will/tmp/qc2/"
+        map_path: "/home/will/tmp/out_bag2/"
+        # map_path: "/home/will/tmp/test/"
+        # map_path: "/home/kshg/code/slam_ws/src/slam/fastlio_localization/PCD/"
         # map_path: "/home/chery/tmp/"
         relocate_use_last_pose: false
         # last_pose_record_path: "/home/will/last_pose_record.txt"
@@ -130,4 +133,4 @@ fastlio_localization:
         gicp_search_radius: 0.5
         gicp_teps: 1.0e-4
         gicp_feps: 0.001
-        gicp_fitness_score: 0.3
+        gicp_fitness_score: 8.3
