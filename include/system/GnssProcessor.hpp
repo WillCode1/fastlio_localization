@@ -4,7 +4,7 @@
 #include "system/Header.h"
 #include "global_localization/UtmCoordinate.h"
 #include "global_localization/EnuCoordinate.h"
-#define ENU
+// #define ENU
 
 struct GnssPose
 {
