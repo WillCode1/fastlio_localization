@@ -19,9 +19,9 @@ fastlio_localization:
         # fastlio
         point_skip_num: 4
         space_down_sample: true
-        surf_frame_ds_res: 0.2
+        surf_frame_ds_res: 0.5
         max_iteration: 3
-        ikdtree_resolution: 0.2
+        ikdtree_resolution: 0.5
         lidar_model_search_range: 5.
         lidar_meas_cov: 0.001
         cube_side_length: 1000
@@ -51,7 +51,7 @@ fastlio_localization:
         imu_tf_broadcast: false
 
         # map_path: "/home/will/tmp/qc2/"
-        map_path: "/home/will/tmp/out_bag2/"
+        map_path: "/home/will/tmp/out_bag/"
         # map_path: "/home/will/tmp/test/"
         # map_path: "/home/kshg/code/slam_ws/src/slam/fastlio_localization/PCD/"
         # map_path: "/home/chery/tmp/"
@@ -109,7 +109,7 @@ fastlio_localization:
         ## Final align (evaluate the error)
         bbs3d_use_gicp: false
 
-        bnb3d_linear_xy_window_size: 10.   # meter
+        bnb3d_linear_xy_window_size: 8.   # meter
         bnb3d_linear_z_window_size: 0.5  # meter
         bnb3d_angular_search_window: 180.  # degree 0~180
         bnb3d_pc_resolutions: [0.3, 0.5, 0.8]
@@ -133,4 +133,4 @@ fastlio_localization:
         gicp_search_radius: 0.5
         gicp_teps: 1.0e-4
         gicp_feps: 0.001
-        gicp_fitness_score: 0.3
+        gicp_fitness_score: 5.3

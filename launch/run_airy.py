@@ -6,7 +6,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    config = os.path.join(get_package_share_directory('fastlio_localization'), 'config', 'ros2_param.yaml')
+    config = os.path.join(get_package_share_directory('fastlio_localization'), 'config', 'ros2_airy.yaml')
     rviz_config = os.path.join(get_package_share_directory('fastlio_localization'), 'rviz_cfg', 'localization_ros2.rviz')
 
     fastlio_localization = Node(package="fastlio_localization", executable="fastlio_localization_ros2", prefix=['stdbuf -o L'], output='screen', parameters=[config])
