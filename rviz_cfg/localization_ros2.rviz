@@ -167,7 +167,7 @@ Visualization Manager:
             Value: /grid_map_updates
           Use Timestamp: false
           Value: false
-        - Angle Tolerance: 0.009999999776482582
+        - Angle Tolerance: 0.10000000149011612
           Class: rviz_default_plugins/Odometry
           Covariance:
             Orientation:
@@ -187,7 +187,7 @@ Visualization Manager:
           Enabled: true
           Keep: 20
           Name: lidar_localization
-          Position Tolerance: 0.0010000000474974513
+          Position Tolerance: 0.10000000149011612
           Shape:
             Alpha: 1
             Axes Length: 1
@@ -206,7 +206,7 @@ Visualization Manager:
             Reliability Policy: Reliable
             Value: /lidar_localization
           Value: true
-        - Angle Tolerance: 0.009999999776482582
+        - Angle Tolerance: 0.10000000149011612
           Class: rviz_default_plugins/Odometry
           Covariance:
             Orientation:
@@ -226,7 +226,7 @@ Visualization Manager:
           Enabled: true
           Keep: 100
           Name: imu_localization
-          Position Tolerance: 0.0010000000474974513
+          Position Tolerance: 0.10000000149011612
           Shape:
             Alpha: 1
             Axes Length: 1
