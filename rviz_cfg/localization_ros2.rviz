@@ -115,8 +115,8 @@ Visualization Manager:
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 63.636104583740234
-            Min Value: -1.1899975538253784
+            Max Value: 82.10542297363281
+            Min Value: -5.522824287414551
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -247,7 +247,7 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: Localization
-    - Alpha: 0
+    - Alpha: 1
       Buffer Length: 1
       Class: rviz_default_plugins/Path
       Color: 64; 191; 191
