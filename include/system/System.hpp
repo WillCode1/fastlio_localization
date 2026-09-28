@@ -36,8 +36,8 @@ public:
         pcl::io::loadPCDFile(globalmap_path, *global_map);
         if (global_map->points.size() < 5000)
         {
-            LOG_ERROR("Too few point clouds! Please check the map file.");
-            std::exit(100);
+            LOG_WARN("Too few point clouds! Please check the map file.");
+            // std::exit(100);
         }
         LOG_WARN("Load pcd successfully! There are %lu points in map. Cost time %fms.", global_map->points.size(), timer.elapsedLast());
 
