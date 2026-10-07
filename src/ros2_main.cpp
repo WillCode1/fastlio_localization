@@ -738,11 +738,13 @@ int main(int argc, char **argv)
     rclcpp::Subscription<livox_ros_driver2::msg::CustomMsg>::SharedPtr sub_pcl1;
     rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr sub_pcl2;
     // auto qos = rclcpp::SensorDataQoS();
+    rclcpp::QoS qos(2000000);
+    qos.best_effort();
     if (lidar_type == AVIA)
-        sub_pcl1 = node->create_subscription<livox_ros_driver2::msg::CustomMsg>(lidar_topic, 200000, livox_pcl_cbk);
+        sub_pcl1 = node->create_subscription<livox_ros_driver2::msg::CustomMsg>(lidar_topic, qos, livox_pcl_cbk);
     else
-        sub_pcl2 = node->create_subscription<sensor_msgs::msg::PointCloud2>(lidar_topic, 200000, standard_pcl_cbk);
-    auto sub_imu = node->create_subscription<sensor_msgs::msg::Imu>(imu_topic, 2000000, imu_cbk);
+        sub_pcl2 = node->create_subscription<sensor_msgs::msg::PointCloud2>(lidar_topic, qos, standard_pcl_cbk);
+    auto sub_imu = node->create_subscription<sensor_msgs::msg::Imu>(imu_topic, qos, imu_cbk);
     auto sub_gnss = node->create_subscription<sensor_msgs::msg::NavSatFix>(gnss_topic, 1000, gnss_cbk);
     pubLaserCloudFull = node->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_registered", 1000);
     pubLidarOdom = node->create_publisher<nav_msgs::msg::Odometry>("/lidar_localization", 1000);
